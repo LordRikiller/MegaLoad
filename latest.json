@@ -1,11 +1,11 @@
 {
-  "version": "0.12.3",
-  "notes": "v0.12.3 - Auto-deploy MegaTrainer plugin, live search on Browse, trainer save overwrite",
-  "pub_date": "2026-03-14T23:36:13Z",
+  "version": "0.12.4",
+  "notes": "v0.12.4 - Numpad trainer hotkeys, speed/jump adjustment, updated MegaTrainer v1.1.0",
+  "pub_date": "2026-03-14T23:50:42Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFka1lYQk5XT09jbFluczdWZFExL25mS3BnakhBcTJvZWljcE8zZCtlSzR0VVpmRmVnMlVOVlVpem1zRS9EeDMzU3pGVkg3VktSVXcxMFJXR2VwWkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNTMxMzYxCWZpbGU6TWVnYUxvYWRfMC4xMi4zX3g2NC1zZXR1cC5uc2lzLnppcAp5STdRMGtaMXR0VmtkbUhXdEpRN29lSVNid1o2dmtTcTMzb0JHNmVpUDU4cW1sZ2cyV1NINHJSZnp2dGFvejdITHhBbWhqOFowQ2lmbWUzcmNtTmtDZz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.12.3/MegaLoad_0.12.3_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUwyenoxbDNTM2wwZGVYYWFmYjZvNVdWVW0vYjBySlNsZTVzYTFuZDA2emVZaWNML25adGFIeE5lekw3eUNsbXk5NVdCNVpCNUozQi9ZaUN1bVZZK1FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNTMyMjMyCWZpbGU6TWVnYUxvYWRfMC4xMi40X3g2NC1zZXR1cC5uc2lzLnppcApPeFdKTzd4dXI1aHlYL1dEcURETThDSzd3Rit5TCtlV0J3THpRUmFZeW0zbnhzTWtEUUw5UWdycmNLWU84NFFGSzB1YmtOMS82TjljYnB4OUJIM0tBdz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.12.4/MegaLoad_0.12.4_x64-setup.nsis.zip"
     }
   }
 }

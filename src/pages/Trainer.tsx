@@ -383,11 +383,11 @@ export function Trainer() {
             <span className="font-semibold text-zinc-300">
               How it works:
             </span>{" "}
-            Toggle cheats here, then launch the game. MegaLoad automatically
-            installs the trainer plugin to your profile.
+            Toggle cheats here or in-game with Numpad 0-9. Speed: Num+/Num-, Jump: Ctrl+Num+/Num-, Reset: Num*.
+            MegaLoad auto-installs the trainer plugin.
           </p>
           <p className="text-[10px] text-zinc-600 mt-1">
-            Save states persist across sessions.
+            Save states persist across sessions. In-game hotkeys sync back to MegaLoad.
           </p>
         </div>
       </div>
