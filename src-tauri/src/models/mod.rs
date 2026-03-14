@@ -32,6 +32,7 @@ pub struct ModInfo {
     pub enabled: bool,
     pub version: Option<String>,
     pub guid: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

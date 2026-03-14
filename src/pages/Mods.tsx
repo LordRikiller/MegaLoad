@@ -324,8 +324,13 @@ export function Mods() {
                 </div>
                 <p className="text-xs text-zinc-500 truncate">
                   {mod.folder || mod.file_name}
-                  {mod.version && ` · v${mod.version}`}
+                  {mod.version && <span className="text-zinc-400 font-mono"> · v{mod.version}</span>}
                 </p>
+                {mod.description && (
+                  <p className="text-xs text-zinc-600 truncate mt-0.5">
+                    {mod.description}
+                  </p>
+                )}
               </div>
 
               {/* Actions */}

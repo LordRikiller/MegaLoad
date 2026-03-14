@@ -3,11 +3,41 @@ use std::fs;
 use std::path::Path;
 use tauri::command;
 
+/// Load the mod manifest to get versions and descriptions for our mods.
+fn load_manifest_info() -> std::collections::HashMap<String, (String, Option<String>)> {
+    let mut map = std::collections::HashMap::new();
+    if let Some(appdata) = std::env::var("APPDATA").ok() {
+        let versions_path = Path::new(&appdata).join("MegaLoad").join("mod_versions.json");
+        if let Ok(data) = fs::read_to_string(&versions_path) {
+            if let Ok(versions) = serde_json::from_str::<std::collections::HashMap<String, String>>(&data) {
+                for (name, ver) in versions {
+                    map.entry(name).or_insert((ver, None));
+                }
+            }
+        }
+        let manifest_path = Path::new(&appdata).join("MegaLoad").join("mod_manifest_cache.json");
+        if let Ok(data) = fs::read_to_string(&manifest_path) {
+            if let Ok(manifest) = serde_json::from_str::<serde_json::Value>(&data) {
+                if let Some(mods) = manifest["mods"].as_array() {
+                    for m in mods {
+                        let name = m["name"].as_str().unwrap_or_default().to_string();
+                        let desc = m["description"].as_str().map(|s| s.to_string());
+                        let ver = m["version"].as_str().unwrap_or_default().to_string();
+                        map.entry(name).and_modify(|e| e.1 = desc.clone()).or_insert((ver, desc));
+                    }
+                }
+            }
+        }
+    }
+    map
+}
+
 #[command]
 pub fn get_mods(bepinex_path: String) -> Result<Vec<ModInfo>, String> {
     let plugins_dir = Path::new(&bepinex_path).join("plugins");
     let disabled_dir = plugins_dir.join("_disabled");
     let mut mods = Vec::new();
+    let manifest_info = load_manifest_info();
 
     // Scan enabled mods
     if plugins_dir.exists() {
@@ -17,6 +47,18 @@ pub fn get_mods(bepinex_path: String) -> Result<Vec<ModInfo>, String> {
     // Scan disabled mods
     if disabled_dir.exists() {
         scan_mods_dir(&disabled_dir, false, &mut mods)?;
+    }
+
+    // Enrich with versions and descriptions from manifest
+    for m in &mut mods {
+        if let Some((ver, desc)) = manifest_info.get(&m.name) {
+            if m.version.is_none() {
+                m.version = Some(ver.clone());
+            }
+            if m.description.is_none() {
+                m.description = desc.clone();
+            }
+        }
     }
 
     mods.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
@@ -52,6 +94,7 @@ fn scan_mods_dir(dir: &Path, enabled: bool, mods: &mut Vec<ModInfo>) -> Result<(
                             enabled,
                             version: None,
                             guid: None,
+                            description: None,
                         });
                     }
                 }
@@ -70,6 +113,7 @@ fn scan_mods_dir(dir: &Path, enabled: bool, mods: &mut Vec<ModInfo>) -> Result<(
                 enabled,
                 version: None,
                 guid: None,
+                description: None,
             });
         }
     }

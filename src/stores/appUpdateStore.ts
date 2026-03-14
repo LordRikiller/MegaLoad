@@ -24,7 +24,7 @@ interface AppUpdateState {
 
 export const useAppUpdateStore = create<AppUpdateState>((set, get) => ({
   status: "idle",
-  currentVersion: "0.2.0",
+  currentVersion: "0.3.0",
   newVersion: null,
   downloadProgress: 0,
   error: null,

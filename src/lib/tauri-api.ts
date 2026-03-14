@@ -38,6 +38,7 @@ export interface ModInfo {
   enabled: boolean;
   version: string | null;
   guid: string | null;
+  description: string | null;
 }
 
 export const getMods = (bepinexPath: string) =>

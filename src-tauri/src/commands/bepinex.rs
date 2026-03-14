@@ -227,7 +227,7 @@ pub fn download_bepinex(valheim_path: String, profile_bepinex_path: String) -> R
 /// Query GitHub API for the latest BepInEx 5.x release and return the Windows x64 zip URL.
 fn get_latest_bepinex_5x_url() -> Result<String, String> {
     let resp = ureq::get("https://api.github.com/repos/BepInEx/BepInEx/releases?per_page=50")
-        .set("User-Agent", "MegaLoad/0.2.0")
+        .set("User-Agent", "MegaLoad/0.3.0")
         .set("Accept", "application/vnd.github+json")
         .call()
         .map_err(|e| format!("GitHub API error: {}", e))?;
@@ -268,7 +268,7 @@ fn get_latest_bepinex_5x_url() -> Result<String, String> {
 
 fn download_file(url: &str) -> Result<Vec<u8>, String> {
     let resp = ureq::get(url)
-        .set("User-Agent", "MegaLoad/0.2.0")
+        .set("User-Agent", "MegaLoad/0.3.0")
         .call()
         .map_err(|e| format!("Download error: {}", e))?;
 

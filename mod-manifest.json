@@ -1,48 +1,54 @@
 {
-    "schema_version":  1,
-    "updated_at":  "2026-03-14T19:27:11Z",
-    "mods":  [
-                 {
-                     "download_url":  "https://github.com/ccmrik/SluttyHoe/releases/download/v3.7.5/SluttyHoe.dll",
-                     "dll_name":  "SluttyHoe.dll",
-                     "name":  "SluttyHoe",
-                     "version":  "3.7.5",
-                     "plugin_folder":  "SluttyHoe"
-                 },
-                 {
-                     "download_url":  "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.5.0/MegaMegingjord.dll",
-                     "dll_name":  "MegaMegingjord.dll",
-                     "name":  "MegaMegingjord",
-                     "version":  "1.5.0",
-                     "plugin_folder":  "MegaMegingjord"
-                 },
-                 {
-                     "download_url":  "https://github.com/ccmrik/MegaFood/releases/download/v1.1.1/MegaFood.dll",
-                     "dll_name":  "MegaFood.dll",
-                     "name":  "MegaFood",
-                     "version":  "1.1.1",
-                     "plugin_folder":  "MegaFood"
-                 },
-                 {
-                     "download_url":  "https://github.com/ccmrik/MegaShot/releases/download/v2.0.1/MegaShot.dll",
-                     "dll_name":  "MegaShot.dll",
-                     "name":  "MegaShot",
-                     "version":  "2.0.1",
-                     "plugin_folder":  "MegaShot"
-                 },
-                 {
-                     "download_url":  "https://github.com/ccmrik/MegaQoL/releases/download/v1.3.1/MegaQoL.dll",
-                     "dll_name":  "MegaQoL.dll",
-                     "name":  "MegaQoL",
-                     "version":  "1.3.1",
-                     "plugin_folder":  "MegaQoL"
-                 },
-                 {
-                     "download_url":  "https://github.com/ccmrik/MegaFishing/releases/download/v1.0.1/MegaFishing.dll",
-                     "dll_name":  "MegaFishing.dll",
-                     "name":  "MegaFishing",
-                     "version":  "1.0.1",
-                     "plugin_folder":  "MegaFishing"
-                 }
-             ]
+  "schema_version": 1,
+  "updated_at": "2026-03-14T20:00:00Z",
+  "mods": [
+    {
+      "name": "SluttyHoe",
+      "version": "3.7.5",
+      "download_url": "https://github.com/ccmrik/SluttyHoe/releases/download/v3.7.5/SluttyHoe.dll",
+      "dll_name": "SluttyHoe.dll",
+      "plugin_folder": "SluttyHoe",
+      "description": "Hoe tool overhaul with biome painter, extended terrain editing, and configurable radius"
+    },
+    {
+      "name": "MegaMegingjord",
+      "version": "1.5.0",
+      "download_url": "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.5.0/MegaMegingjord.dll",
+      "dll_name": "MegaMegingjord.dll",
+      "plugin_folder": "MegaMegingjord",
+      "description": "Megingjord belt powers — carry weight, headlamp, Eitr bonus, seafloor walk, speed & jump boost"
+    },
+    {
+      "name": "MegaFood",
+      "version": "1.1.1",
+      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.1.1/MegaFood.dll",
+      "dll_name": "MegaFood.dll",
+      "plugin_folder": "MegaFood",
+      "description": "Custom food items & recipes with fermenter integration and configurable stats"
+    },
+    {
+      "name": "MegaShot",
+      "version": "2.0.1",
+      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.0.1/MegaShot.dll",
+      "dll_name": "MegaShot.dll",
+      "plugin_folder": "MegaShot",
+      "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system"
+    },
+    {
+      "name": "MegaQoL",
+      "version": "1.3.1",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.3.1/MegaQoL.dll",
+      "dll_name": "MegaQoL.dll",
+      "plugin_folder": "MegaQoL",
+      "description": "Quality of life — auto repair, refueller, pet feeder, craft from containers, map teleport, mass farming"
+    },
+    {
+      "name": "MegaFishing",
+      "version": "1.0.2",
+      "download_url": "https://github.com/ccmrik/MegaFishing/releases/download/v1.0.2/MegaFishing.dll",
+      "dll_name": "MegaFishing.dll",
+      "plugin_folder": "MegaFishing",
+      "description": "Fish auto-pull into containers/inventory with quality upgrade and configurable radius"
+    }
+  ]
 }

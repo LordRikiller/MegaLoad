@@ -28,6 +28,7 @@ struct ManifestMod {
     download_url: String,
     dll_name: String,
     plugin_folder: String,
+    description: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -115,7 +116,7 @@ fn save_cache(mods: &[ModUpdateInfo]) {
 /// Fetch the mod manifest — a single HTTP request for all mod info.
 fn fetch_manifest() -> Result<ModManifest, String> {
     let resp = ureq::get(MANIFEST_URL)
-        .set("User-Agent", "MegaLoad/0.2.0")
+        .set("User-Agent", "MegaLoad/0.3.0")
         .call()
         .map_err(|e| {
             let msg = format!("{}", e);
@@ -227,6 +228,14 @@ pub fn check_mod_updates(bepinex_path: String) -> Result<UpdateCheckResult, Stri
 
     // Fresh check — single HTTP request
     let manifest = fetch_manifest()?;
+
+    // Save manifest locally so get_mods can read descriptions
+    if let Some(dir) = megaload_dir() {
+        if let Ok(json) = serde_json::to_string_pretty(&manifest) {
+            let _ = fs::write(dir.join("mod_manifest_cache.json"), json);
+        }
+    }
+
     let results = evaluate_updates(&manifest, &plugins_dir, &installed_versions);
     let total_updates = results.iter().filter(|m| m.has_update).count();
 
@@ -271,7 +280,7 @@ pub fn install_mod_update(
 
     // Download the DLL (this is a direct file download, not an API call — no rate limit)
     let resp = ureq::get(&download_url)
-        .set("User-Agent", "MegaLoad/0.2.0")
+        .set("User-Agent", "MegaLoad/0.3.0")
         .call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 
