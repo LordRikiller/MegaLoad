@@ -93,6 +93,9 @@ export function Sidebar() {
   const errorCount =
     updateResult?.mods.filter((m) => m.status === "error").length ?? 0;
 
+  const firstError =
+    updateResult?.mods.find((m) => m.error)?.error ?? null;
+
   return (
     <aside className="w-56 glass border-r border-zinc-800/50 flex flex-col shrink-0">
       {/* Nav Items */}
@@ -141,30 +144,37 @@ export function Sidebar() {
 
           {/* Result summary */}
           {startupCheckDone && !updatesBlocking && updateResult && (
-            <div className="flex items-center gap-2 text-xs py-1.5 flex-wrap">
-              {updatedCount > 0 && (
-                <span className="flex items-center gap-1 text-emerald-400">
-                  <Download className="w-3 h-3" />
-                  {updatedCount} updated
-                </span>
-              )}
-              {availableCount > 0 && (
-                <span className="flex items-center gap-1 text-brand-400">
-                  <Download className="w-3 h-3" />
-                  {availableCount} pending
-                </span>
-              )}
-              {errorCount > 0 && (
-                <span className="flex items-center gap-1 text-red-400">
-                  <AlertCircle className="w-3 h-3" />
-                  {errorCount} failed
-                </span>
-              )}
-              {updatedCount === 0 && availableCount === 0 && errorCount === 0 && (
-                <span className="flex items-center gap-1 text-zinc-500">
-                  <CheckCircle2 className="w-3 h-3" />
-                  All mods up to date
-                </span>
+            <div className="text-xs py-1.5 space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                {updatedCount > 0 && (
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <Download className="w-3 h-3" />
+                    {updatedCount} updated
+                  </span>
+                )}
+                {availableCount > 0 && (
+                  <span className="flex items-center gap-1 text-brand-400">
+                    <Download className="w-3 h-3" />
+                    {availableCount} pending
+                  </span>
+                )}
+                {errorCount > 0 && (
+                  <span className="flex items-center gap-1 text-red-400">
+                    <AlertCircle className="w-3 h-3" />
+                    {errorCount} failed
+                  </span>
+                )}
+                {updatedCount === 0 && availableCount === 0 && errorCount === 0 && (
+                  <span className="flex items-center gap-1 text-zinc-500">
+                    <CheckCircle2 className="w-3 h-3" />
+                    All mods up to date
+                  </span>
+                )}
+              </div>
+              {firstError && (
+                <p className="text-[10px] text-red-400/70 leading-tight truncate" title={firstError}>
+                  {firstError}
+                </p>
               )}
             </div>
           )}

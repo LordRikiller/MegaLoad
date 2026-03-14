@@ -2,60 +2,32 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::command;
 
-/// Registry of our mods with their GitHub info.
-const MOD_REGISTRY: &[ModRegistryEntry] = &[
-    ModRegistryEntry {
-        name: "SluttyHoe",
-        owner: "ccmrik",
-        repo: "SluttyHoe",
-        dll_name: "SluttyHoe.dll",
-        plugin_folder: "SluttyHoe",
-    },
-    ModRegistryEntry {
-        name: "MegaMegingjord",
-        owner: "ccmrik",
-        repo: "MegaMegingjord",
-        dll_name: "MegaMegingjord.dll",
-        plugin_folder: "MegaMegingjord",
-    },
-    ModRegistryEntry {
-        name: "MegaFood",
-        owner: "ccmrik",
-        repo: "MegaFood",
-        dll_name: "MegaFood.dll",
-        plugin_folder: "MegaFood",
-    },
-    ModRegistryEntry {
-        name: "MegaShot",
-        owner: "ccmrik",
-        repo: "MegaShot",
-        dll_name: "MegaShot.dll",
-        plugin_folder: "MegaShot",
-    },
-    ModRegistryEntry {
-        name: "MegaQoL",
-        owner: "ccmrik",
-        repo: "MegaQoL",
-        dll_name: "MegaQoL.dll",
-        plugin_folder: "MegaQoL",
-    },
-    ModRegistryEntry {
-        name: "MegaFishing",
-        owner: "ccmrik",
-        repo: "MegaFishing",
-        dll_name: "MegaFishing.dll",
-        plugin_folder: "MegaFishing",
-    },
-];
+/// URL to the single manifest file — ONE request to check ALL mods.
+/// Hosted as a release asset on the MegaLoad repo.
+const MANIFEST_URL: &str =
+    "https://github.com/ccmrik/MegaLoad/releases/latest/download/mod-manifest.json";
 
-struct ModRegistryEntry {
-    name: &'static str,
-    owner: &'static str,
-    repo: &'static str,
-    dll_name: &'static str,
-    plugin_folder: &'static str,
+/// Minimum seconds between update checks (15 minutes).
+const CHECK_COOLDOWN_SECS: u64 = 900;
+
+/// Manifest schema from the hosted JSON file.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct ModManifest {
+    schema_version: u32,
+    updated_at: String,
+    mods: Vec<ManifestMod>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct ManifestMod {
+    name: String,
+    version: String,
+    download_url: String,
+    dll_name: String,
+    plugin_folder: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -65,7 +37,7 @@ pub struct ModUpdateInfo {
     pub latest_version: Option<String>,
     pub has_update: bool,
     pub download_url: Option<String>,
-    pub status: String, // "up-to-date", "update-available", "not-installed", "error"
+    pub status: String,
     pub error: Option<String>,
 }
 
@@ -73,19 +45,39 @@ pub struct ModUpdateInfo {
 pub struct UpdateCheckResult {
     pub mods: Vec<ModUpdateInfo>,
     pub total_updates: usize,
+    pub from_cache: bool,
 }
 
-/// Stores installed mod versions locally so we know what we have.
-fn versions_file_path() -> PathBuf {
-    let mut p = dirs_next().unwrap_or_else(|| PathBuf::from("."));
-    p.push("mod_versions.json");
-    p
+/// Cached check result stored on disk.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct CachedUpdateCheck {
+    timestamp: u64,
+    mods: Vec<ModUpdateInfo>,
 }
 
-fn dirs_next() -> Option<PathBuf> {
+fn megaload_dir() -> Option<PathBuf> {
     std::env::var("APPDATA")
         .ok()
         .map(|r| PathBuf::from(r).join("MegaLoad"))
+}
+
+fn versions_file_path() -> PathBuf {
+    megaload_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("mod_versions.json")
+}
+
+fn cache_file_path() -> PathBuf {
+    megaload_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("update_cache.json")
+}
+
+fn now_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
 }
 
 fn load_installed_versions() -> std::collections::HashMap<String, String> {
@@ -104,62 +96,76 @@ fn save_installed_versions(versions: &std::collections::HashMap<String, String>)
     }
 }
 
-/// Check all registered mods for updates from GitHub Releases.
-#[command]
-pub fn check_mod_updates(bepinex_path: String) -> Result<UpdateCheckResult, String> {
-    let installed_versions = load_installed_versions();
-    let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
-    let mut results = Vec::new();
-    let mut total_updates = 0;
-
-    for entry in MOD_REGISTRY {
-        let info = check_single_mod(entry, &plugins_dir, &installed_versions);
-        if info.has_update {
-            total_updates += 1;
-        }
-        results.push(info);
-    }
-
-    Ok(UpdateCheckResult {
-        mods: results,
-        total_updates,
-    })
+fn load_cache() -> Option<CachedUpdateCheck> {
+    let path = cache_file_path();
+    let data = fs::read_to_string(&path).ok()?;
+    serde_json::from_str(&data).ok()
 }
 
-fn check_single_mod(
-    entry: &ModRegistryEntry,
+fn save_cache(mods: &[ModUpdateInfo]) {
+    let cache = CachedUpdateCheck {
+        timestamp: now_secs(),
+        mods: mods.to_vec(),
+    };
+    if let Ok(json) = serde_json::to_string_pretty(&cache) {
+        let _ = fs::write(cache_file_path(), json);
+    }
+}
+
+/// Fetch the mod manifest — a single HTTP request for all mod info.
+fn fetch_manifest() -> Result<ModManifest, String> {
+    let resp = ureq::get(MANIFEST_URL)
+        .set("User-Agent", "MegaLoad/0.2.0")
+        .call()
+        .map_err(|e| {
+            let msg = format!("{}", e);
+            if msg.contains("403") || msg.contains("429") {
+                "Rate limited — try again later".to_string()
+            } else {
+                format!("Failed to fetch mod manifest: {}", msg)
+            }
+        })?;
+
+    let body = resp
+        .into_string()
+        .map_err(|e| format!("Read error: {}", e))?;
+    serde_json::from_str(&body).map_err(|e| format!("Manifest parse error: {}", e))
+}
+
+/// Build update info for each mod from the manifest.
+fn evaluate_updates(
+    manifest: &ModManifest,
     plugins_dir: &PathBuf,
     installed_versions: &std::collections::HashMap<String, String>,
-) -> ModUpdateInfo {
-    // Check if mod is installed
-    let dll_path = plugins_dir.join(entry.plugin_folder).join(entry.dll_name);
-    let is_installed = dll_path.exists();
+) -> Vec<ModUpdateInfo> {
+    manifest
+        .mods
+        .iter()
+        .map(|m| {
+            let dll_path = plugins_dir.join(&m.plugin_folder).join(&m.dll_name);
+            let is_installed = dll_path.exists();
+            let iv = installed_versions.get(&m.name).cloned();
+            let latest = m.version.trim_start_matches('v').to_string();
 
-    // Get installed version from our version store
-    let installed_version = installed_versions.get(entry.name).cloned();
-
-    // Query GitHub for latest release
-    match get_latest_release(entry.owner, entry.repo) {
-        Ok((tag, download_url)) => {
-            let latest_clean = tag.trim_start_matches('v').to_string();
             let has_update = if !is_installed {
-                false // Don't flag update for mods not in the profile
+                false
             } else {
-                match &installed_version {
-                    Some(iv) => {
-                        let iv_clean = iv.trim_start_matches('v');
-                        iv_clean != latest_clean
-                    }
-                    None => true, // No version recorded = needs update
+                match &iv {
+                    Some(v) => v.trim_start_matches('v') != latest,
+                    None => true,
                 }
             };
 
             ModUpdateInfo {
-                name: entry.name.to_string(),
-                installed_version: installed_version.clone(),
-                latest_version: Some(latest_clean),
+                name: m.name.clone(),
+                installed_version: iv,
+                latest_version: Some(latest),
                 has_update,
-                download_url: if has_update { Some(download_url) } else { None },
+                download_url: if has_update {
+                    Some(m.download_url.clone())
+                } else {
+                    None
+                },
                 status: if !is_installed {
                     "not-installed".to_string()
                 } else if has_update {
@@ -169,73 +175,71 @@ fn check_single_mod(
                 },
                 error: None,
             }
-        }
-        Err(e) => ModUpdateInfo {
-            name: entry.name.to_string(),
-            installed_version,
-            latest_version: None,
-            has_update: false,
-            download_url: None,
-            status: "error".to_string(),
-            error: Some(e),
-        },
-    }
-}
-
-/// Query GitHub Releases API for the latest release.
-/// Returns (tag_name, download_url_for_dll_asset).
-fn get_latest_release(owner: &str, repo: &str) -> Result<(String, String), String> {
-    let url = format!(
-        "https://api.github.com/repos/{}/{}/releases/latest",
-        owner, repo
-    );
-
-    let resp = ureq::get(&url)
-        .set("User-Agent", "MegaLoad/0.1.0")
-        .set("Accept", "application/vnd.github+json")
-        .call()
-        .map_err(|e| format!("GitHub API error for {}/{}: {}", owner, repo, e))?;
-
-    let body = resp
-        .into_string()
-        .map_err(|e| format!("Read error: {}", e))?;
-    let release: serde_json::Value =
-        serde_json::from_str(&body).map_err(|e| format!("JSON parse error: {}", e))?;
-
-    let tag = release["tag_name"]
-        .as_str()
-        .ok_or_else(|| "No tag_name in release".to_string())?
-        .to_string();
-
-    // Find the .dll asset in the release
-    let assets = release["assets"]
-        .as_array()
-        .ok_or_else(|| format!("No assets in release {} for {}/{}", tag, owner, repo))?;
-
-    let dll_asset = assets
-        .iter()
-        .find(|a| {
-            a["name"]
-                .as_str()
-                .map(|n| n.ends_with(".dll"))
-                .unwrap_or(false)
         })
-        .ok_or_else(|| {
-            format!(
-                "No .dll asset found in release {} for {}/{}",
-                tag, owner, repo
-            )
-        })?;
-
-    let download_url = dll_asset["browser_download_url"]
-        .as_str()
-        .ok_or_else(|| "No download URL for asset".to_string())?
-        .to_string();
-
-    Ok((tag, download_url))
+        .collect()
 }
 
-/// Install a single mod update by downloading the DLL from GitHub.
+/// Check all mods for updates. Uses cache if <15min old, otherwise ONE HTTP request.
+#[command]
+pub fn check_mod_updates(bepinex_path: String) -> Result<UpdateCheckResult, String> {
+    let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
+    let installed_versions = load_installed_versions();
+
+    // Check cache first
+    if let Some(cache) = load_cache() {
+        let age = now_secs().saturating_sub(cache.timestamp);
+        if age < CHECK_COOLDOWN_SECS {
+            // Re-evaluate from cached latest versions against current installed state
+            let mut mods = cache.mods;
+            let mut total_updates = 0;
+            for m in &mut mods {
+                let folder = m.name.clone(); // plugin_folder == name for our mods
+                let dll_name = format!("{}.dll", m.name);
+                let dll_path = plugins_dir.join(&folder).join(&dll_name);
+                let is_installed = dll_path.exists();
+                let iv = installed_versions.get(&m.name).cloned();
+                m.installed_version = iv.clone();
+                if let Some(latest) = &m.latest_version {
+                    m.has_update = is_installed
+                        && iv
+                            .as_deref()
+                            .map(|v| v.trim_start_matches('v'))
+                            != Some(latest.trim_start_matches('v'));
+                    m.status = if !is_installed {
+                        "not-installed".to_string()
+                    } else if m.has_update {
+                        "update-available".to_string()
+                    } else {
+                        "up-to-date".to_string()
+                    };
+                }
+                if m.has_update {
+                    total_updates += 1;
+                }
+            }
+            return Ok(UpdateCheckResult {
+                mods,
+                total_updates,
+                from_cache: true,
+            });
+        }
+    }
+
+    // Fresh check — single HTTP request
+    let manifest = fetch_manifest()?;
+    let results = evaluate_updates(&manifest, &plugins_dir, &installed_versions);
+    let total_updates = results.iter().filter(|m| m.has_update).count();
+
+    save_cache(&results);
+
+    Ok(UpdateCheckResult {
+        mods: results,
+        total_updates,
+        from_cache: false,
+    })
+}
+
+/// Install a single mod update by downloading the DLL.
 #[command]
 pub fn install_mod_update(
     bepinex_path: String,
@@ -243,24 +247,31 @@ pub fn install_mod_update(
     download_url: String,
     version: String,
 ) -> Result<String, String> {
-    let entry = MOD_REGISTRY
-        .iter()
-        .find(|e| e.name == mod_name)
-        .ok_or_else(|| format!("Unknown mod: {}", mod_name))?;
+    // Find mod info — try manifest first, fall back to name-based defaults
+    let manifest = fetch_manifest().ok();
+    let manifest_mod = manifest
+        .as_ref()
+        .and_then(|m| m.mods.iter().find(|mm| mm.name == mod_name));
+
+    let plugin_folder = manifest_mod
+        .map(|m| m.plugin_folder.clone())
+        .unwrap_or_else(|| mod_name.clone());
+    let dll_name = manifest_mod
+        .map(|m| m.dll_name.clone())
+        .unwrap_or_else(|| format!("{}.dll", mod_name));
 
     let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
-    let mod_dir = plugins_dir.join(entry.plugin_folder);
+    let mod_dir = plugins_dir.join(&plugin_folder);
 
-    // Ensure mod directory exists
     if !mod_dir.exists() {
         fs::create_dir_all(&mod_dir).map_err(|e| format!("Failed to create dir: {}", e))?;
     }
 
-    let dll_path = mod_dir.join(entry.dll_name);
+    let dll_path = mod_dir.join(&dll_name);
 
-    // Download the DLL
+    // Download the DLL (this is a direct file download, not an API call — no rate limit)
     let resp = ureq::get(&download_url)
-        .set("User-Agent", "MegaLoad/0.1.0")
+        .set("User-Agent", "MegaLoad/0.2.0")
         .call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 
@@ -269,13 +280,11 @@ pub fn install_mod_update(
         .read_to_end(&mut bytes)
         .map_err(|e| format!("Read error: {}", e))?;
 
-    // Write DLL
     let mut file =
         fs::File::create(&dll_path).map_err(|e| format!("Failed to create file: {}", e))?;
     file.write_all(&bytes)
         .map_err(|e| format!("Failed to write file: {}", e))?;
 
-    // Update installed version
     let mut versions = load_installed_versions();
     versions.insert(mod_name.clone(), version.clone());
     save_installed_versions(&versions);
@@ -321,6 +330,7 @@ pub fn auto_update_mods(bepinex_path: String) -> Result<UpdateCheckResult, Strin
     Ok(UpdateCheckResult {
         mods: updated_mods,
         total_updates: remaining,
+        from_cache: check.from_cache,
     })
 }
 

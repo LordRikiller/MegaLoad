@@ -162,6 +162,7 @@ export interface ModUpdateInfo {
 export interface UpdateCheckResult {
   mods: ModUpdateInfo[];
   total_updates: number;
+  from_cache: boolean;
 }
 
 export const checkModUpdates = (bepinexPath: string) =>

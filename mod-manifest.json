@@ -1,0 +1,48 @@
+{
+    "schema_version":  1,
+    "updated_at":  "2026-03-14T19:27:11Z",
+    "mods":  [
+                 {
+                     "download_url":  "https://github.com/ccmrik/SluttyHoe/releases/download/v3.7.5/SluttyHoe.dll",
+                     "dll_name":  "SluttyHoe.dll",
+                     "name":  "SluttyHoe",
+                     "version":  "3.7.5",
+                     "plugin_folder":  "SluttyHoe"
+                 },
+                 {
+                     "download_url":  "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.5.0/MegaMegingjord.dll",
+                     "dll_name":  "MegaMegingjord.dll",
+                     "name":  "MegaMegingjord",
+                     "version":  "1.5.0",
+                     "plugin_folder":  "MegaMegingjord"
+                 },
+                 {
+                     "download_url":  "https://github.com/ccmrik/MegaFood/releases/download/v1.1.1/MegaFood.dll",
+                     "dll_name":  "MegaFood.dll",
+                     "name":  "MegaFood",
+                     "version":  "1.1.1",
+                     "plugin_folder":  "MegaFood"
+                 },
+                 {
+                     "download_url":  "https://github.com/ccmrik/MegaShot/releases/download/v2.0.1/MegaShot.dll",
+                     "dll_name":  "MegaShot.dll",
+                     "name":  "MegaShot",
+                     "version":  "2.0.1",
+                     "plugin_folder":  "MegaShot"
+                 },
+                 {
+                     "download_url":  "https://github.com/ccmrik/MegaQoL/releases/download/v1.3.1/MegaQoL.dll",
+                     "dll_name":  "MegaQoL.dll",
+                     "name":  "MegaQoL",
+                     "version":  "1.3.1",
+                     "plugin_folder":  "MegaQoL"
+                 },
+                 {
+                     "download_url":  "https://github.com/ccmrik/MegaFishing/releases/download/v1.0.1/MegaFishing.dll",
+                     "dll_name":  "MegaFishing.dll",
+                     "name":  "MegaFishing",
+                     "version":  "1.0.1",
+                     "plugin_folder":  "MegaFishing"
+                 }
+             ]
+}
