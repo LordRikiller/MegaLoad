@@ -116,7 +116,7 @@ fn save_cache(mods: &[ModUpdateInfo]) {
 /// Fetch the mod manifest — a single HTTP request for all mod info.
 fn fetch_manifest() -> Result<ModManifest, String> {
     let resp = ureq::get(MANIFEST_URL)
-        .set("User-Agent", "MegaLoad/0.3.0")
+        .set("User-Agent", "MegaLoad/0.4.0")
         .call()
         .map_err(|e| {
             let msg = format!("{}", e);
@@ -280,7 +280,7 @@ pub fn install_mod_update(
 
     // Download the DLL (this is a direct file download, not an API call — no rate limit)
     let resp = ureq::get(&download_url)
-        .set("User-Agent", "MegaLoad/0.3.0")
+        .set("User-Agent", "MegaLoad/0.4.0")
         .call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 

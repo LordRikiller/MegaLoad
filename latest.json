@@ -1,11 +1,11 @@
 {
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUx2R0Ira1F2dklUN01WRkQvSVdRV3IxWVdiNmpJckxNWUdKeDVmQWU4K1FUa3piRU1tZEFLRVl0UUNDK0pha0NzNmtGUUhUOXJLdlIwWWpPRXVDS2cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNDc3ODQyCWZpbGU6TWVnYUxvYWRfMC4yLjBfeDY0LXNldHVwLm5zaXMuemlwCjJ1cW5aejh4M3pRUXFKOG5ObDJHSVhRTzNWbW5ZM0dURkpLeWsxcFRuVGxPZktwaWhxL0pYeWVtaDdoR085cCtucGgvK2Vhd0NUUUs5TkZEUU5FM0JBPT0K",
-                                             "url":  "https://github.com/ccmrik/MegaLoad/releases/download/v0.2.0/MegaLoad_0.2.0_x64-setup.nsis.zip"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUpYRzhiM201M0xEcVR4UFRxaXBLSVNCYVcyRHhGZWtVNi85UnRHMVJtbk5MT0REQWtzaXJKRElRWXdvYWFZWHRMMmcrcEJaOXI3UDlYQjB4T1VTSGdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNDc5MDY5CWZpbGU6TWVnYUxvYWRfMC4zLjBfeDY0LXNldHVwLm5zaXMuemlwClh4UGoyU0cwYUxSTmhDZWxqRUszbkJxd3ZvRm44N0xONDk5Wi9hZVlMYm9VWTZnTzFGbGxVdHN1VW5Xem9qVGRtei9FY0w2RTZJemljbXI3c1kxVURnPT0K",
+                                             "url":  "https://github.com/ccmrik/MegaLoad/releases/download/v0.3.0/MegaLoad_0.3.0_x64-setup.nsis.zip"
                                          }
                   },
-    "pub_date":  "2026-03-14T19:44:12Z",
-    "version":  "v0.2.0",
-    "notes":  "v0.2.0 - Manifest-based mod updater (no more rate limits)"
+    "pub_date":  "2026-03-14T20:04:39Z",
+    "version":  "v0.3.0",
+    "notes":  "v0.3.0 - Mod versions \u0026 descriptions on Mods page"
 }
