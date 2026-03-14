@@ -6,4 +6,6 @@ pub mod launcher;
 pub mod logs;
 pub mod mods;
 pub mod profiles;
+pub mod thunderstore;
+pub mod trainer;
 pub mod updater;

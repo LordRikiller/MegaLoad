@@ -9,6 +9,8 @@ use commands::launcher::*;
 use commands::logs::*;
 use commands::mods::*;
 use commands::profiles::*;
+use commands::thunderstore::*;
+use commands::trainer::*;
 use commands::updater::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -62,6 +64,22 @@ pub fn run() {
             install_mod_update,
             auto_update_mods,
             set_mod_version,
+            // Thunderstore
+            search_thunderstore,
+            get_thunderstore_detail,
+            get_thunderstore_categories,
+            install_thunderstore_mod,
+            update_thunderstore_mod,
+            get_installed_thunderstore_mods,
+            uninstall_thunderstore_mod,
+            // Trainer
+            get_trainer_cheats,
+            toggle_trainer_cheat,
+            save_trainer_profile,
+            load_trainer_profile,
+            delete_trainer_profile,
+            get_trainer_profiles,
+            reset_trainer,
             // App logging
             get_logging_enabled,
             set_logging_enabled,

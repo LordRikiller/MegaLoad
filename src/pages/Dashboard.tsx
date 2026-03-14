@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import { useModStore } from "../stores/modStore";
-import { Package, Users, Rocket, Settings2 } from "lucide-react";
+import { Package, Users, Rocket, Settings2, Globe, Gamepad2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export function Dashboard() {
@@ -99,6 +99,26 @@ export function Dashboard() {
             <h3 className="font-semibold text-zinc-200">Manage Mods</h3>
             <p className="text-xs text-zinc-500 mt-1">
               Enable, disable, or install mods
+            </p>
+          </button>
+          <button
+            onClick={() => navigate("/browse")}
+            className="glass rounded-xl p-5 text-left glass-hover group"
+          >
+            <Globe className="w-6 h-6 text-cyan-400 mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-semibold text-zinc-200">Browse Mods</h3>
+            <p className="text-xs text-zinc-500 mt-1">
+              Find and install mods from Thunderstore
+            </p>
+          </button>
+          <button
+            onClick={() => navigate("/trainer")}
+            className="glass rounded-xl p-5 text-left glass-hover group"
+          >
+            <Gamepad2 className="w-6 h-6 text-red-400 mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-semibold text-zinc-200">Trainer</h3>
+            <p className="text-xs text-zinc-500 mt-1">
+              Toggle god mode, unlimited stamina, and more
             </p>
           </button>
           <button

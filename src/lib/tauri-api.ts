@@ -196,3 +196,154 @@ export const getAppLogPath = () =>
   invoke<string>("get_app_log_path");
 export const openDataDir = () =>
   invoke<void>("open_data_dir");
+
+// --- Thunderstore types & commands ---
+
+export interface ThunderstoreListItem {
+  full_name: string;
+  name: string;
+  owner: string;
+  version: string;
+  description: string;
+  downloads: number;
+  rating: number;
+  icon: string;
+  categories: string[];
+  is_deprecated: boolean;
+  date_updated: string;
+  dependency_count: number;
+}
+
+export interface ThunderstoreSearchResult {
+  items: ThunderstoreListItem[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export interface ThunderstoreVersionDetail {
+  version_number: string;
+  download_url: string;
+  downloads: number;
+  description: string;
+  dependencies: string[];
+  date_created: string;
+  file_size: number;
+}
+
+export interface ThunderstoreModDetail {
+  full_name: string;
+  name: string;
+  owner: string;
+  description: string;
+  icon: string;
+  rating: number;
+  is_deprecated: boolean;
+  categories: string[];
+  website_url: string;
+  versions: ThunderstoreVersionDetail[];
+}
+
+export interface InstalledTsMod {
+  full_name: string;
+  version: string;
+  folder_name: string;
+  installed_at: number;
+}
+
+export const searchThunderstore = (
+  query?: string,
+  category?: string,
+  page?: number,
+  perPage?: number
+) =>
+  invoke<ThunderstoreSearchResult>("search_thunderstore", {
+    query: query ?? null,
+    category: category ?? null,
+    page: page ?? null,
+    perPage: perPage ?? null,
+  });
+
+export const getThunderstoreDetail = (fullName: string) =>
+  invoke<ThunderstoreModDetail>("get_thunderstore_detail", { fullName });
+
+export const getThunderstoreCategories = () =>
+  invoke<string[]>("get_thunderstore_categories");
+
+export const installThunderstoreMod = (
+  bepinexPath: string,
+  fullName: string,
+  downloadUrl: string,
+  version: string
+) =>
+  invoke<string>("install_thunderstore_mod", {
+    bepinexPath,
+    fullName,
+    downloadUrl,
+    version,
+  });
+
+export const updateThunderstoreMod = (
+  bepinexPath: string,
+  fullName: string,
+  downloadUrl: string,
+  version: string,
+  folderName: string
+) =>
+  invoke<string>("update_thunderstore_mod", {
+    bepinexPath,
+    fullName,
+    downloadUrl,
+    version,
+    folderName,
+  });
+
+export const getInstalledThunderstoreMods = (bepinexPath: string) =>
+  invoke<InstalledTsMod[]>("get_installed_thunderstore_mods", { bepinexPath });
+
+export const uninstallThunderstoreMod = (
+  bepinexPath: string,
+  fullName: string
+) =>
+  invoke<void>("uninstall_thunderstore_mod", { bepinexPath, fullName });
+
+// --- Trainer types & commands ---
+
+export interface CheatDef {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  enabled: boolean;
+}
+
+export interface SavedTrainerProfile {
+  name: string;
+  cheats: { id: string; enabled: boolean }[];
+  created_at: number;
+}
+
+export const getTrainerCheats = (bepinexPath: string) =>
+  invoke<CheatDef[]>("get_trainer_cheats", { bepinexPath });
+
+export const toggleTrainerCheat = (
+  bepinexPath: string,
+  cheatId: string,
+  enabled: boolean
+) =>
+  invoke<void>("toggle_trainer_cheat", { bepinexPath, cheatId, enabled });
+
+export const saveTrainerProfile = (bepinexPath: string, name: string) =>
+  invoke<void>("save_trainer_profile", { bepinexPath, name });
+
+export const loadTrainerProfile = (bepinexPath: string, name: string) =>
+  invoke<CheatDef[]>("load_trainer_profile", { bepinexPath, name });
+
+export const deleteTrainerProfile = (bepinexPath: string, name: string) =>
+  invoke<void>("delete_trainer_profile", { bepinexPath, name });
+
+export const getTrainerProfiles = (bepinexPath: string) =>
+  invoke<SavedTrainerProfile[]>("get_trainer_profiles", { bepinexPath });
+
+export const resetTrainer = (bepinexPath: string) =>
+  invoke<void>("reset_trainer", { bepinexPath });

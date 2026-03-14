@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
+  Globe,
+  Gamepad2,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useProfileStore } from "../../stores/profileStore";
@@ -23,7 +25,9 @@ import { detectValheimPath, launchValheim } from "../../lib/tauri-api";
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/mods", icon: Package, label: "Mods" },
+  { to: "/browse", icon: Globe, label: "Browse" },
   { to: "/config", icon: Settings2, label: "Config Editor" },
+  { to: "/trainer", icon: Gamepad2, label: "Trainer" },
   { to: "/logs", icon: ScrollText, label: "Log Viewer" },
   { to: "/profiles", icon: Users, label: "Profiles" },
   { to: "/settings", icon: Cog, label: "Settings" },

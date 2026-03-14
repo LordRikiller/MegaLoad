@@ -1,11 +1,11 @@
 {
-  "version": "0.11.0",
-  "notes": "v0.11.0 - Add open folder button to Data Location setting",
-  "pub_date": "2026-03-15T00:08:26Z",
+  "version": "0.11.1",
+  "notes": "v0.11.1 - Fix open data folder button",
+  "pub_date": "2026-03-15T08:16:52Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU9hYmV6ZDNqR0lmNUpQZ0VkZ0tBc0U4cmF0WHhsNjYzKzFGQ0RDOHcwN0pFdEhRRktZMUNsUmRGWGRTeDBTNmJCVlo5OVRkOE1QUzdzL0FMOURvQ0FnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNDkzNjkyCWZpbGU6TWVnYUxvYWRfMC4xMS4wX3g2NC1zZXR1cC5uc2lzLnppcApQNlZKYThSRE4ycWdjczdwUTd0emJ2NHBQY2szS2YxV1ZKa0JOWktxOENMajdMeUd3SDRUNzBBZmdYeFJBRnJmZFhZQzJBWDExSTdJSE5QNGw4UW1CQT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.11.0/MegaLoad_0.11.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBYR3N1TkwwVTA3bjNqT2JFcmJyeCtwRVpleTNvYTExWG9lNVBybVFMb0lZb0hJU0UwaDN2SkZ5cjZkRlJIZEtpdkloemNOZWVuYTVGc3JXVEJpbkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNTIzMDAyCWZpbGU6TWVnYUxvYWRfMC4xMS4xX3g2NC1zZXR1cC5uc2lzLnppcAo0ZjBkZlcxRy9EYUtYSGlTRHF3UFNpSDNjdDg4MEVkQWNPMkZIYjJsekRXYXpqL0MzMEVhYStOcmhaU1R5dGlQUElmb0dOSGtNRGtUdU93VVZaQkJBdz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.11.1/MegaLoad_0.11.1_x64-setup.nsis.zip"
     }
   }
 }
