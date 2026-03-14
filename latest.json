@@ -1,11 +1,1 @@
-{
-  "version": "0.6.0",
-  "notes": "v0.6.0 - App logging system with toggle, download, and comprehensive operation tracking",
-  "pub_date": "2026-03-14T21:11:55Z",
-  "platforms": {
-    "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUl1b3ZRNld2UkNqK0NoWEN4b0M2QkJ6YWdDaWtia2NFakJFUmFJUjh4anpob05sU3Jyb1dZdTVteUl2dHE4V0J1cXBXQklLR2lQRnBvL3UwN2tyWVEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNDgzMTA1CWZpbGU6TWVnYUxvYWRfMC42LjBfeDY0LXNldHVwLm5zaXMuemlwCmJJOXdBcVV1bnVCT2lPVUNaYkxmRG9HaEd2SUlKdXR6YktQVHhpZUFOeFdmcFNIL0dpZGRHK1ZDNWZrZUhBVUN6b1NhWDZuQ0dJM2xCalM0N0RSOER3PT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.6.0/MegaLoad_0.6.0_x64-setup.nsis.zip"
-    }
-  }
-}
+{"version":"0.6.1","notes":"v0.6.1 - Add -console launch arg for F5 devcommands support","pub_date":"2026-03-14T11:13:16Z","platforms":{"windows-x86_64":{"signature":"dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUw3WmE1NFM0RVN3R25CQlBkbzdtYnVRWW9udVd0TkZoNVdNYVFJSXg0Y3JDbHd6TTZXMWhvaFZveGxKQ2ZEbUEzNVlOb09kYlB5cUxkVUQxeGhyMUFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNDg2NTY1CWZpbGU6TWVnYUxvYWRfMC42LjFfeDY0LXNldHVwLm5zaXMuemlwCjMvZnVmVjJEVFhHR04wcFI3Tjl0Rm1NTWtpL09jT3dGOS9rTnA3Uk9CcjBvM1lpWW5wcHZEdHVVSEpMYjRkelhYcWhHU08vREY0YjB2cDJ6MHp4RkFnPT0K","url":"https://github.com/ccmrik/MegaLoad/releases/download/v0.6.1/MegaLoad_0.6.1_x64-setup.nsis.zip"}}}

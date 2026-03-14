@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import {
   getConfigFiles,
@@ -6,6 +6,7 @@ import {
   resetConfigFile,
   type ConfigFile,
   type ConfigEntry,
+  type ConfigSection,
 } from "../lib/tauri-api";
 import {
   Search,
@@ -17,8 +18,34 @@ import {
   FileText,
   X,
   Undo2,
+  List,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+
+/** Natural sort comparator — handles "1 - Foo", "2 - Bar", "10 - Baz" correctly */
+function naturalCompare(a: string, b: string): number {
+  const re = /(\d+)|(\D+)/g;
+  const aParts = a.match(re) || [];
+  const bParts = b.match(re) || [];
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    if (i >= aParts.length) return -1;
+    if (i >= bParts.length) return 1;
+    const aIsNum = /^\d+$/.test(aParts[i]);
+    const bIsNum = /^\d+$/.test(bParts[i]);
+    if (aIsNum && bIsNum) {
+      const diff = parseInt(aParts[i], 10) - parseInt(bParts[i], 10);
+      if (diff !== 0) return diff;
+    } else {
+      const cmp = aParts[i].localeCompare(bParts[i]);
+      if (cmp !== 0) return cmp;
+    }
+  }
+  return 0;
+}
+
+function sortSections(sections: ConfigSection[]): ConfigSection[] {
+  return [...sections].sort((a, b) => naturalCompare(a.name, b.name));
+}
 
 export function ConfigEditor() {
   const { activeProfile } = useProfileStore();
@@ -33,6 +60,8 @@ export function ConfigEditor() {
   );
   const [changeCount, setChangeCount] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (profile?.bepinex_path) {
@@ -110,6 +139,22 @@ export function ConfigEditor() {
   };
 
   const selectedConfig = configs.find((c) => c.file_name === selectedMod);
+
+  // Sort sections naturally (1, 2, 3... not 1, 10, 11, 2...)
+  const sortedSections = useMemo(
+    () => (selectedConfig ? sortSections(selectedConfig.sections) : []),
+    [selectedConfig]
+  );
+
+  const scrollToSection = (sectionKey: string) => {
+    const el = sectionRefs.current[sectionKey];
+    if (el && contentRef.current) {
+      // Expand the section if collapsed
+      setExpandedSections((prev) => new Set([...prev, sectionKey]));
+      // Scroll within the content panel
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   // Filter mod list by sidebar search
   const filteredConfigs = search
@@ -308,7 +353,47 @@ export function ConfigEditor() {
         </div>
 
         {/* Config Content */}
-        <div className="flex-1 glass rounded-xl border border-zinc-800/50 overflow-y-auto">
+        <div className="flex-1 flex min-w-0 gap-0">
+          {/* Section Navigation Menu */}
+          {selectedConfig && sortedSections.length > 1 && (
+            <div className="w-48 shrink-0 glass rounded-l-xl border border-r-0 border-zinc-800/50 flex flex-col">
+              <div className="px-3 py-3 border-b border-zinc-800/50 flex items-center gap-2">
+                <List className="w-3.5 h-3.5 text-zinc-500" />
+                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  Sections
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+                {sortedSections.map((section) => {
+                  const sectionKey = `${selectedConfig.file_name}:${section.name}`;
+                  return (
+                    <button
+                      key={sectionKey}
+                      onClick={() => scrollToSection(sectionKey)}
+                      className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-colors truncate"
+                      title={section.name}
+                    >
+                      <span className="truncate block">{section.name}</span>
+                      <span className="text-[9px] text-zinc-600">
+                        {section.entries.length} setting{section.entries.length !== 1 ? "s" : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Config Entries */}
+          <div
+            ref={contentRef}
+            className={cn(
+              "flex-1 glass border border-zinc-800/50 overflow-y-auto",
+              selectedConfig && sortedSections.length > 1
+                ? "rounded-r-xl border-l-0"
+                : "rounded-xl"
+            )}
+          >
           {!selectedConfig ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Settings2 className="w-10 h-10 text-zinc-700 mb-3" />
@@ -340,7 +425,7 @@ export function ConfigEditor() {
 
               {/* Sections */}
               <div className="p-5 space-y-3">
-                {selectedConfig.sections.map((section) => {
+                {sortedSections.map((section) => {
                   const sectionKey = `${selectedConfig.file_name}:${section.name}`;
                   const isExpanded =
                     expandedSections.has(sectionKey) ||
@@ -349,6 +434,7 @@ export function ConfigEditor() {
                   return (
                     <div
                       key={sectionKey}
+                      ref={(el) => { sectionRefs.current[sectionKey] = el; }}
                       className="rounded-xl border border-zinc-800/40 overflow-hidden bg-zinc-900/30"
                     >
                       <button
@@ -392,6 +478,7 @@ export function ConfigEditor() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
