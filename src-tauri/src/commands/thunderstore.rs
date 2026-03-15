@@ -142,7 +142,7 @@ fn fetch_packages() -> Result<Vec<ThunderstorePackage>, String> {
 
     app_log("Fetching Thunderstore package list...");
     let resp = ureq::get(TS_API_URL)
-        .set("User-Agent", "MegaLoad/0.12.5")
+        .set("User-Agent", "MegaLoad/0.12.6")
         .set("Accept", "application/json")
         .call()
         .map_err(|e| format!("Thunderstore API error: {}", e))?;
@@ -426,7 +426,7 @@ pub fn uninstall_thunderstore_mod(
 
 fn download_ts_file(url: &str) -> Result<Vec<u8>, String> {
     let resp = ureq::get(url)
-        .set("User-Agent", "MegaLoad/0.12.5")
+        .set("User-Agent", "MegaLoad/0.12.6")
         .call()
         .map_err(|e| format!("Download error: {}", e))?;
 

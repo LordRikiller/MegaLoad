@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import { useTrainerStore } from "../stores/trainerStore";
 import {
@@ -15,6 +15,8 @@ import {
   RotateCcw,
   FolderOpen,
   Loader2,
+  Gauge,
+  ArrowUpFromDot,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -40,6 +42,8 @@ export function Trainer() {
   const {
     cheats,
     savedProfiles,
+    speedMultiplier,
+    jumpMultiplier,
     loading,
     fetchCheats,
     toggle,
@@ -47,6 +51,7 @@ export function Trainer() {
     loadProfile,
     deleteProfile,
     reset,
+    setMultiplier,
   } = useTrainerStore();
 
   const [saveName, setSaveName] = useState("");
@@ -108,6 +113,24 @@ export function Trainer() {
     setActiveProfileName(null);
     setToast("All cheats disabled");
   };
+
+  // Debounced multiplier persistence
+  const multiplierTimers = React.useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const handleMultiplier = useCallback(
+    (kind: "speed" | "jump", value: number) => {
+      if (!profile?.bepinex_path) return;
+      const rounded = Math.round(value * 10) / 10;
+      // Optimistic update in store
+      if (kind === "speed") useTrainerStore.setState({ speedMultiplier: rounded });
+      else useTrainerStore.setState({ jumpMultiplier: rounded });
+      // Debounce the backend call
+      clearTimeout(multiplierTimers.current[kind]);
+      multiplierTimers.current[kind] = setTimeout(() => {
+        setMultiplier(profile.bepinex_path, kind, rounded);
+      }, 150);
+    },
+    [profile?.bepinex_path, setMultiplier]
+  );
 
   // Group cheats by category
   const categories = [...new Set(cheats.map((c) => c.category))];
@@ -286,6 +309,79 @@ export function Trainer() {
             </button>
           );
         })}
+      </div>
+
+      {/* Speed & Jump Sliders */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {/* Speed */}
+        <div className={cn(
+          "glass rounded-xl p-4 border transition-all duration-300",
+          speedMultiplier !== 1.0
+            ? "border-brand-500/30 bg-brand-500/5"
+            : "border-zinc-800/30"
+        )}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className={cn("p-1.5 rounded-lg", speedMultiplier !== 1.0 ? "bg-brand-500/15" : "bg-blue-500/10")}>
+              <Gauge className={cn("w-4 h-4", speedMultiplier !== 1.0 ? "text-brand-400" : "text-blue-400")} />
+            </div>
+            <h3 className="font-semibold text-zinc-200 text-sm">Player Speed</h3>
+            <span className={cn(
+              "ml-auto text-sm font-bold tabular-nums",
+              speedMultiplier !== 1.0 ? "text-brand-400" : "text-zinc-500"
+            )}>
+              {speedMultiplier.toFixed(1)}x
+            </span>
+          </div>
+          <input
+            type="range"
+            min="0.1"
+            max="5"
+            step="0.1"
+            value={speedMultiplier}
+            onChange={(e) => handleMultiplier("speed", parseFloat(e.target.value))}
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand-500 bg-zinc-700"
+          />
+          <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
+            <span>0.1x</span>
+            <span>1.0x</span>
+            <span>5.0x</span>
+          </div>
+        </div>
+
+        {/* Jump */}
+        <div className={cn(
+          "glass rounded-xl p-4 border transition-all duration-300",
+          jumpMultiplier !== 1.0
+            ? "border-brand-500/30 bg-brand-500/5"
+            : "border-zinc-800/30"
+        )}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className={cn("p-1.5 rounded-lg", jumpMultiplier !== 1.0 ? "bg-brand-500/15" : "bg-purple-500/10")}>
+              <ArrowUpFromDot className={cn("w-4 h-4", jumpMultiplier !== 1.0 ? "text-brand-400" : "text-purple-400")} />
+            </div>
+            <h3 className="font-semibold text-zinc-200 text-sm">Jump Height</h3>
+            <span className={cn(
+              "ml-auto text-sm font-bold tabular-nums",
+              jumpMultiplier !== 1.0 ? "text-brand-400" : "text-zinc-500"
+            )}>
+              {jumpMultiplier.toFixed(1)}x
+            </span>
+          </div>
+          <input
+            type="range"
+            min="0.1"
+            max="5"
+            step="0.1"
+            value={jumpMultiplier}
+            onChange={(e) => handleMultiplier("jump", parseFloat(e.target.value))}
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-brand-500 bg-zinc-700"
+          />
+          <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
+            <span>0.1x</span>
+            <span>1.0x</span>
+            <span>5.0x</span>
+          </div>
+        </div>
       </div>
 
       {/* Cheat Grid */}

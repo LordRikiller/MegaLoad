@@ -356,3 +356,13 @@ export const getTrainerProfiles = (bepinexPath: string) =>
 
 export const resetTrainer = (bepinexPath: string) =>
   invoke<void>("reset_trainer", { bepinexPath });
+
+export const getTrainerMultipliers = (bepinexPath: string) =>
+  invoke<[number, number]>("get_trainer_multipliers", { bepinexPath });
+
+export const setTrainerMultiplier = (
+  bepinexPath: string,
+  kind: string,
+  value: number
+) =>
+  invoke<void>("set_trainer_multiplier", { bepinexPath, kind, value });

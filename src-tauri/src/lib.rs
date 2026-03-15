@@ -81,6 +81,8 @@ pub fn run() {
             delete_trainer_profile,
             get_trainer_profiles,
             reset_trainer,
+            get_trainer_multipliers,
+            set_trainer_multiplier,
             // App logging
             get_logging_enabled,
             set_logging_enabled,

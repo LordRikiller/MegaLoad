@@ -15,9 +15,27 @@ pub struct CheatDef {
     pub enabled: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TrainerState {
     pub cheats: Vec<CheatEntry>,
+    #[serde(default = "default_one")]
+    pub speed_multiplier: f32,
+    #[serde(default = "default_one")]
+    pub jump_multiplier: f32,
+}
+
+fn default_one() -> f32 {
+    1.0
+}
+
+impl Default for TrainerState {
+    fn default() -> Self {
+        TrainerState {
+            cheats: Vec::new(),
+            speed_multiplier: 1.0,
+            jump_multiplier: 1.0,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -333,7 +351,38 @@ pub fn get_trainer_profiles(
 pub fn reset_trainer(bepinex_path: String) -> Result<(), String> {
     let mut data = load_trainer_data(&bepinex_path);
     data.active.cheats.clear();
+    data.active.speed_multiplier = 1.0;
+    data.active.jump_multiplier = 1.0;
     save_trainer_data(&bepinex_path, &data);
     app_log("Trainer: reset all cheats to OFF");
+    Ok(())
+}
+
+/// Get the current speed/jump multipliers.
+#[command]
+pub fn get_trainer_multipliers(bepinex_path: String) -> Result<(f32, f32), String> {
+    let data = load_trainer_data(&bepinex_path);
+    Ok((data.active.speed_multiplier, data.active.jump_multiplier))
+}
+
+/// Set a speed or jump multiplier.
+#[command]
+pub fn set_trainer_multiplier(
+    bepinex_path: String,
+    kind: String,
+    value: f32,
+) -> Result<(), String> {
+    let clamped = value.clamp(0.1, 10.0);
+    let rounded = (clamped * 10.0).round() / 10.0;
+    let mut data = load_trainer_data(&bepinex_path);
+
+    match kind.as_str() {
+        "speed" => data.active.speed_multiplier = rounded,
+        "jump" => data.active.jump_multiplier = rounded,
+        _ => return Err(format!("Unknown multiplier kind: {}", kind)),
+    }
+
+    save_trainer_data(&bepinex_path, &data);
+    app_log(&format!("Trainer: {} → {:.1}x", kind, rounded));
     Ok(())
 }
