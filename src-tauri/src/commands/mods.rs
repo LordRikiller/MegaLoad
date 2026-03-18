@@ -41,14 +41,22 @@ pub fn get_mods(bepinex_path: String) -> Result<Vec<ModInfo>, String> {
     let mut mods = Vec::new();
     let manifest_info = load_manifest_info();
 
-    // Scan enabled mods
+    // Scan enabled mods first
     if plugins_dir.exists() {
         scan_mods_dir(&plugins_dir, true, &mut mods)?;
     }
 
-    // Scan disabled mods
+    // Scan disabled mods, dedup: skip any mod that already exists as enabled
     if disabled_dir.exists() {
-        scan_mods_dir(&disabled_dir, false, &mut mods)?;
+        let mut disabled_mods = Vec::new();
+        scan_mods_dir(&disabled_dir, false, &mut disabled_mods)?;
+        let enabled_names: std::collections::HashSet<String> =
+            mods.iter().map(|m| m.name.to_lowercase()).collect();
+        for m in disabled_mods {
+            if !enabled_names.contains(&m.name.to_lowercase()) {
+                mods.push(m);
+            }
+        }
     }
 
     // Enrich with versions and descriptions from MegaLoad manifest (overrides Thunderstore)
