@@ -1,11 +1,11 @@
 {
-  "version": "0.13.9",
-  "notes": "v0.13.9 - Steam cloud sync detection, disable launch while game running or syncing",
-  "pub_date": "2026-03-19T09:34:16Z",
+  "version": "0.13.10",
+  "notes": "v0.13.10 - Block launch when Steam not running, ensure steam_appid.txt exists",
+  "pub_date": "2026-03-19T09:43:11Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNVWm12d0JZUkl1N2h5VmhtazhBd3FaMm1HaGNIY0tTbEQwVTJaOUlqWWVDZVZrcXlPdXVjbGxEU1orQ01IMzNiZTJhNXdHMmp4Z1E4OWVFNWhOQ2c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczODczMTE4CWZpbGU6TWVnYUxvYWRfMC4xMy45X3g2NC1zZXR1cC5uc2lzLnppcApZMTlHTmlXcDRJQ2xpSitOYU80ZVZjZTFrWjhSZURSdnk2cVBrZytrOCtZbzhRamI5dUtkWHpxUVRudnBGcGFJd0VqS1dsUFBPYmk4Z1M1SWQvQ3hEQT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.9/MegaLoad_0.13.9_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUswOEtlM0IvK210YkdSbTh3Smx6VEIwRVJGRWZiV2pHNmV0eWsvSDZ0VUJTN1hkQy9kVEgvb2pCU2lWdnhrRTlLL0Z1blFsUitTYTBWTHBIM1F2b3c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczODczNzgyCWZpbGU6TWVnYUxvYWRfMC4xMy4xMF94NjQtc2V0dXAubnNpcy56aXAKdU9WMnh6R1N6czBlb3hGMTM1eEpPbFBRRHdKSmRjVTR1UFFvT1FYRVhya0dmdWcreWpWV1c2cDJPSnBObjRrSnNTN0t3OFREYUtEbUxoRFROSk5GQXc9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.10/MegaLoad_0.13.10_x64-setup.nsis.zip"
     }
   }
 }

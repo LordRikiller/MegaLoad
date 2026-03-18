@@ -152,6 +152,8 @@ export const launchValheim = (valheimPath: string, bepinexPath: string) =>
   invoke<void>("launch_valheim", { valheimPath, bepinexPath });
 export const checkGameStatus = (valheimPath: string) =>
   invoke<GameStatus>("check_game_status", { valheimPath });
+export const startSteam = (valheimPath: string) =>
+  invoke<string>("start_steam", { valheimPath });
 
 // --- BepInEx bootstrap commands ---
 

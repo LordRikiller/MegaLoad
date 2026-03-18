@@ -99,11 +99,6 @@ pub fn launch_valheim(valheim_path: String, bepinex_path: String) -> Result<(), 
         app_log("Created steam_appid.txt");
     }
 
-    // Verify Steam is running — SteamAPI_Init() will fail without it
-    if !is_process_running("steam.exe") {
-        return Err("Steam is not running. Please start Steam before launching Valheim.".to_string());
-    }
-
     // === KEY FIX: Rewrite doorstop_config.ini to use the ABSOLUTE path to this profile's BepInEx ===
     // This is what R2Modman does — env vars are unreliable across doorstop versions.
     let doorstop_config_path = game_dir.join("doorstop_config.ini");
@@ -157,14 +152,14 @@ pub fn check_game_status(valheim_path: String) -> Result<GameStatus, String> {
         false
     };
 
-    let ready = !valheim_running && !cloud_syncing && steam_running;
+    let ready = !valheim_running && !cloud_syncing;
 
     let status_text = if valheim_running {
         "Valheim is running".to_string()
     } else if cloud_syncing {
         "Steam Cloud sync in progress...".to_string()
     } else if !steam_running {
-        "Steam is not running — launch Steam first".to_string()
+        "Ready — Steam will be started automatically".to_string()
     } else {
         "Ready".to_string()
     };
@@ -176,6 +171,45 @@ pub fn check_game_status(valheim_path: String) -> Result<GameStatus, String> {
         ready_to_launch: ready,
         status_text,
     })
+}
+
+/// Start Steam if it's not already running. Returns the Steam exe path used.
+#[command]
+pub fn start_steam(valheim_path: String) -> Result<String, String> {
+    if is_process_running("steam.exe") {
+        return Ok("already_running".to_string());
+    }
+
+    // Derive Steam root from: .../steamapps/common/Valheim → .../Steam/steam.exe
+    let game_dir = PathBuf::from(&valheim_path);
+    let steam_exe = game_dir
+        .parent() // common/
+        .and_then(|p| p.parent()) // steamapps/
+        .and_then(|p| p.parent()) // Steam/
+        .map(|p| p.join("steam.exe"));
+
+    let exe = match steam_exe {
+        Some(p) if p.exists() => p,
+        _ => {
+            // Fallback: try common install locations
+            let candidates = [
+                r"C:\Program Files (x86)\Steam\steam.exe",
+                r"C:\Program Files\Steam\steam.exe",
+                r"D:\Steam\steam.exe",
+            ];
+            match candidates.iter().find(|c| Path::new(c).exists()) {
+                Some(c) => PathBuf::from(c),
+                None => return Err("Could not find steam.exe. Please start Steam manually.".to_string()),
+            }
+        }
+    };
+
+    app_log(&format!("Starting Steam: {}", exe.display()));
+    std::process::Command::new(&exe)
+        .spawn()
+        .map_err(|e| format!("Failed to start Steam: {}", e))?;
+
+    Ok(exe.to_string_lossy().to_string())
 }
 
 /// Check if a process is running by name using tasklist (Windows).

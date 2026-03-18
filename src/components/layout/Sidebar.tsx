@@ -23,7 +23,7 @@ import { cn } from "../../lib/utils";
 import { useProfileStore } from "../../stores/profileStore";
 import { useUpdateStore } from "../../stores/updateStore";
 import { useToastStore } from "../../stores/toastStore";
-import { detectValheimPath, launchValheim, checkGameStatus } from "../../lib/tauri-api";
+import { detectValheimPath, launchValheim, checkGameStatus, startSteam } from "../../lib/tauri-api";
 import type { GameStatus } from "../../lib/tauri-api";
 
 const navItems = [
@@ -41,6 +41,7 @@ export function Sidebar() {
   const { activeProfile } = useProfileStore();
   const profile = activeProfile();
   const [launching, setLaunching] = useState(false);
+  const [launchPhase, setLaunchPhase] = useState<string | null>(null);
   const [valheimPath, setValheimPath] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [gameStatus, setGameStatus] = useState<GameStatus | null>(null);
@@ -90,10 +91,38 @@ export function Sidebar() {
     setLaunching(true);
     setLaunchError(null);
     try {
+      // Step 1: Start Steam if not running
+      const status = await checkGameStatus(valheimPath);
+      if (!status.steam_running) {
+        setLaunchPhase("Starting Steam...");
+        await startSteam(valheimPath);
+        // Wait for Steam to be detected (poll every 2s, up to 30s)
+        let steamUp = false;
+        for (let i = 0; i < 15; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          const s = await checkGameStatus(valheimPath);
+          setGameStatus(s);
+          if (s.steam_running) { steamUp = true; break; }
+        }
+        if (!steamUp) throw "Steam failed to start within 30 seconds.";
+      }
+
+      // Step 2: Wait for cloud sync to finish (poll every 2s, up to 60s)
+      setLaunchPhase("Waiting for Cloud Sync...");
+      for (let i = 0; i < 30; i++) {
+        const s = await checkGameStatus(valheimPath);
+        setGameStatus(s);
+        if (!s.cloud_syncing) break;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      // Step 3: Launch
+      setLaunchPhase("Launching...");
       await launchValheim(valheimPath, profile.bepinex_path);
     } catch (e) {
       setLaunchError(String(e));
     } finally {
+      setLaunchPhase(null);
       setTimeout(() => setLaunching(false), 2000);
     }
   };
@@ -106,7 +135,7 @@ export function Sidebar() {
 
   const updatesBlocking = checking || updating;
   const gameBlocking =
-    gameStatus?.valheim_running || gameStatus?.cloud_syncing || (gameStatus ? !gameStatus.steam_running : false);
+    gameStatus?.valheim_running || gameStatus?.cloud_syncing || false;
   const launchDisabled =
     !profile || !valheimPath || launching || updatesBlocking || gameBlocking;
 
@@ -260,9 +289,9 @@ export function Sidebar() {
               </div>
             )}
             {!gameStatus.steam_running && !gameStatus.valheim_running && !gameStatus.cloud_syncing && (
-              <div className="flex items-center gap-2 text-xs text-amber-400">
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
                 <CloudOff className="w-3 h-3 shrink-0" />
-                <span>Steam not running — launch blocked</span>
+                <span>Steam not running — will start automatically</span>
               </div>
             )}
           </div>
@@ -281,7 +310,7 @@ export function Sidebar() {
           {launching ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Launching...
+              {launchPhase || "Launching..."}
             </>
           ) : updatesBlocking ? (
             <>
@@ -297,11 +326,6 @@ export function Sidebar() {
             <>
               <Cloud className="w-4 h-4 animate-pulse" />
               Cloud Syncing...
-            </>
-          ) : gameStatus && !gameStatus.steam_running ? (
-            <>
-              <CloudOff className="w-4 h-4" />
-              Start Steam First
             </>
           ) : (
             <>

@@ -55,6 +55,7 @@ pub fn run() {
             detect_r2modman_profiles,
             launch_valheim,
             check_game_status,
+            start_steam,
             // BepInEx bootstrap
             find_bepinex_sources,
             install_bepinex_core,
