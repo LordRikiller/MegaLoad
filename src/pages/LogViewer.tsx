@@ -5,6 +5,7 @@ import {
   clearLog,
   getLogSize,
   saveLogFile,
+  saveTextFile,
   type LogLine,
 } from "../lib/tauri-api";
 import { save } from "@tauri-apps/plugin-dialog";
@@ -17,6 +18,7 @@ import {
   ArrowDown,
   X,
   Download,
+  Copy,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -76,15 +78,19 @@ export function LogViewer() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const text = filteredLines.map((l) => l.text).join("\n");
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `LogOutput_${new Date().toISOString().slice(0, 10)}.log`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const dest = await save({
+      defaultPath: `LogOutput_${new Date().toISOString().slice(0, 10)}.log`,
+      filters: [{ name: "Log Files", extensions: ["log", "txt"] }],
+    });
+    if (!dest) return;
+    await saveTextFile(dest, text);
+  };
+
+  const handleCopy = async () => {
+    const text = filteredLines.map((l) => l.text).join("\n");
+    await navigator.clipboard.writeText(text);
   };
 
   const handleDownload = async () => {
@@ -184,6 +190,15 @@ export function LogViewer() {
           >
             <Download className="w-3.5 h-3.5" />
             Export
+          </button>
+
+          <button
+            onClick={handleCopy}
+            disabled={filteredLines.length === 0}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-30"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            Copy
           </button>
 
           <button
@@ -287,7 +302,7 @@ export function LogViewer() {
       {/* Log Content */}
       <div
         ref={scrollRef}
-        className="flex-1 glass rounded-xl border border-zinc-800/50 overflow-y-auto font-mono text-xs leading-5 min-h-0"
+        className="flex-1 glass rounded-xl border border-zinc-800/50 overflow-y-auto font-mono text-xs leading-5 min-h-0 select-text"
         onScroll={(e) => {
           const el = e.currentTarget;
           const atBottom =

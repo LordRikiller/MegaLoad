@@ -109,3 +109,9 @@ pub fn save_log_file(bepinex_path: String, dest_path: String) -> Result<(), Stri
     fs::copy(&log_path, &dest_path).map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[command]
+pub fn save_text_file(dest_path: String, content: String) -> Result<(), String> {
+    fs::write(&dest_path, &content).map_err(|e| e.to_string())?;
+    Ok(())
+}

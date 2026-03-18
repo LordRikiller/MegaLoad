@@ -1,11 +1,11 @@
 {
-  "version": "0.13.6",
-  "notes": "v0.13.6 - Show numpad keybinds on trainer cheat cards",
-  "pub_date": "2026-03-19T06:34:11Z",
+  "version": "0.13.7",
+  "notes": "v0.13.7 - Add MegaFactory to starter mods, featured Our Mods section on Browse page",
+  "pub_date": "2026-03-18T20:35:06Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUVQSDdnU29pdmF6b2VPUmUyekIwNklZZUplSkNSTVRtVmVEYWEzcTZ5eE9vcjF0OTZxSWZPc2pOVHRyeDZBejNhVndDOVgxRjdwak9pTHlMTGRCWkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczODYyNDQwCWZpbGU6TWVnYUxvYWRfMC4xMy42X3g2NC1zZXR1cC5uc2lzLnppcApLV3RSc09ERUpwMFFRWExreWx4ZVRVaHZsTDBJSXhWd0IrSkdCbWlicHpvanMxRUJPWVZLemZ0U3ozcGQ1OGRFcHBLRFNKOVFkTTRDWEZldlIva3RDUT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.6/MegaLoad_0.13.6_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFqdDFIK0FoREtWTDhON2hFMGtaV01CdHQyKzJXZ3ZkMVVsZTBEYmFIRXkraEZKcWVrZVJ5c2hLQnZCR1lTTXpWMmc3Vzk2N2NJd3dpcVlNeUpwdHdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczODY2MDE0CWZpbGU6TWVnYUxvYWRfMC4xMy43X3g2NC1zZXR1cC5uc2lzLnppcApvbXQ1amtVVXFqM0MweDl4TXdvalNEeXFOajNya3oweXUxKy9xdXFNMU9sVzVLQitrZlp0Ujh6QlhWNWg2cTYwd0UwdE1aTlJ4RUUrQWR4cFkrNzFEQT09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.7/MegaLoad_0.13.7_x64-setup.nsis.zip"
     }
   }
 }

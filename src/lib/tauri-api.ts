@@ -124,6 +124,8 @@ export const clearLog = (bepinexPath: string) =>
   invoke<void>("clear_log", { bepinexPath });
 export const saveLogFile = (bepinexPath: string, destPath: string) =>
   invoke<void>("save_log_file", { bepinexPath, destPath });
+export const saveTextFile = (destPath: string, content: string) =>
+  invoke<void>("save_text_file", { destPath, content });
 
 // --- Import commands ---
 
