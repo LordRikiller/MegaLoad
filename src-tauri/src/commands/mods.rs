@@ -1,4 +1,5 @@
 use crate::commands::app_log::app_log;
+use crate::commands::security::sanitize_path_component;
 use crate::models::ModInfo;
 use std::fs;
 use std::path::Path;
@@ -139,6 +140,12 @@ fn read_thunderstore_manifest(folder: &Path) -> Option<(String, Option<String>)>
 
 #[command]
 pub fn toggle_mod(bepinex_path: String, folder: String, file_name: String, enable: bool) -> Result<(), String> {
+    // Validate path components to prevent traversal attacks
+    if !folder.is_empty() {
+        sanitize_path_component(&folder)?;
+    }
+    sanitize_path_component(&file_name)?;
+
     let plugins_dir = Path::new(&bepinex_path).join("plugins");
     let disabled_dir = plugins_dir.join("_disabled");
 
@@ -171,6 +178,12 @@ pub fn toggle_mod(bepinex_path: String, folder: String, file_name: String, enabl
 
 #[command]
 pub fn delete_mod(bepinex_path: String, folder: String, file_name: String, enabled: bool) -> Result<(), String> {
+    // Validate path components to prevent traversal attacks
+    if !folder.is_empty() {
+        sanitize_path_component(&folder)?;
+    }
+    sanitize_path_component(&file_name)?;
+
     let mod_label = if folder.is_empty() { &file_name } else { &folder };
     app_log(&format!("Deleting mod: {}", mod_label));
     let plugins_dir = Path::new(&bepinex_path).join("plugins");

@@ -1,4 +1,5 @@
 use crate::commands::app_log::app_log;
+use crate::commands::security::validate_config_path;
 use crate::models::{ConfigEntry, ConfigFile, ConfigSection};
 use std::collections::HashSet;
 use std::fs;
@@ -36,6 +37,9 @@ pub fn save_config_value(
     key: String,
     value: String,
 ) -> Result<(), String> {
+    // Validate config path is within BepInEx/config and has .cfg extension
+    validate_config_path(&config_path, "")?;
+
     app_log(&format!("Config: [{}] {} = {}", section, key, value));
     let path = Path::new(&config_path);
     let content = fs::read_to_string(path).map_err(|e| e.to_string())?;

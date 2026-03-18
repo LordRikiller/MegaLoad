@@ -1,4 +1,5 @@
 use crate::commands::app_log::app_log;
+use crate::commands::security::{sanitize_path_component, validate_download_url};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{Cursor, Read};
@@ -142,7 +143,7 @@ fn fetch_packages() -> Result<Vec<ThunderstorePackage>, String> {
 
     app_log("Fetching Thunderstore package list...");
     let resp = ureq::get(TS_API_URL)
-        .set("User-Agent", "MegaLoad/0.13.2")
+        .set("User-Agent", "MegaLoad/0.13.3")
         .set("Accept", "application/json")
         .call()
         .map_err(|e| format!("Thunderstore API error: {}", e))?;
@@ -344,12 +345,18 @@ pub fn install_thunderstore_mod(
         full_name, version
     ));
 
+    // Validate download URL
+    validate_download_url(&download_url)?;
+
     // 1. Download the zip
     let bytes = download_ts_file(&download_url)?;
 
     // 2. Extract into the profile's plugins directory
     let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
     let mod_folder_name = full_name.replace('/', "-"); // e.g. "Author-ModName"
+
+    // Validate the derived folder name
+    sanitize_path_component(&mod_folder_name)?;
     let mod_dir = plugins_dir.join(&mod_folder_name);
 
     extract_thunderstore_zip(&bytes, &mod_dir)?;
@@ -374,6 +381,10 @@ pub fn update_thunderstore_mod(
         "Updating Thunderstore mod: {} to v{}",
         full_name, version
     ));
+
+    // Validate download URL and folder name
+    validate_download_url(&download_url)?;
+    sanitize_path_component(&folder_name)?;
 
     let bytes = download_ts_file(&download_url)?;
     let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
@@ -409,6 +420,10 @@ pub fn uninstall_thunderstore_mod(
     let mut state = load_ts_state(&bepinex_path);
     if let Some(pos) = state.mods.iter().position(|m| m.full_name == full_name) {
         let removed = state.mods.remove(pos);
+
+        // Validate folder name before deletion
+        sanitize_path_component(&removed.folder_name)?;
+
         // Remove the folder
         let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
         let mod_dir = plugins_dir.join(&removed.folder_name);
@@ -426,7 +441,7 @@ pub fn uninstall_thunderstore_mod(
 
 fn download_ts_file(url: &str) -> Result<Vec<u8>, String> {
     let resp = ureq::get(url)
-        .set("User-Agent", "MegaLoad/0.13.2")
+        .set("User-Agent", "MegaLoad/0.13.3")
         .call()
         .map_err(|e| format!("Download error: {}", e))?;
 

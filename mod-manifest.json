@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-03-15T17:10:00Z",
+  "updated_at": "2026-03-15T17:36:00Z",
   "mods": [
     {
       "name": "SluttyHoe",
@@ -12,8 +12,8 @@
     },
     {
       "name": "MegaMegingjord",
-      "version": "1.5.0",
-      "download_url": "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.5.0/MegaMegingjord.dll",
+      "version": "1.6.0",
+      "download_url": "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.6.0/MegaMegingjord.dll",
       "dll_name": "MegaMegingjord.dll",
       "plugin_folder": "MegaMegingjord",
       "description": "Megingjord belt powers — carry weight, headlamp, Eitr bonus, seafloor walk, speed & jump boost"
@@ -36,8 +36,8 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.5.10",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.5.10/MegaQoL.dll",
+      "version": "1.5.11",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.5.11/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, pet feeder, craft from containers, map teleport, mass farming"

@@ -1,1 +1,11 @@
-{"version":"0.13.1","notes":"v0.13.1 - Profile page layout, open folder button, manifest fix","pub_date":"2026-03-15T13:08:26Z","platforms":{"windows-x86_64":{"signature":"dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU1mREFNdjA2RjBGS3dJUUZZVHE4S1p4eVdKenBTVkY1TjFBMkVuM2JkWS9RM2xQVFhpVjdvdy9BbS94WWM1YTd0bi9yVmptUFFVdytnMUErYXRlbndVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNTQwNDc5CWZpbGU6TWVnYUxvYWRfMC4xMy4xX3g2NC1zZXR1cC5uc2lzLnppcAp6T255YkpLL1A3aExIYTBPOFErNWVFdVNZbVhkb0Z3Y1F5WHIyUHBpa0pXclZpTVdkS3dCQ3BXVlhrbnZINmluMDZjc2VDNTVOcVYyOWtGUCtJNlJBdz09Cg==","url":"https://github.com/ccmrik/MegaLoad/releases/download/v0.13.1/MegaLoad_0.13.1_x64-setup.nsis.zip"}}}
+{
+  "version": "0.13.2",
+  "notes": "v0.13.2 - Force-clear caches on manual Check for Updates",
+  "pub_date": "2026-03-15T16:24:22Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU5RcDhuUkc3MmJiOUxrdUNBN2ZFNGNtMUxwc2hXWUdjSm1ZWWhSSzUzOVVPV08zR0ZwWkJVcUxUOVZzYkdiS0xNWkdMRGNjMGdVbVNTbFBsMXdabmdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNTUyMjUzCWZpbGU6TWVnYUxvYWRfMC4xMy4yX3g2NC1zZXR1cC5uc2lzLnppcAp6RGVlcXpISkIxaS9UNHkrOSszZUVxOFZnWDNSWkFBaTlnaTZlOVBVQk51MnpkL2w3V0h1QTdtS1RrWnU0UVJ0OUNhMUFNNE1PUGN5dDR2YTgvK09Edz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.2/MegaLoad_0.13.2_x64-setup.nsis.zip"
+    }
+  }
+}

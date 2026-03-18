@@ -1,4 +1,5 @@
 use crate::commands::app_log::app_log;
+use crate::commands::security::{sanitize_path_component, validate_download_url};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{Read, Write};
@@ -117,7 +118,7 @@ fn save_cache(mods: &[ModUpdateInfo]) {
 /// Fetch the mod manifest — a single HTTP request for all mod info.
 fn fetch_manifest() -> Result<ModManifest, String> {
     let resp = ureq::get(MANIFEST_URL)
-        .set("User-Agent", "MegaLoad/0.13.2")
+        .set("User-Agent", "MegaLoad/0.13.3")
         .call()
         .map_err(|e| {
             let msg = format!("{}", e);
@@ -298,6 +299,9 @@ pub fn install_mod_update(
     download_url: String,
     version: String,
 ) -> Result<String, String> {
+    // Validate download URL is HTTPS from an allowed host
+    validate_download_url(&download_url)?;
+
     app_log(&format!("Downloading update for {} v{}", mod_name, version.trim_start_matches('v')));
     // Find mod info — try manifest first, fall back to name-based defaults
     let manifest = fetch_manifest().ok();
@@ -312,6 +316,10 @@ pub fn install_mod_update(
         .map(|m| m.dll_name.clone())
         .unwrap_or_else(|| format!("{}.dll", mod_name));
 
+    // Validate path components from manifest to prevent traversal
+    sanitize_path_component(&plugin_folder)?;
+    sanitize_path_component(&dll_name)?;
+
     let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
     let mod_dir = plugins_dir.join(&plugin_folder);
 
@@ -323,7 +331,7 @@ pub fn install_mod_update(
 
     // Download the DLL (this is a direct file download, not an API call — no rate limit)
     let resp = ureq::get(&download_url)
-        .set("User-Agent", "MegaLoad/0.13.2")
+        .set("User-Agent", "MegaLoad/0.13.3")
         .call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 

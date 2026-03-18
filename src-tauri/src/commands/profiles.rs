@@ -1,4 +1,5 @@
 use crate::commands::app_log::app_log;
+use crate::commands::security::sanitize_path_component;
 use crate::models::{Profile, ProfileStore};
 use std::fs;
 use std::path::PathBuf;
@@ -72,6 +73,9 @@ pub fn create_profile(name: String) -> Result<Profile, String> {
 
 #[command]
 pub fn delete_profile(id: String) -> Result<(), String> {
+    // Validate profile ID to prevent path traversal
+    sanitize_path_component(&id)?;
+
     let store = load_profiles();
     let name = store.profiles.iter().find(|p| p.id == id).map(|p| p.name.clone()).unwrap_or_default();
     app_log(&format!("Deleting profile: {} ({})", name, id));
