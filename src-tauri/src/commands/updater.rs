@@ -118,7 +118,7 @@ fn save_cache(mods: &[ModUpdateInfo]) {
 /// Fetch the mod manifest — a single HTTP request for all mod info.
 fn fetch_manifest() -> Result<ModManifest, String> {
     let resp = ureq::get(MANIFEST_URL)
-        .set("User-Agent", "MegaLoad/0.13.13")
+        .set("User-Agent", "MegaLoad/0.13.14")
         .call()
         .map_err(|e| {
             let msg = format!("{}", e);
@@ -141,7 +141,10 @@ fn evaluate_updates(
     plugins_dir: &PathBuf,
     installed_versions: &std::collections::HashMap<String, String>,
 ) -> Vec<ModUpdateInfo> {
-    manifest
+    // Collect versions we need to seed (installed but no recorded version)
+    let mut versions_to_seed: Vec<(String, String)> = Vec::new();
+
+    let results: Vec<ModUpdateInfo> = manifest
         .mods
         .iter()
         .map(|m| {
@@ -155,13 +158,17 @@ fn evaluate_updates(
             } else {
                 match &iv {
                     Some(v) => v.trim_start_matches('v') != latest,
-                    None => true,
+                    // Installed but no version recorded — adopt manifest version (up-to-date)
+                    None => {
+                        versions_to_seed.push((m.name.clone(), latest.clone()));
+                        false
+                    }
                 }
             };
 
             ModUpdateInfo {
                 name: m.name.clone(),
-                installed_version: iv,
+                installed_version: if iv.is_none() && is_installed { Some(latest.clone()) } else { iv },
                 latest_version: Some(latest),
                 has_update,
                 download_url: if has_update {
@@ -179,7 +186,19 @@ fn evaluate_updates(
                 error: None,
             }
         })
-        .collect()
+        .collect();
+
+    // Seed mod_versions.json for installed mods that had no recorded version
+    if !versions_to_seed.is_empty() {
+        let mut versions = load_installed_versions();
+        for (name, ver) in &versions_to_seed {
+            versions.insert(name.clone(), ver.clone());
+        }
+        save_installed_versions(&versions);
+        app_log(&format!("Seeded versions for {} pre-existing mods", versions_to_seed.len()));
+    }
+
+    results
 }
 
 fn clear_caches() {
@@ -209,6 +228,7 @@ pub fn check_mod_updates(bepinex_path: String, force: bool) -> Result<UpdateChec
             // Re-evaluate from cached latest versions against current installed state
             let mut mods = cache.mods;
             let mut total_updates = 0;
+            let mut versions_to_seed: Vec<(String, String)> = Vec::new();
             for m in &mut mods {
                 let folder = m.name.clone(); // plugin_folder == name for our mods
                 let dll_name = format!("{}.dll", m.name);
@@ -217,11 +237,18 @@ pub fn check_mod_updates(bepinex_path: String, force: bool) -> Result<UpdateChec
                 let iv = installed_versions.get(&m.name).cloned();
                 m.installed_version = iv.clone();
                 if let Some(latest) = &m.latest_version {
-                    m.has_update = is_installed
-                        && iv
-                            .as_deref()
-                            .map(|v| v.trim_start_matches('v'))
-                            != Some(latest.trim_start_matches('v'));
+                    if is_installed && iv.is_none() {
+                        // Installed but no version recorded — adopt manifest version
+                        m.has_update = false;
+                        m.installed_version = Some(latest.clone());
+                        versions_to_seed.push((m.name.clone(), latest.trim_start_matches('v').to_string()));
+                    } else {
+                        m.has_update = is_installed
+                            && iv
+                                .as_deref()
+                                .map(|v| v.trim_start_matches('v'))
+                                != Some(latest.trim_start_matches('v'));
+                    }
                     m.status = if !is_installed {
                         "not-installed".to_string()
                     } else if m.has_update {
@@ -233,6 +260,14 @@ pub fn check_mod_updates(bepinex_path: String, force: bool) -> Result<UpdateChec
                 if m.has_update {
                     total_updates += 1;
                 }
+            }
+            // Seed versions for mods that were installed but had no recorded version
+            if !versions_to_seed.is_empty() {
+                let mut versions = load_installed_versions();
+                for (name, ver) in &versions_to_seed {
+                    versions.insert(name.clone(), ver.clone());
+                }
+                save_installed_versions(&versions);
             }
             return Ok(UpdateCheckResult {
                 mods,
@@ -331,7 +366,7 @@ pub fn install_mod_update(
 
     // Download the DLL (this is a direct file download, not an API call — no rate limit)
     let resp = ureq::get(&download_url)
-        .set("User-Agent", "MegaLoad/0.13.13")
+        .set("User-Agent", "MegaLoad/0.13.14")
         .call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 

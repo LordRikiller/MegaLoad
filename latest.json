@@ -1,11 +1,1 @@
-{
-  "version": "0.13.12",
-  "notes": "v0.13.12 - Config Editor: parse BepInEx metadata for dropdowns, sliders, type detection. Fix BOM handling and line ending preservation.",
-  "pub_date": "2026-03-19T21:51:10Z",
-  "platforms": {
-    "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUwzYjFVcU9YVzAyL3pOcEJtVGJieXBYRWxSZ3phTUc0TE54QjZldm1DUWdOKzZucGhvdzd4L0Y5SjNYVkF3ZCtwb0FvcnFZS0tjK250OHAzTWRUUmdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczOTU2NzE0CWZpbGU6TWVnYUxvYWRfMC4xMy4xMl94NjQtc2V0dXAubnNpcy56aXAKU2JiVk5JRFhWbGxQNW9LR0piaDlRUyt5d3VHRlhYbkFvL0Z5S2hpM3F3cldHcUI2R2s4bXBLRDJOQlVDNWlmaVpMWlFLc1pyQlliYU5IcC9TL1k4Q2c9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.12/MegaLoad_0.13.12_x64-setup.nsis.zip"
-    }
-  }
-}
+{  "version": "0.13.13",  "notes": "v0.13.13 - Fix config editor: numeric ranges render as sliders instead of dropdowns",  "pub_date": "2026-03-20T09:43:17Z",  "platforms": {    "windows-x86_64": {      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU1KR1lYRzlIVGhmUlJ5RUZuZWlGa1p4eVVqbzVHa1NtbEhPRzlkTlFEQ2J3S0lNSTRid0w5NGdJaFJzdzMrZSsyT0NxVExoMjEyQVc2ektBUmhhelFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczOTYwMDY3CWZpbGU6TWVnYUxvYWRfMC4xMy4xM194NjQtc2V0dXAubnNpcy56aXAKcnpGQ2Z2UXgvbjZTMHY3MmFXQ21mMTNGRytYVVM2K05rUHd2MEhKSGJrT3dncWJJMXFWZzJscklDUXlCMUxiYW5Ba0prOUx5ZXlGQlcxaVRLT3B1RHc9PQo=",      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.13/MegaLoad_0.13.13_x64-setup.nsis.zip"    }  }}

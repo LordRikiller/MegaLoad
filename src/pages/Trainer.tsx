@@ -87,10 +87,25 @@ export function Trainer() {
     Numpad9: "no_durability_loss",
   };
 
-  // Reverse lookup: cheat ID → numpad key label
-  const cheatKeyLabel: Record<string, string> = Object.fromEntries(
-    Object.entries(numpadMap).map(([code, id]) => [id, code.replace("Numpad", "Num ")])
-  );
+  // ALT + Numpad bindings
+  const altNumpadMap: Record<string, string> = {
+    Numpad0: "explore_map",
+    Numpad1: "always_rested",
+    Numpad2: "infinite_eitr",
+    Numpad3: "tame_all",
+    Numpad4: "no_structure_damage",
+    Numpad5: "fast_skill_up",
+  };
+
+  // Reverse lookup: cheat ID → key label for display
+  const cheatKeyLabel: Record<string, string> = {
+    ...Object.fromEntries(
+      Object.entries(numpadMap).map(([code, id]) => [id, code.replace("Numpad", "Num ")])
+    ),
+    ...Object.fromEntries(
+      Object.entries(altNumpadMap).map(([code, id]) => [id, "Alt+" + code.replace("Numpad", "Num ")])
+    ),
+  };
 
   useEffect(() => {
     if (!profile?.bepinex_path) return;
@@ -100,27 +115,44 @@ export function Trainer() {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      const cheatId = numpadMap[e.code];
-      if (cheatId) {
-        e.preventDefault();
-        const cheat = cheats.find((c) => c.id === cheatId);
-        if (cheat) {
-          toggle(profile.bepinex_path, cheatId, !cheat.enabled);
-          setToast(`${cheat.name}: ${!cheat.enabled ? "ON" : "OFF"}`);
+      // ALT + Numpad toggles
+      if (e.altKey) {
+        const cheatId = altNumpadMap[e.code];
+        if (cheatId) {
+          e.preventDefault();
+          const cheat = cheats.find((c) => c.id === cheatId);
+          if (cheat) {
+            toggle(profile.bepinex_path, cheatId, !cheat.enabled);
+            setToast(`${cheat.name}: ${!cheat.enabled ? "ON" : "OFF"}`);
+          }
+          return;
         }
-        return;
+      }
+
+      // Regular numpad toggles (no modifier)
+      if (!e.altKey) {
+        const cheatId = numpadMap[e.code];
+        if (cheatId) {
+          e.preventDefault();
+          const cheat = cheats.find((c) => c.id === cheatId);
+          if (cheat) {
+            toggle(profile.bepinex_path, cheatId, !cheat.enabled);
+            setToast(`${cheat.name}: ${!cheat.enabled ? "ON" : "OFF"}`);
+          }
+          return;
+        }
       }
 
       const ctrl = e.ctrlKey;
       if (e.code === "NumpadAdd") {
         e.preventDefault();
         if (ctrl) {
-          const val = Math.round(Math.min(jumpMultiplier + 0.1, 5) * 10) / 10;
+          const val = Math.round(Math.min(jumpMultiplier + 0.1, 16) * 10) / 10;
           setMultiplier(profile.bepinex_path, "jump", val);
           useTrainerStore.setState({ jumpMultiplier: val });
           setToast(`Jump Height: ${val.toFixed(1)}x`);
         } else {
-          const val = Math.round(Math.min(speedMultiplier + 0.1, 5) * 10) / 10;
+          const val = Math.round(Math.min(speedMultiplier + 0.1, 16) * 10) / 10;
           setMultiplier(profile.bepinex_path, "speed", val);
           useTrainerStore.setState({ speedMultiplier: val });
           setToast(`Speed: ${val.toFixed(1)}x`);
@@ -417,7 +449,7 @@ export function Trainer() {
           <input
             type="range"
             min="0.1"
-            max="5"
+            max="16"
             step="0.1"
             value={speedMultiplier}
             onChange={(e) => handleMultiplier("speed", parseFloat(e.target.value))}
@@ -426,7 +458,7 @@ export function Trainer() {
           <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
             <span>0.1x</span>
             <span>1.0x</span>
-            <span>5.0x</span>
+            <span>16.0x</span>
           </div>
         </div>
 
@@ -452,7 +484,7 @@ export function Trainer() {
           <input
             type="range"
             min="0.1"
-            max="5"
+            max="16"
             step="0.1"
             value={jumpMultiplier}
             onChange={(e) => handleMultiplier("jump", parseFloat(e.target.value))}
@@ -461,7 +493,7 @@ export function Trainer() {
           <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
             <span>0.1x</span>
             <span>1.0x</span>
-            <span>5.0x</span>
+            <span>16.0x</span>
           </div>
         </div>
       </div>
@@ -566,7 +598,7 @@ export function Trainer() {
             <span className="font-semibold text-zinc-300">
               How it works:
             </span>{" "}
-            Toggle cheats here or in-game with Numpad 0-9. Speed: Num+/Num-, Jump: Ctrl+Num+/Num-, Reset: Num*.
+            Toggle cheats here or in-game with Numpad 0-9 (Alt+Num for extras). Speed: Num+/Num-, Jump: Ctrl+Num+/Num-, Reset: Num*.
             MegaLoad auto-installs the trainer plugin.
           </p>
           <p className="text-[10px] text-zinc-600 mt-1">

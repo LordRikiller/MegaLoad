@@ -55,16 +55,16 @@ export function Sidebar() {
     sessionUpdatedMods,
   } = useUpdateStore();
   const addToast = useToastStore((s) => s.addToast);
-  const hasRunStartupCheck = useRef(false);
 
   useEffect(() => {
     detectValheimPath().then(setValheimPath).catch(() => {});
   }, []);
 
-  // Auto-update on startup when profile is available
+  // Auto-update on startup when profile is available (re-run on profile switch)
+  const lastCheckedProfile = useRef<string | null>(null);
   useEffect(() => {
-    if (profile?.bepinex_path && !hasRunStartupCheck.current) {
-      hasRunStartupCheck.current = true;
+    if (profile?.bepinex_path && profile.bepinex_path !== lastCheckedProfile.current) {
+      lastCheckedProfile.current = profile.bepinex_path;
       autoUpdate(profile.bepinex_path);
     }
   }, [profile?.bepinex_path, autoUpdate]);
