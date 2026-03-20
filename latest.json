@@ -1,1 +1,11 @@
-{  "version": "0.13.13",  "notes": "v0.13.13 - Fix config editor: numeric ranges render as sliders instead of dropdowns",  "pub_date": "2026-03-20T09:43:17Z",  "platforms": {    "windows-x86_64": {      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU1KR1lYRzlIVGhmUlJ5RUZuZWlGa1p4eVVqbzVHa1NtbEhPRzlkTlFEQ2J3S0lNSTRid0w5NGdJaFJzdzMrZSsyT0NxVExoMjEyQVc2ektBUmhhelFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczOTYwMDY3CWZpbGU6TWVnYUxvYWRfMC4xMy4xM194NjQtc2V0dXAubnNpcy56aXAKcnpGQ2Z2UXgvbjZTMHY3MmFXQ21mMTNGRytYVVM2K05rUHd2MEhKSGJrT3dncWJJMXFWZzJscklDUXlCMUxiYW5Ba0prOUx5ZXlGQlcxaVRLT3B1RHc9PQo=",      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.13/MegaLoad_0.13.13_x64-setup.nsis.zip"    }  }}
+{
+  "version": "0.13.14",
+  "notes": "v0.13.14 - Fix mod update count bug, add MegaTrainer cheats",
+  "pub_date": "2026-03-20T00:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU1oQkJMc0xPeDg3Y2RxaW9rOTZMaHppamtSNStDN0V6Szl1ektVQmwyWit3TGVNNUhINlVnYllkSkJUdWh3TkU1NjU5Wnh0azRaRGMvTUxsTXc3dFFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczOTY4Mjc5CWZpbGU6TWVnYUxvYWRfMC4xMy4xNF94NjQtc2V0dXAubnNpcy56aXAKdXVhc2x1MExBRW1Hem15RHpLK2V3VzRHcnZna0h5NzFQVEFya1g1dCtDZXUwUGtSWWN2aDRCR0JycENnNzVrTDEvaHM4YVVSZWJ3b0x3T2dUeXJHQWc9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.14/MegaLoad_0.13.14_x64-setup.nsis.zip"
+    }
+  }
+}
