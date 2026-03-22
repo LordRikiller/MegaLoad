@@ -34,6 +34,11 @@ import {
   ArrowRight,
   Filter,
   Check,
+  TreePine,
+  Pickaxe,
+  Hammer,
+  Hand,
+  Boxes,
 } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { saveTextFile } from "../lib/tauri-api";
@@ -1405,13 +1410,41 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
               </div>
             )}
 
-            {/* Dropped By */}
-            {droppedBy.length > 0 && (
+            {/* Dropped By / World Sources */}
+            {(item.worldSources?.length > 0 || droppedBy.length > 0) && (
               <div className="glass rounded-xl p-5 border border-zinc-800/50">
                 <h2 className="text-sm font-semibold text-zinc-200 mb-3">
-                  Dropped By ({droppedBy.length})
+                  Dropped By ({(item.worldSources?.length || 0) + droppedBy.length})
                 </h2>
                 <div className="grid grid-cols-1 gap-1">
+                  {/* World sources (trees, rocks, destructibles) */}
+                  {item.worldSources?.map((ws) => (
+                    <div
+                      key={ws.source}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left"
+                    >
+                      <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                        {ws.type === "Tree" ? <TreePine className="w-4 h-4 text-green-400" /> :
+                         ws.type === "Rock" ? <Pickaxe className="w-4 h-4 text-stone-400" /> :
+                         ws.type === "Pickup" ? <Hand className="w-4 h-4 text-sky-400" /> :
+                         ws.type === "Crafting" ? <Hammer className="w-4 h-4 text-amber-400" /> :
+                         <Boxes className="w-4 h-4 text-orange-400" />}
+                      </div>
+                      <span className="text-xs text-zinc-200 truncate flex-1">
+                        {ws.source}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {ws.biomes.map((b) => (
+                          <BiomeBadge key={b} biome={b} onClick={() => navigateToBiome(b)} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Separator between world sources and creatures */}
+                  {item.worldSources?.length > 0 && droppedBy.length > 0 && (
+                    <div className="border-t border-zinc-800/30 my-1" />
+                  )}
+                  {/* Creature drops */}
                   {droppedBy.map((creature) => (
                     <button
                       key={creature.id}

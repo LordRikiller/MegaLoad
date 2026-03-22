@@ -250,6 +250,7 @@ function findCreatureName(prefab) {
 function mapItemType(gameType, prefab, shared) {
   // Special cases
   if (prefab === "FishingRod") return "Tool";
+  if ((prefab.startsWith("Feast") && prefab !== "Feaster") || prefab === "MeatPlatterUncooked") return "Food";
   
   switch (gameType) {
     case "Material": return "Material";
@@ -287,6 +288,7 @@ function mapItemType(gameType, prefab, shared) {
 function mapSubcategory(gameType, prefab, shared) {
   // Special cases
   if (prefab === "FishingRod") return "Fishing Rod";
+  if ((prefab.startsWith("Feast") && prefab !== "Feaster") || prefab === "MeatPlatterUncooked" || prefab === "MeatPlatter") return "Feast";
   
   const skill = shared.skillType;
   
@@ -1199,6 +1201,18 @@ for (const item of items) {
   }
   
   const drops = [];  // Items don't have drops — creatures do
+
+  // Build worldSources from WORLD_DROPS (grouped by source name)
+  const worldSources = [];
+  const wdEntries = WORLD_DROPS[item.prefab];
+  if (wdEntries) {
+    const grouped = {};
+    for (const wd of wdEntries) {
+      if (!grouped[wd.source]) grouped[wd.source] = { source: wd.source, type: wd.type, biomes: [] };
+      if (!grouped[wd.source].biomes.includes(wd.biome)) grouped[wd.source].biomes.push(wd.biome);
+    }
+    worldSources.push(...Object.values(grouped));
+  }
   
   const entry = {
     id: item.prefab,
@@ -1217,6 +1231,7 @@ for (const item of items) {
     recipe: recipeIngredients,
     upgradeCosts: upgradeCosts,
     drops: drops,
+    worldSources: worldSources,
     stats: buildStats(item),
     wikiUrl: WIKI_MAP[item.prefab] ? WIKI_MAP[item.prefab][0] : "",
     wikiGroup: WIKI_MAP[item.prefab] && WIKI_MAP[item.prefab][1] ? WIKI_MAP[item.prefab][1] : "",
@@ -1279,6 +1294,7 @@ for (const cd of creatureDrops) {
     recipe: [],
     upgradeCosts: [],
     drops: drops,
+    worldSources: [],
     stats: [{ label: "Health", value: `${cd.health}` }],
     wikiUrl: WIKI_MAP[cd.creature] ? WIKI_MAP[cd.creature][0] : "",
     wikiGroup: WIKI_MAP[cd.creature] && WIKI_MAP[cd.creature][1] ? WIKI_MAP[cd.creature][1] : "",
@@ -1325,6 +1341,7 @@ for (const p of pieces) {
     recipe: recipeIngredients,
     upgradeCosts: [],
     drops: [],
+    worldSources: [],
     stats: p.comfort > 0 ? [{ label: "Comfort", value: `${p.comfort}` }] : [],
     wikiUrl: WIKI_MAP[p.prefab] ? WIKI_MAP[p.prefab][0] : "",
     wikiGroup: WIKI_MAP[p.prefab] && WIKI_MAP[p.prefab][1] ? WIKI_MAP[p.prefab][1] : "",
@@ -1490,6 +1507,12 @@ export interface UpgradeCost {
   resources: RecipeIngredient[];
 }
 
+export interface WorldSource {
+  source: string;    // "Beech Tree", "Copper Deposit", etc.
+  type: string;      // "Tree", "Rock", "Destructible", "Pickup", "Crafting"
+  biomes: string[];  // Biomes where this source is found
+}
+
 export type ItemType =
   | "Material"
   | "Weapon"
@@ -1519,6 +1542,7 @@ export interface ValheimItem {
   recipe: RecipeIngredient[];
   upgradeCosts: UpgradeCost[]; // Resources needed per upgrade level (level 2+)
   drops: ItemDrop[];    // What this creature/source drops (for Creature type)
+  worldSources: WorldSource[];  // Trees, rocks, destructibles that drop this item
   stats: ItemStat[];    // Flexible stats (damage, armor, duration, etc.)
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
