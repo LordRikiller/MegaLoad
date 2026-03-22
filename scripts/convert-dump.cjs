@@ -1447,6 +1447,7 @@ for (const item of items) {
   
   const entry = {
     id: item.prefab,
+    token: item.name || "",
     name: name,
     type: mapItemType(item.itemType, item.prefab, item),
     subcategory: mapSubcategory(item.itemType, item.prefab, item),
@@ -1510,6 +1511,7 @@ for (const cd of creatureDrops) {
   
   const entry = {
     id: cd.creature,
+    token: "",
     name: cleanName,
     type: "Creature",
     subcategory: cd.health >= 5000 ? "Boss" : "Creature",
@@ -1557,6 +1559,7 @@ for (const p of pieces) {
   
   const entry = {
     id: p.prefab,
+    token: p.name || "",
     name: name,
     type: "BuildPiece",
     subcategory: mapPieceCategory(p.category),
@@ -1758,6 +1761,7 @@ export type ItemType =
 
 export interface ValheimItem {
   id: string;           // Internal prefab name (for console commands)
+  token: string;        // Localization token from game data (e.g. "$item_axe_stone")
   name: string;         // Display name
   type: ItemType;
   subcategory: string;  // e.g. "Ore", "Ingot", "Trophy", "Sword", "Chest"

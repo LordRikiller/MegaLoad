@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Skull,
@@ -24,9 +25,11 @@ import {
   AlertCircle,
   Sparkles,
   TreePine,
+  Crosshair,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { usePlayerDataStore } from "../stores/playerDataStore";
+import { useValheimDataStore } from "../stores/valheimDataStore";
 import {
   VALHEIM_ITEMS,
   type ValheimItem,
@@ -82,8 +85,12 @@ const SKILL_COLORS: Record<string, string> = {
 
 // ── Item Lookup Helpers ────────────────────────────────────
 const itemMap = new Map<string, ValheimItem>();
+const tokenMap = new Map<string, ValheimItem>();
 for (const item of VALHEIM_ITEMS) {
   itemMap.set(item.id, item);
+  if (item.token) {
+    tokenMap.set(item.token.toLowerCase(), item);
+  }
 }
 
 function getItem(prefabId: string): ValheimItem | undefined {
@@ -126,6 +133,8 @@ function ItemIcon({ id, size = 32, className = "" }: { id: string; size?: number
 
 // ── Main Page ──────────────────────────────────────────────
 export function PlayerData() {
+  const navigate = useNavigate();
+  const setSelectedItem = useValheimDataStore((s) => s.setSelectedItem);
   const {
     characters,
     selectedPath,
@@ -135,6 +144,14 @@ export function PlayerData() {
     fetchCharacters,
     selectCharacter,
   } = usePlayerDataStore();
+
+  const goToItem = (prefabId: string) => {
+    const item = itemMap.get(prefabId);
+    if (item) {
+      setSelectedItem(item);
+      navigate("/valheim-data");
+    }
+  };
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [knowledgeTab, setKnowledgeTab] = useState<"discovered" | "all">("discovered");
@@ -158,18 +175,26 @@ export function PlayerData() {
   const knowledgeData = useMemo(() => {
     if (!character) return { discovered: [], undiscovered: [], all: [] };
 
-    const knownSet = new Set([
-      ...character.known_materials,
-      ...character.known_recipes,
-    ]);
+    // Build a set of known prefab IDs by resolving tokens to prefabs
+    const knownPrefabs = new Set<string>();
+    for (const token of [...character.known_materials, ...character.known_recipes]) {
+      // Try direct prefab match first (trophies use prefab names)
+      if (itemMap.has(token)) {
+        knownPrefabs.add(token);
+      } else {
+        // Resolve $item_xxx / $piece_xxx token to prefab via tokenMap
+        const item = tokenMap.get(token.toLowerCase());
+        if (item) knownPrefabs.add(item.id);
+      }
+    }
 
     // Filter to items that are discoverable (not build pieces, creatures)
     const discoverableItems = VALHEIM_ITEMS.filter(
       (i) => i.type !== "BuildPiece" && i.type !== "Creature"
     );
 
-    const discovered = discoverableItems.filter((i) => knownSet.has(i.id));
-    const undiscovered = discoverableItems.filter((i) => !knownSet.has(i.id));
+    const discovered = discoverableItems.filter((i) => knownPrefabs.has(i.id));
+    const undiscovered = discoverableItems.filter((i) => !knownPrefabs.has(i.id));
 
     return { discovered, undiscovered, all: discoverableItems };
   }, [character]);
@@ -196,9 +221,18 @@ export function PlayerData() {
     return filtered;
   }, [knowledgeTab, knowledgeData, knowledgeSearch, knowledgeFilter]);
 
-  const knownSet = useMemo(() => {
+  const knownPrefabSet = useMemo(() => {
     if (!character) return new Set<string>();
-    return new Set([...character.known_materials, ...character.known_recipes]);
+    const set = new Set<string>();
+    for (const token of [...character.known_materials, ...character.known_recipes]) {
+      if (itemMap.has(token)) {
+        set.add(token);
+      } else {
+        const item = tokenMap.get(token.toLowerCase());
+        if (item) set.add(item.id);
+      }
+    }
+    return set;
   }, [character]);
 
   // ── Equipped items ─────────────────────────────────────
@@ -311,8 +345,10 @@ export function PlayerData() {
       {character && (
         <>
           {/* ── Stats Row ──────────────────────────────────── */}
-          <div className="grid grid-cols-5 gap-3 stagger-children">
+          <div className="grid grid-cols-7 gap-3 stagger-children">
             <StatCard icon={Skull} label="Deaths" value={character.deaths} color="text-red-400" bg="bg-red-500/10" />
+            <StatCard icon={Swords} label="Kills" value={character.kills.toLocaleString()} color="text-orange-400" bg="bg-orange-500/10" />
+            <StatCard icon={Crown} label="Forsaken" value={character.boss_kills} color="text-purple-400" bg="bg-purple-500/10" />
             <StatCard icon={Wrench} label="Crafts" value={character.crafts.toLocaleString()} color="text-brand-400" bg="bg-brand-500/10" />
             <StatCard icon={Hammer} label="Builds" value={character.builds.toLocaleString()} color="text-blue-400" bg="bg-blue-500/10" />
             <StatCard icon={Trophy} label="Trophies" value={character.trophies.length} color="text-yellow-400" bg="bg-yellow-500/10" />
@@ -327,6 +363,7 @@ export function PlayerData() {
                 equippedItems={equippedItems}
                 getEquippedForSlot={getEquippedForSlot}
                 character={character}
+                onItemClick={goToItem}
               />
 
               {/* Active Foods */}
@@ -337,7 +374,11 @@ export function PlayerData() {
                   </h3>
                   <div className="space-y-2">
                     {character.active_foods.map((food, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                      <div
+                        key={i}
+                        className={cn("flex items-center gap-2", itemMap.has(food.name) && "cursor-pointer hover:bg-zinc-800/40 rounded-lg px-1 -mx-1")}
+                        onClick={() => goToItem(food.name)}
+                      >
                         <ItemIcon id={food.name} size={24} />
                         <span className="text-sm text-zinc-300 truncate">{getItemName(food.name)}</span>
                         <div className="flex gap-2 ml-auto text-xs">
@@ -389,6 +430,7 @@ export function PlayerData() {
                           key={`${rowIdx}-${colIdx}`}
                           item={item}
                           isHotbar={rowIdx === 0}
+                          onItemClick={goToItem}
                         />
                       ))}
                     </div>
@@ -507,12 +549,13 @@ export function PlayerData() {
                 </thead>
                 <tbody>
                   {filteredKnowledge.slice(0, 200).map((item) => {
-                    const isKnown = knownSet.has(item.id);
+                    const isKnown = knownPrefabSet.has(item.id);
                     return (
                       <tr
                         key={item.id}
+                        onClick={() => goToItem(item.id)}
                         className={cn(
-                          "border-t border-zinc-800/30 hover:bg-zinc-800/30 transition-colors",
+                          "border-t border-zinc-800/30 hover:bg-zinc-800/30 transition-colors cursor-pointer",
                           knowledgeTab === "all" && !isKnown && "opacity-50"
                         )}
                       >
@@ -605,10 +648,12 @@ function EquipmentPanel({
   equippedItems,
   getEquippedForSlot,
   character,
+  onItemClick,
 }: {
   equippedItems: InventoryItem[];
   getEquippedForSlot: (slot: typeof EQUIP_SLOTS[number]) => InventoryItem | undefined;
   character: any;
+  onItemClick: (prefabId: string) => void;
 }) {
   const guardianName = GUARDIAN_NAMES[character.guardian_power] ?? character.guardian_power ?? "None";
 
@@ -655,10 +700,11 @@ function EquipmentPanel({
           return (
             <div
               key={slot.key}
+              onClick={() => inv && onItemClick(inv.name)}
               className={cn(
                 "flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-colors",
                 inv
-                  ? "border-brand-500/20 bg-brand-500/5"
+                  ? "border-brand-500/20 bg-brand-500/5 cursor-pointer hover:border-brand-500/40"
                   : "border-zinc-800/50 bg-zinc-900/40"
               )}
             >
@@ -719,17 +765,19 @@ function VitalBar({
 }
 
 // ── Inventory Slot ─────────────────────────────────────────
-function InventorySlot({ item, isHotbar }: { item: InventoryItem | null; isHotbar: boolean }) {
+function InventorySlot({ item, isHotbar, onItemClick }: { item: InventoryItem | null; isHotbar: boolean; onItemClick: (prefabId: string) => void }) {
   const valheimItem = item ? getItem(item.name) : undefined;
 
   return (
     <div
+      onClick={() => item && onItemClick(item.name)}
       className={cn(
         "w-[52px] h-[52px] rounded-lg flex items-center justify-center relative group transition-colors",
         isHotbar
           ? "bg-zinc-800/80 border border-zinc-700/60"
           : "bg-zinc-900/60 border border-zinc-800/40",
-        item?.equipped && "ring-1 ring-brand-400/50 bg-brand-500/5"
+        item?.equipped && "ring-1 ring-brand-400/50 bg-brand-500/5",
+        item && "cursor-pointer hover:border-brand-500/30"
       )}
       title={
         item

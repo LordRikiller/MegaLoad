@@ -158,6 +158,7 @@ pub struct CharacterData {
     pub deaths: i32,
     pub crafts: i32,
     pub builds: i32,
+    pub boss_kills: i32,
     pub player_id: i64,
     pub guardian_power: String,
     pub max_hp: f32,
@@ -429,28 +430,29 @@ fn parse_character_file(file_data: &[u8]) -> Result<CharacterData, String> {
     let version = r.read_i32()?;
 
     // Stats — format changed in v38
-    let (kills, deaths, crafts, builds) = if version >= 38 {
+    let (kills, deaths, crafts, builds, boss_kills) = if version >= 38 {
         // v38+: stat_count (int32) + stat_count x float
         let stat_count = r.read_i32()?;
         let mut stats = vec![0.0f32; stat_count as usize];
         for i in 0..stat_count as usize {
             stats[i] = r.read_f32()?;
         }
-        // PlayerStatType: Deaths=0, CraftsOrUpgrades=1, Builds=2, EnemyKills=6
+        // PlayerStatType: Deaths=0, CraftsOrUpgrades=1, Builds=2, EnemyKills=6, BossKills=86
         let deaths = stats.get(0).copied().unwrap_or(0.0) as i32;
         let crafts = stats.get(1).copied().unwrap_or(0.0) as i32;
         let builds = stats.get(2).copied().unwrap_or(0.0) as i32;
         let kills = stats.get(6).copied().unwrap_or(0.0) as i32;
-        (kills, deaths, crafts, builds)
+        let boss_kills = stats.get(86).copied().unwrap_or(0.0) as i32;
+        (kills, deaths, crafts, builds, boss_kills)
     } else if version >= 28 {
         // v28-37: individual int32 fields
         let kills = r.read_i32()?;
         let deaths = r.read_i32()?;
         let crafts = r.read_i32()?;
         let builds = r.read_i32()?;
-        (kills, deaths, crafts, builds)
+        (kills, deaths, crafts, builds, 0)
     } else {
-        (0, 0, 0, 0)
+        (0, 0, 0, 0, 0)
     };
 
     // v40+: firstSpawn flag
@@ -528,6 +530,7 @@ fn parse_character_file(file_data: &[u8]) -> Result<CharacterData, String> {
             deaths,
             crafts,
             builds,
+            boss_kills,
             player_id,
             guardian_power: String::new(),
             max_hp: 25.0,
@@ -565,6 +568,7 @@ fn parse_character_file(file_data: &[u8]) -> Result<CharacterData, String> {
         deaths,
         crafts,
         builds,
+        boss_kills,
         player_id,
         world_count,
         ..pd
@@ -769,6 +773,7 @@ fn parse_player_data(blob: &[u8], name: &str) -> Result<CharacterData, String> {
         deaths: 0,
         crafts: 0,
         builds: 0,
+        boss_kills: 0,
         player_id: 0,
         guardian_power,
         max_hp,
@@ -1016,6 +1021,9 @@ mod tests {
                 println!("  Inventory: {} items", c.inventory.len());
                 println!("  Equipped: {:?}", c.inventory.iter().filter(|i| i.equipped).map(|i| &i.name).collect::<Vec<_>>());
                 println!("  Recipes:{} Materials:{} Trophies:{}", c.known_recipes.len(), c.known_materials.len(), c.trophies.len());
+                println!("  Sample recipes: {:?}", c.known_recipes.iter().take(10).collect::<Vec<_>>());
+                println!("  Sample materials: {:?}", c.known_materials.iter().take(10).collect::<Vec<_>>());
+                println!("  Sample trophies: {:?}", c.trophies.iter().take(10).collect::<Vec<_>>());
                 println!("  Biomes: {:?}", c.known_biomes);
                 println!("  Foods: {:?}", c.active_foods.iter().map(|f| &f.name).collect::<Vec<_>>());
                 println!("  Worlds: {}", c.world_count);

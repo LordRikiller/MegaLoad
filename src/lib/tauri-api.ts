@@ -442,6 +442,7 @@ export interface CharacterData {
   deaths: number;
   crafts: number;
   builds: number;
+  boss_kills: number;
   player_id: number;
   guardian_power: string;
   max_hp: number;
