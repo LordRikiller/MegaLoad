@@ -44,8 +44,8 @@
     },
     {
       "name": "MegaFishing",
-      "version": "1.0.6",
-      "download_url": "https://github.com/ccmrik/MegaFishing/releases/download/v1.0.6/MegaFishing.dll",
+      "version": "1.0.7",
+      "download_url": "https://github.com/ccmrik/MegaFishing/releases/download/v1.0.7/MegaFishing.dll",
       "dll_name": "MegaFishing.dll",
       "plugin_folder": "MegaFishing",
       "description": "Fish auto-pull into containers/inventory with quality upgrade and configurable radius"
