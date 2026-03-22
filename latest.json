@@ -1,11 +1,11 @@
 {
-  "version": "0.13.32",
-  "notes": "v0.13.32 - Knowledge card: move title to own top row",
-  "pub_date": "2026-03-22T18:47:26Z",
+  "version": "0.13.33",
+  "notes": "v0.13.33 - MegaBugs ticket system + 18 biome alignment fixes",
+  "pub_date": "2026-03-22T12:14:37Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZVL1NIM2l0bGlDTWtSaktjcTVyc3hZUFoxZVhiYzU1ODVwdGo4SEZIcUVlSCsyeG0yZWdOeUxzcDJ0UnJyY1NDTXZYcTJxeGM2T3hmZHVnaTRidlFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MTY1NTU5CWZpbGU6TWVnYUxvYWRfMC4xMy4zMl94NjQtc2V0dXAubnNpcy56aXAKNlJ3UGNHZnBwTHpOdW01bzJvY0YvRWQycmRqUS9STmRXYXZsOC83RlNUajQ1WmNqT1JFZ0pndWNLOFhBTTlWeWswVDdGM2dBRklDNmlBQUNENWkyQUE9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.32/MegaLoad_0.13.32_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOURDZW00QjFnL2tIM3RkQ25CclZRWXFvVWZSRXEyeFFhNXFCYWE0WkJKOXluVDQyemFtY2VUS1hCSHg0RXZ5WG9mVEY3UzhPVXA5enZRZjl0azJxZHc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MTgxNjYxCWZpbGU6TWVnYUxvYWRfMC4xMy4zM194NjQtc2V0dXAubnNpcy56aXAKRktVVEZyRUNJbVRmN1FkUGlDc2JNckNYMjBkaWV4bE91dERMSThTU0VHNW42enhYTndjVlZvZkN3ZWkzbDVjSWNEVGRYL05CNGR1UHhnSUkyOXlNQ1E9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.33/MegaLoad_0.13.33_x64-setup.nsis.zip"
     }
   }
 }

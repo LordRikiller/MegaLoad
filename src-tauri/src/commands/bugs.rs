@@ -41,7 +41,7 @@ fn github_token() -> Result<String, String> {
 // Shared types
 // ---------------------------------------------------------------------------
 const REPO: &str = "ccmrik/MegaBugs";
-const USER_AGENT: &str = "MegaLoad/0.13.32";
+const USER_AGENT: &str = concat!("MegaLoad/", env!("CARGO_PKG_VERSION"));
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MegaBugsAccess {
