@@ -118,7 +118,7 @@ fn save_cache(mods: &[ModUpdateInfo]) {
 /// Fetch the mod manifest — a single HTTP request for all mod info.
 fn fetch_manifest() -> Result<ModManifest, String> {
     let resp = crate::commands::http::agent().get(MANIFEST_URL)
-        .set("User-Agent", "MegaLoad/0.13.16")
+        .set("User-Agent", "MegaLoad/0.13.17")
         .call()
         .map_err(|e| {
             let msg = format!("{}", e);
@@ -366,7 +366,7 @@ pub fn install_mod_update(
 
     // Download the DLL (this is a direct file download, not an API call — no rate limit)
     let resp = crate::commands::http::agent().get(&download_url)
-        .set("User-Agent", "MegaLoad/0.13.16")
+        .set("User-Agent", "MegaLoad/0.13.17")
         .call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 

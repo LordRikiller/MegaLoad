@@ -1,1 +1,11 @@
-{"version":"0.13.15","notes":"v0.13.15 - Bump all mod versions, update manifest","pub_date":"2026-03-21T23:30:22Z","platforms":{"windows-x86_64":{"signature":"dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUk1WExrNXdxa1ZOVlJ3NHlLTmVhbmduUS84MXBPQ3N2Mzd3bDE0THREdmhXNXczaVkvREM0L0FTbGx4MHJtSmhLZjFHbm92Yy9GOWVsYXh4MjBuTmdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MTM1Nzk3CWZpbGU6TWVnYUxvYWRfMC4xMy4xNV94NjQtc2V0dXAubnNpcy56aXAKTkZFZXVUQVZOaS8yY2JBSWpZVGlPVEs0VHBNWXI5Q01RVGxIdnVmbE1PeHkzRzJjR0NETmdjUVlLNXFZNDlUWCtQdWxRblhSSUx3OXEwRFY5UTgvQmc9PQo=","url":"https://github.com/ccmrik/MegaLoad/releases/download/v0.13.15/MegaLoad_0.13.15_x64-setup.nsis.zip"}}}
+{
+  "version": "0.13.16",
+  "notes": "v0.13.16 - Fix update count badge to match toast notification",
+  "pub_date": "2026-03-22T00:27:54Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlaVXBPRnMyc0VxYWt1eDk1eXpuM3gyTWIzc2NLY3ZwWXZnUDJJRmd3dC9vMUx4TkpRQTBnSnM3VFpwckV1Z053WUtUSDJWSW5WeEFITTBpc0kxTndBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MTM5MTk0CWZpbGU6TWVnYUxvYWRfMC4xMy4xNl94NjQtc2V0dXAubnNpcy56aXAKamowZVZOaVlST2VoMXllOWtlNjEzTHRvK1FYWEZTYW9YTWtORkJSam5DSDd3ZU44RUZBdWRlQVorcHl2M1A0dTJCYWkxdS9YUVlmVnZpbHRDT0poRHc9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.16/MegaLoad_0.13.16_x64-setup.nsis.zip"
+    }
+  }
+}

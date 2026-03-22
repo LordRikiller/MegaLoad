@@ -12,8 +12,8 @@
     },
     {
       "name": "MegaMegingjord",
-      "version": "1.6.3",
-      "download_url": "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.6.3/MegaMegingjord.dll",
+      "version": "1.6.4",
+      "download_url": "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.6.4/MegaMegingjord.dll",
       "dll_name": "MegaMegingjord.dll",
       "plugin_folder": "MegaMegingjord",
       "description": "Megingjord belt powers — carry weight, headlamp, Eitr bonus, seafloor walk, speed & jump boost"
@@ -28,16 +28,16 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.2.2",
-      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.2.2/MegaShot.dll",
+      "version": "2.2.3",
+      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.2.3/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system"
     },
     {
       "name": "MegaQoL",
-      "version": "1.5.14",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.5.14/MegaQoL.dll",
+      "version": "1.6.1",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.6.1/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, pet feeder, craft from containers, map teleport, mass farming"
@@ -60,8 +60,8 @@
     },
     {
       "name": "MegaTrainer",
-      "version": "1.4.3",
-      "download_url": "https://github.com/ccmrik/MegaTrainer/releases/download/v1.4.3/MegaTrainer.dll",
+      "version": "1.5.0",
+      "download_url": "https://github.com/ccmrik/MegaTrainer/releases/download/v1.5.0/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
       "description": "In-game cheat trainer — god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"

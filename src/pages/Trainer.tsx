@@ -79,12 +79,11 @@ export function Trainer() {
     Numpad1: "unlimited_stamina",
     Numpad2: "unlimited_weight",
     Numpad3: "ghost_mode",
-    Numpad4: "no_skill_drain",
-    Numpad5: "debug_mode",
-    Numpad6: "no_placement_cost",
-    Numpad7: "no_weather_damage",
-    Numpad8: "instant_kill",
-    Numpad9: "no_durability_loss",
+    Numpad4: "fly_mode",
+    Numpad5: "no_placement_cost",
+    Numpad6: "no_weather_damage",
+    Numpad7: "instant_kill",
+    Numpad8: "no_durability_loss",
   };
 
   // ALT + Numpad bindings
