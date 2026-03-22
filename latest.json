@@ -1,11 +1,11 @@
 {
-  "version": "0.13.17",
-  "notes": "v0.13.17 - Update trainer: rename Fly Mode, remove No Skill Drain, fix Always Rested, shift numpad bindings",
-  "pub_date": "2026-03-22T01:24:16Z",
+  "version": "0.13.19",
+  "notes": "v0.13.19 - Block mod updates while Valheim is running",
+  "pub_date": "2026-03-22T13:08:17Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUVyVmdwNktNajlEN2tOZmo4azZCM0dtWnhIU3JBVGpCRHk3MFJNNHlFaWNoaFhoRU53WXlSZmVoUDVQYWNVN2ZyOHNFUit5WmdoaWcxNlYzWjI5ZkE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MTQyNjM1CWZpbGU6TWVnYUxvYWRfMC4xMy4xN194NjQtc2V0dXAubnNpcy56aXAKejNENVAraHBEZG9RUW9TY2dmbHQrcFdBcEpCVEtwNVl3RllQYkV0Mmp5cWp3ODhKeWdxTElUZ1ZHWG9xUnh4YUR6ZXhWUm5jQUJ1cVIydmd3Z21wQVE9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.17/MegaLoad_0.13.17_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJmQUtsc1didGFuTWczNkJMTDhOYXRBMnMzVjlGSStDMDdVOGZlZyttR25kb2Y1MWR5ZzlnMzROUzc2SVBjVnlhTDdUcm1FU3NieTNGSG5BWGNhendRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MTQ1Mjg4CWZpbGU6TWVnYUxvYWRfMC4xMy4xOV94NjQtc2V0dXAubnNpcy56aXAKSzR5elJhUm5EUll6elBYbGdRZjlxeVkrY1R4SHFGTzlWZE9kZ1pHSzkvWkRNNFJjR0RpTCtJOEJQZnYwSXdpTUxudmZDVHA0NXkyU1VFOWR5dEplQmc9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.19/MegaLoad_0.13.19_x64-setup.nsis.zip"
     }
   }
 }

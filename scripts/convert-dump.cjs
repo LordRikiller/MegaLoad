@@ -160,7 +160,7 @@ for (const [finalId, baseRecipe] of Object.entries(MEAD_BASE_MAP)) {
   }
 }
 // ── Build creature drop lookup: item prefab -> [{creature, chance, min, max}] ──
-const dropLookup = {};  // item prefab -> [{creaturePrefab, creature, chance, min, max}]
+const dropLookup = {};  // item prefab -> [{creaturePrefab, creature, chance, min, max, biome?}]
 for (const cd of creatureDrops) {
   const creatureName = loc(findCreatureName(cd.creature));
   for (const d of cd.drops) {
@@ -176,15 +176,20 @@ for (const cd of creatureDrops) {
   }
 }
 
-// ── Build item biomes from creature drops ──
-// If creatures from multiple biomes drop this item, the item belongs to multiple biomes.
+// ── Build item biomes from creature + world drops ──
+// If creatures/world sources from multiple biomes drop this item, it belongs to multiple biomes.
 function getBiomesFromDrops(prefab) {
   const itemDrops = dropLookup[prefab];
   if (!itemDrops || itemDrops.length === 0) return [];
   const biomes = new Set();
   for (const d of itemDrops) {
-    const b = guessCreatureBiome(d.creaturePrefab);
-    if (b) biomes.add(b);
+    // World drops have .biome set directly; creature drops use guessCreatureBiome
+    if (d.biome) {
+      biomes.add(d.biome);
+    } else if (d.creaturePrefab) {
+      const b = guessCreatureBiome(d.creaturePrefab);
+      if (b) biomes.add(b);
+    }
   }
   return [...biomes];
 }
@@ -676,9 +681,24 @@ const BIOME_OVERRIDE = {
   "SurtlingCore": ["Black Forest", "Swamp"],
   "BoneFragments": ["Meadows", "Black Forest", "Swamp"],
   "Thistle": ["Black Forest", "Swamp"],
-  "Acorn": ["Meadows"],
+  "Acorn": ["Meadows", "Plains"],
   "SerpentMeat": ["Ocean"],
   "SerpentScale": ["Ocean"],
+
+  // ─── Multi-biome tree/rock/forage materials ───
+  "Wood": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
+  "FineWood": ["Meadows", "Plains"],
+  "RoundLog": ["Black Forest", "Mountain"],
+  "Stone": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],
+  "Flint": ["Meadows", "Black Forest"],
+  "Resin": ["Meadows", "Black Forest"],
+  "Mushroom": ["Meadows", "Black Forest"],
+  "Feathers": ["Meadows", "Black Forest", "Mountain", "Plains"],
+  "Coal": ["Meadows", "Black Forest", "Swamp"],
+  "LeatherScraps": ["Meadows", "Black Forest"],
+  "BirchSeeds": ["Meadows", "Plains"],
+  "PineCone": ["Black Forest", "Mountain"],
+  "IronScrap": ["Swamp", "Mountain"],
 
   // ─── Swamp materials ───
   "WitheredBone": ["Swamp"],
@@ -746,6 +766,170 @@ const BIOME_OVERRIDE = {
   "sapling_seedonion": ["Mountain"],
   "sapling_seedturnip": ["Swamp"],
 };
+
+// ── World drops: items obtained from trees, rocks, destructibles, etc. ──
+// These are NOT creature drops — they come from environment objects.
+// Format: { item_prefab: [{source, biome, type}] }
+const WORLD_DROPS = {
+  // ─── Trees ───
+  "Wood": [
+    {source: "Beech Tree", biome: "Meadows", type: "Tree"},
+    {source: "Birch Tree", biome: "Meadows", type: "Tree"},
+    {source: "Birch Tree", biome: "Plains", type: "Tree"},
+    {source: "Oak Tree", biome: "Meadows", type: "Tree"},
+    {source: "Oak Tree", biome: "Plains", type: "Tree"},
+    {source: "Pine Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Pine Tree", biome: "Mountain", type: "Tree"},
+    {source: "Fir Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Ancient Tree", biome: "Swamp", type: "Tree"},
+  ],
+  "FineWood": [
+    {source: "Birch Tree", biome: "Meadows", type: "Tree"},
+    {source: "Birch Tree", biome: "Plains", type: "Tree"},
+    {source: "Oak Tree", biome: "Meadows", type: "Tree"},
+    {source: "Oak Tree", biome: "Plains", type: "Tree"},
+    {source: "Shipwreck", biome: "Ocean", type: "Destructible"},
+  ],
+  "RoundLog": [
+    {source: "Pine Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Pine Tree", biome: "Mountain", type: "Tree"},
+  ],
+  "ElderBark": [
+    {source: "Ancient Tree", biome: "Swamp", type: "Tree"},
+  ],
+  "YggdrasilWood": [
+    {source: "Yggdrasil Shoot", biome: "Mistlands", type: "Tree"},
+  ],
+  "Blackwood": [
+    {source: "Blackwood Tree", biome: "Ashlands", type: "Tree"},
+  ],
+  // ─── Rocks & mining ───
+  "Stone": [
+    {source: "Rock", biome: "Meadows", type: "Rock"},
+    {source: "Rock", biome: "Black Forest", type: "Rock"},
+    {source: "Rock", biome: "Swamp", type: "Rock"},
+    {source: "Rock", biome: "Mountain", type: "Rock"},
+    {source: "Rock", biome: "Plains", type: "Rock"},
+    {source: "Rock", biome: "Ashlands", type: "Rock"},
+  ],
+  "Flint": [
+    {source: "Flint Node", biome: "Meadows", type: "Rock"},
+    {source: "Flint Node", biome: "Black Forest", type: "Rock"},
+  ],
+  "CopperOre": [
+    {source: "Copper Deposit", biome: "Black Forest", type: "Rock"},
+  ],
+  "TinOre": [
+    {source: "Tin Deposit", biome: "Black Forest", type: "Rock"},
+  ],
+  "IronScrap": [
+    {source: "Muddy Scrap Pile", biome: "Swamp", type: "Rock"},
+    {source: "Frozen Body", biome: "Mountain", type: "Destructible"},
+  ],
+  "SilverOre": [
+    {source: "Silver Vein", biome: "Mountain", type: "Rock"},
+  ],
+  "Obsidian": [
+    {source: "Obsidian Deposit", biome: "Mountain", type: "Rock"},
+  ],
+  "BlackMetalScrap": [
+    {source: "Fuling Camp Chest", biome: "Plains", type: "Destructible"},
+  ],
+  "FlametalOre": [
+    {source: "Flametal Deposit", biome: "Ashlands", type: "Rock"},
+  ],
+  "Crystal": [
+    {source: "Crystal Formation", biome: "Mountain", type: "Rock"},
+  ],
+  // ─── Forageables & ground loot ───
+  "Resin": [
+    {source: "Beech Tree", biome: "Meadows", type: "Tree"},
+    {source: "Fir Tree", biome: "Black Forest", type: "Tree"},
+  ],
+  "Feathers": [
+    {source: "Birds", biome: "Meadows", type: "Destructible"},
+    {source: "Birds", biome: "Black Forest", type: "Destructible"},
+    {source: "Birds", biome: "Mountain", type: "Destructible"},
+    {source: "Birds", biome: "Plains", type: "Destructible"},
+  ],
+  "Mushroom": [
+    {source: "Ground Spawn", biome: "Meadows", type: "Pickup"},
+    {source: "Ground Spawn", biome: "Black Forest", type: "Pickup"},
+  ],
+  "Coal": [
+    {source: "Charcoal Kiln", biome: "Meadows", type: "Crafting"},
+    {source: "Burial Chamber", biome: "Black Forest", type: "Destructible"},
+  ],
+  "LeatherScraps": [
+    {source: "Burial Chamber Furniture", biome: "Black Forest", type: "Destructible"},
+  ],
+  "SurtlingCore": [
+    {source: "Burial Chamber", biome: "Black Forest", type: "Destructible"},
+    {source: "Fire Geyser", biome: "Swamp", type: "Destructible"},
+  ],
+  "BoneFragments": [
+    {source: "Bone Pile", biome: "Meadows", type: "Destructible"},
+    {source: "Bone Pile", biome: "Black Forest", type: "Destructible"},
+    {source: "Bone Pile", biome: "Swamp", type: "Destructible"},
+  ],
+  // ─── Seeds from trees ───
+  "BeechSeeds": [
+    {source: "Beech Tree", biome: "Meadows", type: "Tree"},
+  ],
+  "BirchSeeds": [
+    {source: "Birch Tree", biome: "Meadows", type: "Tree"},
+    {source: "Birch Tree", biome: "Plains", type: "Tree"},
+  ],
+  "PineCone": [
+    {source: "Pine Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Pine Tree", biome: "Mountain", type: "Tree"},
+  ],
+  "FirCone": [
+    {source: "Fir Tree", biome: "Black Forest", type: "Tree"},
+  ],
+  "Acorn": [
+    {source: "Oak Tree", biome: "Meadows", type: "Tree"},
+    {source: "Oak Tree", biome: "Plains", type: "Tree"},
+  ],
+  // ─── Dungeon loot / chests ───
+  "Amber": [
+    {source: "Chest", biome: "Meadows", type: "Destructible"},
+    {source: "Burial Chamber Chest", biome: "Black Forest", type: "Destructible"},
+    {source: "Sunken Crypt Chest", biome: "Swamp", type: "Destructible"},
+  ],
+  "AmberPearl": [
+    {source: "Chest", biome: "Meadows", type: "Destructible"},
+    {source: "Burial Chamber Chest", biome: "Black Forest", type: "Destructible"},
+    {source: "Sunken Crypt Chest", biome: "Swamp", type: "Destructible"},
+  ],
+  "Ruby": [
+    {source: "Burial Chamber Chest", biome: "Black Forest", type: "Destructible"},
+    {source: "Sunken Crypt Chest", biome: "Swamp", type: "Destructible"},
+  ],
+  "Coins": [
+    {source: "Chest", biome: "Meadows", type: "Destructible"},
+    {source: "Burial Chamber Chest", biome: "Black Forest", type: "Destructible"},
+    {source: "Sunken Crypt Chest", biome: "Swamp", type: "Destructible"},
+    {source: "Frost Cave Chest", biome: "Mountain", type: "Destructible"},
+  ],
+};
+
+// ── Inject WORLD_DROPS (trees, rocks, destructibles) into dropLookup ──
+for (const [itemPrefab, sources] of Object.entries(WORLD_DROPS)) {
+  if (!dropLookup[itemPrefab]) dropLookup[itemPrefab] = [];
+  for (const wd of sources) {
+    dropLookup[itemPrefab].push({
+      creaturePrefab: null,       // Not a creature
+      creature: wd.source,        // Display name (e.g. "Birch Tree")
+      chance: 1,
+      min: 1,
+      max: 1,
+      health: 0,
+      biome: wd.biome,            // Direct biome (no guessCreatureBiome needed)
+      worldDropType: wd.type,     // "Tree", "Rock", "Destructible", "Pickup"
+    });
+  }
+}
 
 // Cache for computed biome tiers
 const _biomeTierCache = {};
@@ -838,16 +1022,28 @@ function getSource(prefab, recipe, itemDrops) {
     return sources;
   }
   if (recipe) sources.push("Crafting");
-  if (itemDrops && itemDrops.length > 0) sources.push("Creature Drop");
-  
+
+  // Separate creature drops from world drops
+  const creatureDrops = (itemDrops || []).filter(d => d.creaturePrefab !== null && !d.worldDropType);
+  const worldDrops = (itemDrops || []).filter(d => d.worldDropType);
+
+  if (creatureDrops.length > 0) sources.push("Creature Drop");
+
+  // Add world-drop source types
+  const worldTypes = new Set(worldDrops.map(d => d.worldDropType));
+  if (worldTypes.has("Tree")) sources.push("Tree");
+  if (worldTypes.has("Rock")) sources.push("Mining");
+  if (worldTypes.has("Destructible")) sources.push("Destructible");
+  if (worldTypes.has("Pickup")) sources.push("Pickup");
+
   const p = prefab.toLowerCase();
-  if (p.includes("ore") || p.includes("scrap")) sources.push("Mining");
-  if (p.includes("trophy")) sources.push("Creature Drop");
-  if (p.includes("seed")) sources.push("Pickup");
-  if (p.includes("mushroom") || p.includes("thistle") || p.includes("carrot") ||
+  if ((p.includes("ore") || (p.includes("scrap") && !p.includes("leather"))) && !sources.includes("Mining")) sources.push("Mining");
+  if (p.includes("trophy") && !sources.includes("Creature Drop")) sources.push("Creature Drop");
+  if (p.includes("seed") && !sources.includes("Pickup")) sources.push("Pickup");
+  if ((p.includes("mushroom") || p.includes("thistle") || p.includes("carrot") ||
       p.includes("turnip") || p.includes("onion") || p.includes("barley") ||
-      p.includes("flax")) sources.push("Foraging");
-  
+      p.includes("flax")) && !sources.includes("Foraging")) sources.push("Foraging");
+
   if (sources.length === 0) sources.push("Pickup");
   return [...new Set(sources)];
 }

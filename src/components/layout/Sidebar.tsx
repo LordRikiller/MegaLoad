@@ -54,6 +54,7 @@ export function Sidebar() {
     error: updateError,
     startupCheckDone,
     autoUpdate,
+    checkUpdates,
     sessionUpdatedMods,
   } = useUpdateStore();
   const addToast = useToastStore((s) => s.addToast);
@@ -67,9 +68,14 @@ export function Sidebar() {
   useEffect(() => {
     if (profile?.bepinex_path && profile.bepinex_path !== lastCheckedProfile.current) {
       lastCheckedProfile.current = profile.bepinex_path;
-      autoUpdate(profile.bepinex_path);
+      // If game is already running at startup, only check — don't install
+      if (gameStatus?.valheim_running) {
+        checkUpdates(profile.bepinex_path);
+      } else {
+        autoUpdate(profile.bepinex_path);
+      }
     }
-  }, [profile?.bepinex_path, autoUpdate]);
+  }, [profile?.bepinex_path, autoUpdate, checkUpdates, gameStatus?.valheim_running]);
 
   useEffect(() => {
     if (launchError) {
@@ -130,9 +136,19 @@ export function Sidebar() {
   };
 
   const handleCheckUpdates = () => {
-    if (profile?.bepinex_path) {
-      autoUpdate(profile.bepinex_path, true);
+    if (!profile?.bepinex_path) return;
+    if (gameStatus?.valheim_running) {
+      addToast({
+        type: "warning",
+        title: "Close Valheim first",
+        message: "Mods can't be updated while the game is running. Close Valheim and try again.",
+        duration: 5000,
+      });
+      // Still check for available updates, just don't install
+      checkUpdates(profile.bepinex_path, true);
+      return;
     }
+    autoUpdate(profile.bepinex_path, true);
   };
 
   const updatesBlocking = checking || updating;
