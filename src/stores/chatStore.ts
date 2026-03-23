@@ -4,8 +4,11 @@ import {
   chatGetUsage,
   chatGetDebugEnabled,
   chatSetDebugEnabled as apiSetDebug,
+  chatLoadHistory,
+  chatSaveHistory,
   type ChatMessage,
   type DailyUsage,
+  type ChatHistoryMessage,
 } from "../lib/tauri-api";
 import { useModStore } from "./modStore";
 import { usePlayerDataStore } from "./playerDataStore";
@@ -33,12 +36,14 @@ interface ChatState {
   usage: DailyUsage | null;
   debugEnabled: boolean;
   debugLoaded: boolean;
+  historyLoaded: boolean;
 
   sendMessage: (userText: string) => Promise<void>;
   clearChat: () => void;
   fetchUsage: () => Promise<void>;
   fetchDebug: () => Promise<void>;
   setDebugEnabled: (enabled: boolean) => Promise<void>;
+  loadHistory: () => Promise<void>;
 }
 
 function buildSystemPrompt(): string {
@@ -209,6 +214,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   usage: null,
   debugEnabled: false,
   debugLoaded: false,
+  historyLoaded: false,
 
   sendMessage: async (userText: string) => {
     const trimmed = userText.trim();
@@ -253,6 +259,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         loading: false,
         usage: response.daily_usage,
       }));
+
+      // Sync chat history to server (best effort, don't block)
+      const allMessages = get().messages;
+      const historyMessages: ChatHistoryMessage[] = allMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+        input_tokens: m.inputTokens,
+        output_tokens: m.outputTokens,
+      }));
+      chatSaveHistory(historyMessages).catch(() => {});
     } catch (e) {
       set({ error: String(e), loading: false });
     }
@@ -260,6 +277,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   clearChat: () => {
     set({ messages: [], error: null });
+    // Clear server history too (save empty)
+    chatSaveHistory([]).catch(() => {});
   },
 
   fetchUsage: async () => {
@@ -283,6 +302,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setDebugEnabled: async (enabled: boolean) => {
     await apiSetDebug(enabled);
     set({ debugEnabled: enabled });
+  },
+
+  loadHistory: async () => {
+    if (get().historyLoaded) return;
+    try {
+      const history = await chatLoadHistory();
+      if (history.messages.length > 0) {
+        const messages: DisplayMessage[] = history.messages.map((m) => ({
+          id: makeId(),
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          timestamp: m.timestamp,
+          inputTokens: m.input_tokens,
+          outputTokens: m.output_tokens,
+        }));
+        set({ messages, historyLoaded: true });
+      } else {
+        set({ historyLoaded: true });
+      }
+    } catch {
+      set({ historyLoaded: true });
+    }
   },
 }));
 

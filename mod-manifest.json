@@ -20,24 +20,24 @@
     },
     {
       "name": "MegaFood",
-      "version": "1.1.8",
-      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.1.8/MegaFood.dll",
+      "version": "1.1.9",
+      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.1.9/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
       "description": "Custom food items & recipes with fermenter integration and configurable stats"
     },
     {
       "name": "MegaShot",
-      "version": "2.3.2",
-      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.3.2/MegaShot.dll",
+      "version": "2.3.3",
+      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.3.3/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system"
     },
     {
       "name": "MegaQoL",
-      "version": "1.8.7",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.8.7/MegaQoL.dll",
+      "version": "1.8.8",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.8.8/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, pet feeder, craft from containers, map teleport, mass farming"

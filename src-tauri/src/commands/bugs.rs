@@ -1,58 +1,18 @@
 use crate::commands::app_log::app_log;
+use crate::commands::github::{github_get_file, github_put_file, github_list_dir, github_delete_file};
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tauri::command;
 
-// ---------------------------------------------------------------------------
-// GitHub token — XOR-obfuscated at compile time
-// Set MEGABUGS_GITHUB_TOKEN env var before building, or leave blank for dev.
-// ---------------------------------------------------------------------------
-const OBFUSCATION_KEY: u8 = 0xAB;
-
-fn get_github_token() -> Option<String> {
-    let obfuscated: &[u8] = match option_env!("MEGABUGS_TOKEN_OBF") {
-        Some(s) => s.as_bytes(),
-        None => return None,
-    };
-    // Decode from hex, then XOR to recover the token
-    let bytes: Vec<u8> = (0..obfuscated.len() / 2)
-        .filter_map(|i| u8::from_str_radix(&String::from_utf8_lossy(&obfuscated[i * 2..i * 2 + 2]), 16).ok())
-        .map(|b| b ^ OBFUSCATION_KEY)
-        .collect();
-    String::from_utf8(bytes).ok()
-}
-
-/// Fallback: read token from a local file (dev convenience)
-fn get_github_token_dev() -> Option<String> {
-    let home = std::env::var("USERPROFILE").ok()?;
-    let path = Path::new(&home).join(".megaload").join("megabugs-token");
-    fs::read_to_string(path).ok().map(|s| s.trim().to_string())
-}
-
-fn github_token() -> Result<String, String> {
-    get_github_token()
-        .or_else(get_github_token_dev)
-        .ok_or_else(|| "MegaBugs: No GitHub token configured".to_string())
-}
-
-// ---------------------------------------------------------------------------
-// Shared types
-// ---------------------------------------------------------------------------
-const REPO: &str = "ccmrik/MegaBugs";
-const USER_AGENT: &str = concat!("MegaLoad/", env!("CARGO_PKG_VERSION"));
+// Re-export UserIdentity from shared identity module
+pub use crate::commands::identity::UserIdentity;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MegaBugsAccess {
     pub enabled: bool,
     pub is_admin: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct UserIdentity {
-    pub user_id: String,
-    pub display_name: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -118,128 +78,7 @@ pub struct ImageData {
     pub base64_data: String,
 }
 
-// ---------------------------------------------------------------------------
-// GitHub Contents API helpers
-// ---------------------------------------------------------------------------
-
-/// Response from GitHub Contents API GET
-#[derive(Deserialize, Debug)]
-struct GitHubContent {
-    sha: String,
-    content: Option<String>,
-}
-
-/// Read a file from the repo. Returns (content_string, sha).
-fn github_get_file(path: &str) -> Result<(String, String), String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
-    let resp = crate::commands::http::agent()
-        .get(&url)
-        .set("Authorization", &format!("token {}", token))
-        .set("User-Agent", USER_AGENT)
-        .set("Accept", "application/vnd.github+json")
-        .call()
-        .map_err(|e| format!("GitHub API GET failed for {}: {}", path, e))?;
-
-    let body = resp.into_string().map_err(|e| format!("Read error: {}", e))?;
-    let gc: GitHubContent =
-        serde_json::from_str(&body).map_err(|e| format!("Parse error for {}: {}", path, e))?;
-
-    let raw = gc.content.unwrap_or_default().replace('\n', "").replace('\r', "");
-    let decoded = B64.decode(&raw).map_err(|e| format!("Base64 decode failed: {}", e))?;
-    let text = String::from_utf8(decoded).map_err(|e| format!("UTF-8 error: {}", e))?;
-    Ok((text, gc.sha))
-}
-
-/// Create or update a file in the repo.
-/// If `sha` is Some, it's an update; otherwise it's a create.
-fn github_put_file(path: &str, content: &[u8], message: &str, sha: Option<&str>) -> Result<String, String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
-    let encoded = B64.encode(content);
-
-    let mut body = serde_json::json!({
-        "message": message,
-        "content": encoded,
-    });
-    if let Some(s) = sha {
-        body["sha"] = serde_json::Value::String(s.to_string());
-    }
-
-    let resp = crate::commands::http::agent()
-        .put(&url)
-        .set("Authorization", &format!("token {}", token))
-        .set("User-Agent", USER_AGENT)
-        .set("Accept", "application/vnd.github+json")
-        .send_string(&body.to_string())
-        .map_err(|e| format!("GitHub API PUT failed for {}: {}", path, e))?;
-
-    let resp_body = resp.into_string().map_err(|e| format!("Read error: {}", e))?;
-    let parsed: serde_json::Value =
-        serde_json::from_str(&resp_body).map_err(|e| format!("Parse error: {}", e))?;
-    let new_sha = parsed["content"]["sha"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
-    Ok(new_sha)
-}
-
-/// List files in a repo directory. Returns vec of (path, sha).
-fn github_list_dir(path: &str) -> Result<Vec<(String, String)>, String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
-    let resp = crate::commands::http::agent()
-        .get(&url)
-        .set("Authorization", &format!("token {}", token))
-        .set("User-Agent", USER_AGENT)
-        .set("Accept", "application/vnd.github+json")
-        .call()
-        .map_err(|e| format!("GitHub API GET dir failed for {}: {}", path, e))?;
-
-    let body = resp.into_string().map_err(|e| format!("Read error: {}", e))?;
-    let items: Vec<serde_json::Value> =
-        serde_json::from_str(&body).map_err(|e| format!("Parse error for dir {}: {}", path, e))?;
-
-    Ok(items
-        .iter()
-        .filter_map(|item| {
-            let p = item["path"].as_str()?.to_string();
-            let s = item["sha"].as_str()?.to_string();
-            Some((p, s))
-        })
-        .collect())
-}
-
-/// Delete a file from the repo.
-fn github_delete_file(path: &str, sha: &str, message: &str) -> Result<(), String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
-
-    let body = serde_json::json!({
-        "message": message,
-        "sha": sha,
-    });
-
-    crate::commands::http::agent()
-        .delete(&url)
-        .set("Authorization", &format!("token {}", token))
-        .set("User-Agent", USER_AGENT)
-        .set("Accept", "application/vnd.github+json")
-        .send_string(&body.to_string())
-        .map_err(|e| format!("GitHub API DELETE failed for {}: {}", path, e))?;
-
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// App data dir helper
-// ---------------------------------------------------------------------------
-fn megabugs_data_dir() -> PathBuf {
-    let base = std::env::var("APPDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("."));
-    base.join("MegaLoad")
-}
+// GitHub helpers are in crate::commands::github
 
 fn iso_now() -> String {
     let now = std::time::SystemTime::now()
@@ -336,50 +175,16 @@ pub fn check_megabugs_access(bepinex_path: String) -> Result<MegaBugsAccess, Str
     })
 }
 
-/// Get or check if user identity exists.
+/// Get or check if user identity exists — delegates to shared identity.
 #[command]
 pub fn get_megabugs_identity() -> Result<UserIdentity, String> {
-    let path = megabugs_data_dir().join("megabugs_identity.json");
-    let data = fs::read_to_string(&path)
-        .map_err(|_| "No MegaBugs identity found — set up your display name first".to_string())?;
-    serde_json::from_str(&data).map_err(|e| format!("Identity parse error: {}", e))
+    crate::commands::identity::get_megaload_identity()
 }
 
-/// Create or update user identity.
+/// Create or update user identity — delegates to shared identity.
 #[command]
 pub fn set_megabugs_identity(display_name: String) -> Result<UserIdentity, String> {
-    if display_name.trim().is_empty() {
-        return Err("Display name cannot be empty".to_string());
-    }
-    if display_name.len() > 50 {
-        return Err("Display name too long (max 50 characters)".to_string());
-    }
-
-    let dir = megabugs_data_dir();
-    let path = dir.join("megabugs_identity.json");
-
-    // Preserve existing UUID if updating name
-    let user_id = if let Ok(data) = fs::read_to_string(&path) {
-        if let Ok(existing) = serde_json::from_str::<UserIdentity>(&data) {
-            existing.user_id
-        } else {
-            uuid::Uuid::new_v4().to_string()
-        }
-    } else {
-        uuid::Uuid::new_v4().to_string()
-    };
-
-    let identity = UserIdentity {
-        user_id,
-        display_name: display_name.trim().to_string(),
-    };
-
-    let _ = fs::create_dir_all(&dir);
-    let json = serde_json::to_string_pretty(&identity).map_err(|e| e.to_string())?;
-    fs::write(&path, json).map_err(|e| format!("Failed to save identity: {}", e))?;
-
-    app_log(&format!("MegaBugs identity set: {}", identity.display_name));
-    Ok(identity)
+    crate::commands::identity::set_megaload_identity(display_name)
 }
 
 /// Fetch ticket index (filtered by user_id for non-admin).
@@ -896,23 +701,8 @@ pub fn fetch_attachment(path: String) -> Result<String, String> {
         return Err("Invalid attachment path characters".to_string());
     }
 
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
-    let resp = crate::commands::http::agent()
-        .get(&url)
-        .set("Authorization", &format!("token {}", token))
-        .set("User-Agent", USER_AGENT)
-        .set("Accept", "application/vnd.github+json")
-        .call()
-        .map_err(|e| format!("Failed to fetch attachment: {}", e))?;
-
-    let body = resp.into_string().map_err(|e| format!("Read error: {}", e))?;
-    let gc: GitHubContent =
-        serde_json::from_str(&body).map_err(|e| format!("Parse error: {}", e))?;
-
-    // Return the raw base64 content (already base64 from GitHub)
-    let raw = gc.content.unwrap_or_default().replace('\n', "").replace('\r', "");
-    Ok(raw)
+    crate::commands::github::github_get_raw_base64(&path)
+        .map_err(|e| format!("Failed to fetch attachment: {}", e))
 }
 
 fn get_installed_mod_list(bepinex_path: &str) -> Vec<String> {

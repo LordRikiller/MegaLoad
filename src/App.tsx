@@ -13,6 +13,7 @@ import { PlayerData } from "./pages/PlayerData";
 import { Cart } from "./pages/Cart";
 import { MegaBugs } from "./pages/MegaBugs";
 import { MegaChat } from "./pages/MegaChat";
+import { AdminPanel } from "./pages/AdminPanel";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/bugs" element={<MegaBugs />} />
         <Route path="/chat" element={<MegaChat />} />
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="/logs" element={<LogViewer />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/settings" element={<Settings />} />

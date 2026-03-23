@@ -6,6 +6,7 @@ use commands::bepinex::*;
 use commands::bugs::*;
 use commands::chat::*;
 use commands::config::*;
+use commands::identity::*;
 use commands::import::*;
 use commands::launcher::*;
 use commands::logs::*;
@@ -130,6 +131,19 @@ pub fn run() {
             chat_reset_usage,
             chat_get_debug_enabled,
             chat_set_debug_enabled,
+            // Identity & user management
+            get_megaload_identity,
+            set_megaload_identity,
+            check_username_available,
+            check_is_admin,
+            check_user_banned,
+            chat_load_history,
+            chat_save_history,
+            // Admin moderation
+            admin_list_users,
+            admin_ban_user,
+            admin_unban_user,
+            admin_get_user_chat_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

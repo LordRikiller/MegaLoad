@@ -624,3 +624,76 @@ export const chatGetDebugEnabled = () =>
 
 export const chatSetDebugEnabled = (enabled: boolean) =>
   invoke<void>("chat_set_debug_enabled", { enabled });
+
+// ---------------------------------------------------------------------------
+// Identity & User Management
+// ---------------------------------------------------------------------------
+
+export interface MegaLoadIdentity {
+  user_id: string;
+  display_name: string;
+}
+
+export interface ChatUsageStats {
+  total_tokens: number;
+  total_requests: number;
+}
+
+export interface AdminUserInfo {
+  user_id: string;
+  display_name: string;
+  registered_at: string;
+  last_active: string;
+  is_admin: boolean;
+  flags: string[];
+  megachat_usage: ChatUsageStats;
+  megabugs_tickets: number;
+}
+
+export interface ChatHistoryMessage {
+  role: string;
+  content: string;
+  timestamp: string;
+  input_tokens?: number;
+  output_tokens?: number;
+}
+
+export interface ChatHistoryFile {
+  user_id: string;
+  messages: ChatHistoryMessage[];
+  last_updated: string;
+}
+
+export const getMegaloadIdentity = () =>
+  invoke<MegaLoadIdentity>("get_megaload_identity");
+
+export const setMegaloadIdentity = (displayName: string) =>
+  invoke<MegaLoadIdentity>("set_megaload_identity", { displayName });
+
+export const checkUsernameAvailable = (displayName: string) =>
+  invoke<boolean>("check_username_available", { displayName });
+
+export const checkIsAdmin = () =>
+  invoke<boolean>("check_is_admin");
+
+export const checkUserBanned = () =>
+  invoke<boolean>("check_user_banned");
+
+export const chatLoadHistory = () =>
+  invoke<ChatHistoryFile>("chat_load_history");
+
+export const chatSaveHistory = (messages: ChatHistoryMessage[]) =>
+  invoke<void>("chat_save_history", { messages });
+
+// Admin moderation
+export const adminListUsers = () =>
+  invoke<AdminUserInfo[]>("admin_list_users");
+
+export const adminBanUser = (userId: string) =>
+  invoke<void>("admin_ban_user", { userId });
+
+export const adminUnbanUser = (userId: string) =>
+  invoke<void>("admin_unban_user", { userId });
+
+export const adminGetUserChatHistory = (userId: string) =>
+  invoke<ChatHistoryFile>("admin_get_user_chat_history", { userId });

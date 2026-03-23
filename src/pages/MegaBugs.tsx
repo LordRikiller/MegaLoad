@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   Clock,
   Tag,
-  User,
   Monitor,
   ScrollText,
   ChevronDown,
@@ -98,7 +97,6 @@ export function MegaBugs() {
     offline,
     checkAccess,
     loadIdentity,
-    saveIdentity,
     loadTickets,
     loadTicketDetail,
     submit,
@@ -115,9 +113,6 @@ export function MegaBugs() {
   const [view, setView] = useState<View>("list");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  // Identity setup
-  const [nameInput, setNameInput] = useState("");
 
   // New ticket form
   const [ticketType, setTicketType] = useState<TicketType>("bug");
@@ -353,34 +348,11 @@ export function MegaBugs() {
     );
   }
 
-  // Identity setup
+  // Identity setup — handled by app-level IdentityGate; this is a fallback
   if (!identity) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8 animate-in">
-        <div className="glass rounded-2xl p-8 max-w-sm w-full space-y-6">
-          <div className="text-center space-y-2">
-            <User className="w-10 h-10 text-brand-400 mx-auto" />
-            <h2 className="text-lg font-semibold text-zinc-200">Set Your Display Name</h2>
-            <p className="text-sm text-zinc-400">
-              This name will appear on your bug reports and feature requests.
-            </p>
-          </div>
-          <input
-            className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand-500/50"
-            placeholder="Your display name"
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            maxLength={50}
-            onKeyDown={(e) => e.key === "Enter" && nameInput.trim() && saveIdentity(nameInput.trim())}
-          />
-          <button
-            className="w-full px-4 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium transition-colors disabled:opacity-40"
-            disabled={!nameInput.trim()}
-            onClick={() => saveIdentity(nameInput.trim())}
-          >
-            Continue
-          </button>
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
       </div>
     );
   }

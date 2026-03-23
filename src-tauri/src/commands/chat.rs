@@ -45,17 +45,10 @@ fn claude_token() -> Result<String, String> {
 }
 
 // ---------------------------------------------------------------------------
-// Admin detection (reuse MegaBugs pattern)
+// Admin detection — delegate to shared identity module
 // ---------------------------------------------------------------------------
 fn is_admin() -> bool {
-    std::env::var("USERPROFILE")
-        .map(|home| {
-            std::path::Path::new(&home)
-                .join(".megaload")
-                .join("megabugs-admin.key")
-                .exists()
-        })
-        .unwrap_or(false)
+    crate::commands::identity::is_admin()
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +194,15 @@ pub fn chat_send_message(
 ) -> Result<ChatResponse, String> {
     let token = claude_token()?;
     let admin = is_admin();
+
+    // Check ban status (non-admin only)
+    if !admin {
+        if let Ok(banned) = crate::commands::identity::check_user_banned() {
+            if banned {
+                return Err("Your account has been suspended. Contact support if you believe this is in error.".to_string());
+            }
+        }
+    }
 
     // Check daily limit (admin bypasses)
     let mut usage = load_usage();

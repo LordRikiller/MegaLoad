@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useChatStore, DAILY_TOKEN_LIMIT } from "../stores/chatStore";
+import { useIdentityStore } from "../stores/identityStore";
 import { cn } from "../lib/utils";
 import {
   MessageCircle,
@@ -11,6 +12,7 @@ import {
   Bot,
   User,
   Zap,
+  ShieldOff,
 } from "lucide-react";
 
 export function MegaChat() {
@@ -24,7 +26,10 @@ export function MegaChat() {
     clearChat,
     fetchUsage,
     fetchDebug,
+    loadHistory,
   } = useChatStore();
+
+  const isBanned = useIdentityStore((s) => s.isBanned);
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -35,7 +40,8 @@ export function MegaChat() {
   useEffect(() => {
     fetchUsage();
     fetchDebug();
-  }, [fetchUsage, fetchDebug]);
+    loadHistory();
+  }, [fetchUsage, fetchDebug, loadHistory]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -239,6 +245,15 @@ export function MegaChat() {
 
       {/* Input area */}
       <div className="px-5 py-3 border-t border-zinc-800/50">
+        {isBanned ? (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20">
+            <ShieldOff className="w-5 h-5 text-red-400 shrink-0" />
+            <p className="text-sm text-red-300">
+              Your account has been suspended. Contact support if you believe this is in error.
+            </p>
+          </div>
+        ) : (
+        <>
         <div className="flex gap-3 items-end">
           <textarea
             ref={inputRef}
@@ -275,6 +290,8 @@ export function MegaChat() {
         <p className="text-[10px] text-zinc-600 mt-1.5 text-center">
           Shift+Enter for new line &middot; Enter to send
         </p>
+        </>
+        )}
       </div>
     </div>
   );

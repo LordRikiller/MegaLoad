@@ -19,7 +19,7 @@ export function Titlebar() {
   return (
     <div
       data-tauri-drag-region
-      className="h-10 flex items-center justify-between bg-zinc-950 border-b border-zinc-800/50 select-none shrink-0"
+      className="h-10 flex items-center justify-between bg-zinc-950 border-b border-zinc-800/50 select-none shrink-0 z-50"
     >
       <div data-tauri-drag-region className="flex items-center gap-2 px-4">
         <img src="/megaload-icon.png" alt="MegaLoad" className="w-6 h-6 rounded" draggable={false} />

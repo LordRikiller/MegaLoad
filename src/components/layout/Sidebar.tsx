@@ -22,6 +22,7 @@ import {
   UserCircle,
   Bug,
   MessageCircle,
+  Shield,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useProfileStore } from "../../stores/profileStore";
@@ -29,6 +30,7 @@ import { useUpdateStore } from "../../stores/updateStore";
 import { useToastStore } from "../../stores/toastStore";
 import { usePlayerDataStore } from "../../stores/playerDataStore";
 import { useBugStore } from "../../stores/bugStore";
+import { useIdentityStore } from "../../stores/identityStore";
 import { detectValheimPath, launchValheim, checkGameStatus, startSteam } from "../../lib/tauri-api";
 import type { GameStatus } from "../../lib/tauri-api";
 
@@ -51,6 +53,7 @@ export function Sidebar() {
   const profile = activeProfile();
   const bugAccess = useBugStore((s) => s.access);
   const checkBugAccess = useBugStore((s) => s.checkAccess);
+  const isAdmin = useIdentityStore((s) => s.isAdmin);
   const [launching, setLaunching] = useState(false);
   const [launchPhase, setLaunchPhase] = useState<string | null>(null);
   const [valheimPath, setValheimPath] = useState<string | null>(null);
@@ -229,6 +232,22 @@ export function Sidebar() {
           >
             <Bug className="w-4.5 h-4.5 shrink-0" />
             MegaBugs
+          </NavLink>
+        )}
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                isActive
+                  ? "bg-brand-500/15 text-brand-400 shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+              )
+            }
+          >
+            <Shield className="w-4.5 h-4.5 shrink-0" />
+            Admin
           </NavLink>
         )}
       </nav>
