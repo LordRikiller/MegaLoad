@@ -243,7 +243,22 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "name-desc", label: "Name Z→A" },
   { value: "tier-asc", label: "Tier ↑ (Low → High)" },
   { value: "tier-desc", label: "Tier ↓ (High → Low)" },
+  { value: "biome-grouped", label: "Biome (Progression)" },
 ];
+
+/** Icon color classes per biome for group headers */
+const BIOME_HEADER_COLORS: Record<string, string> = {
+  Meadows: "text-lime-400",
+  "Black Forest": "text-teal-400",
+  Swamp: "text-green-500",
+  Mountain: "text-slate-300",
+  Plains: "text-yellow-400",
+  Mistlands: "text-purple-400",
+  Ocean: "text-blue-400",
+  Ashlands: "text-orange-400",
+  "Deep North": "text-sky-400",
+  Unknown: "text-zinc-500",
+};
 
 function BiomeBadge({ biome, onClick }: { biome: string; onClick?: () => void }) {
   return (
@@ -405,9 +420,43 @@ export function ValheimData() {
   const subcategoryEntries = Object.entries(subcategoryCounts).sort((a, b) => b[1] - a[1]);
   const hasActiveFilters = query || activeTypes.length > 0 || activeSubcategories.length > 0 || activeBiomes.length > 0 || activeStations.length > 0 || activeFactories.length > 0 || activeVendors.length > 0 || sortBy !== "name-asc";
 
-  // Group items by type for section headers
+  // Group items by type (default) or by biome (when biome-grouped)
   const groupedItems = useMemo(() => {
-    const groups: { type: ItemType; icon: typeof Package; items: ValheimItem[] }[] = [];
+    if (sortBy === "biome-grouped") {
+      // Group by earliest biome in progression order
+      const byBiome = new Map<string, ValheimItem[]>();
+      for (const item of items) {
+        // Pick the earliest biome (lowest tier) for grouping
+        let biome = "Unknown";
+        if (item.biomes.length > 0) {
+          let minTier = Infinity;
+          for (const b of item.biomes) {
+            const idx = BIOME_ORDER.indexOf(b as any);
+            const tier = idx >= 0 ? idx : BIOME_ORDER.length;
+            if (tier < minTier) { minTier = tier; biome = b; }
+          }
+        }
+        const list = byBiome.get(biome) || [];
+        list.push(item);
+        byBiome.set(biome, list);
+      }
+      const groups: { key: string; label: string; icon?: typeof Package; colorClass?: string; items: ValheimItem[] }[] = [];
+      for (const biome of [...BIOME_ORDER]) {
+        const list = byBiome.get(biome);
+        if (list && list.length > 0) {
+          groups.push({ key: biome, label: biome, colorClass: BIOME_HEADER_COLORS[biome], items: list });
+        }
+      }
+      // Items with no recognized biome
+      const unknown = byBiome.get("Unknown");
+      if (unknown && unknown.length > 0) {
+        groups.push({ key: "Unknown", label: "Unknown Biome", colorClass: BIOME_HEADER_COLORS["Unknown"], items: unknown });
+      }
+      return groups;
+    }
+
+    // Default: group by item type
+    const groups: { key: string; label: string; icon?: typeof Package; colorClass?: string; items: ValheimItem[] }[] = [];
     const byType = new Map<string, ValheimItem[]>();
     for (const item of items) {
       const list = byType.get(item.type) || [];
@@ -417,11 +466,11 @@ export function ValheimData() {
     for (const type of TYPE_ORDER) {
       const list = byType.get(type);
       if (list && list.length > 0) {
-        groups.push({ type, icon: TYPE_ICONS[type] || Package, items: list });
+        groups.push({ key: type, label: TYPE_GROUP_LABELS[type] || `${type}s`, icon: TYPE_ICONS[type] || Package, items: list });
       }
     }
     return groups;
-  }, [items]);
+  }, [items, sortBy]);
 
   // Export helpers
   const doExport = async (format: "csv" | "json" | "txt") => {
@@ -866,14 +915,18 @@ export function ValheimData() {
             <ItemTable items={items} tableSortKey={tableSortKey} tableSortDir={tableSortDir} onSort={setTableSort} onSelect={setSelectedItem} />
           ) : (
             <div className="space-y-6">
-              {groupedItems.map(({ type, icon: GIcon, items: groupItems }) => (
-                <div key={type}>
+              {groupedItems.map(({ key, label, icon: GIcon, colorClass, items: groupItems }) => (
+                <div key={key}>
                   {/* Group header */}
                   {groupedItems.length > 1 && (
                     <div className="flex items-center gap-2 mb-2 sticky top-0 z-10 bg-[#0c0e14]/90 backdrop-blur-sm py-1.5">
-                      <GIcon className="w-4 h-4 text-zinc-500" />
-                      <span className="text-sm font-semibold text-zinc-300">
-                        {TYPE_GROUP_LABELS[type] || `${type}s`}
+                      {GIcon ? (
+                        <GIcon className="w-4 h-4 text-zinc-500" />
+                      ) : (
+                        <span className={cn("w-2.5 h-2.5 rounded-full inline-block", colorClass?.replace("text-", "bg-") || "bg-zinc-500")} />
+                      )}
+                      <span className={cn("text-sm font-semibold", colorClass || "text-zinc-300")}>
+                        {label}
                       </span>
                       <span className="text-[11px] text-zinc-600">{groupItems.length}</span>
                     </div>

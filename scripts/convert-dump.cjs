@@ -88,6 +88,7 @@ const BLACKLISTED_PREFABS = new Set([
   "Flametal",            // Old "Ancient Metal" — replaced by FlametalNew in Ashlands update
   "FlametalOre",         // Old "Glowing Metal Ore" — replaced by FlametalOreNew
   "BonemawSerpentScale", // Bonemaw Scale — not a player-obtainable item
+  "TrophyForestTroll",   // Deprecated — replaced by TrophyFrostTroll
 
   // Boss altar upgrade pickups — not player-usable items
   "HealthUpgrade_Bonemass",
@@ -750,13 +751,25 @@ const BIOME_OVERRIDE = {
   "VineGreenSeeds": ["Black Forest"],      // Haldor vendor (Ivy Seeds)
 
   // ─── Trophies (biome of the creature) ───
-  "TrophyDraugrFem": ["Swamp"],
-  "TrophyForestTroll": ["Black Forest"],
+  "TrophyDraugr": ["Meadows", "Swamp", "Mountain"],
+  "TrophyDraugrFem": ["Meadows", "Swamp", "Mountain"],
+  "TrophyDraugrElite": ["Meadows", "Swamp", "Mountain"],
+  "TrophySkeleton": ["Meadows", "Black Forest", "Swamp", "Mountain"],
+  "TrophySkeletonPoison": ["Black Forest"],
+  "TrophyDeer": ["Meadows", "Black Forest"],
+  "TrophySeekerQueen": ["Mistlands"],
   "TrophyHatchling": ["Mountain"],
   "TrophyTheElder": ["Black Forest"],
   "TrophyKvastur": ["Swamp"],
 
   // ─── Creatures missing biomes ───
+  "Deer": ["Meadows", "Black Forest"],
+  "Draugr": ["Meadows", "Swamp", "Mountain"],
+  "Draugr_Ranged": ["Meadows", "Swamp", "Mountain"],
+  "Draugr_Elite": ["Meadows", "Swamp", "Mountain"],
+  "Skeleton": ["Meadows", "Black Forest", "Swamp", "Mountain"],
+  "Skeleton_NoArcher": ["Meadows", "Black Forest", "Swamp", "Mountain"],
+  "Skeleton_Poison": ["Black Forest"],
   "Hatchling": ["Mountain"],
   "Hive": ["Meadows"],
   "TheHive": ["Meadows"],

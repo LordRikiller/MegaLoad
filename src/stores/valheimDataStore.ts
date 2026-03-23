@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { VALHEIM_ITEMS, type ValheimItem } from "../data/valheim-items";
 
-export type SortOption = "name-asc" | "name-desc" | "tier-asc" | "tier-desc";
+export type SortOption = "name-asc" | "name-desc" | "tier-asc" | "tier-desc" | "biome-grouped";
 export type ViewMode = "grid" | "table";
 export type TableSortKey = "name" | "type" | "subcategory" | "biome" | "station" | "weight" | "stack";
 export type TableSortDir = "asc" | "desc";
@@ -615,6 +615,12 @@ function sortItems(items: ValheimItem[], sortBy: SortOption): ValheimItem[] {
         const ta = Math.min(...(a.biomes.length ? a.biomes.map((b) => BIOME_TIER[b] ?? NO_BIOME_TIER) : [NO_BIOME_TIER]));
         const tb = Math.min(...(b.biomes.length ? b.biomes.map((b) => BIOME_TIER[b] ?? NO_BIOME_TIER) : [NO_BIOME_TIER]));
         return ta !== tb ? tb - ta : a.name.localeCompare(b.name);
+      });
+    case "biome-grouped":
+      return sorted.sort((a, b) => {
+        const ta = Math.min(...(a.biomes.length ? a.biomes.map((b) => BIOME_TIER[b] ?? NO_BIOME_TIER) : [NO_BIOME_TIER]));
+        const tb = Math.min(...(b.biomes.length ? b.biomes.map((b) => BIOME_TIER[b] ?? NO_BIOME_TIER) : [NO_BIOME_TIER]));
+        return ta !== tb ? ta - tb : a.name.localeCompare(b.name);
       });
   }
 }
