@@ -82,6 +82,7 @@ const BLACKLISTED_PREFABS = new Set([
   "Tankard_dvergr",      // NPC dvergr item
   "Mistile_kamikaze",    // Creature kamikaze attack
   "PlayerUnarmed",       // Internal bare-hands weapon
+  "RottenMeat",          // Decay product — not obtainable from a biome, zero food stats
 
   // Deprecated/removed items — not obtainable in current game
   "Flametal",            // Old "Ancient Metal" — replaced by FlametalNew in Ashlands update
@@ -151,9 +152,14 @@ for (const r of recipes) {
 // Final meads (MeadBugRepellent) have no recipe; only MeadBase* items do.
 // Map each final product → its base's recipe so it shows station + ingredients.
 const MEAD_BASE_MAP = {};
+// Fix casing mismatches between base and final mead prefabs
+const MEAD_BASE_CASING_FIX = {
+  "MeadLightFoot": "MeadLightfoot",  // MeadBaseLightFoot → MeadLightfoot (lowercase f)
+};
 for (const r of recipes) {
   if (r.item.startsWith("MeadBase")) {
-    const finalId = r.item.replace("MeadBase", "Mead");
+    let finalId = r.item.replace("MeadBase", "Mead");
+    if (MEAD_BASE_CASING_FIX[finalId]) finalId = MEAD_BASE_CASING_FIX[finalId];
     MEAD_BASE_MAP[finalId] = r;
   } else if (r.item === "BarleyWineBase") {
     MEAD_BASE_MAP["BarleyWine"] = r;
@@ -1229,11 +1235,23 @@ function guessBiomes(prefab, recipePrefab) {
   return [];
 }
 
+// ── Items cooked on fire/cooking station (no recipe in dump, source should be "Cooking") ──
+const FIRE_COOKED_ITEMS = new Set([
+  "CookedMeat", "NeckTailGrilled", "CookedDeerMeat", "FishCooked",
+  "CookedChickenMeat", "CookedWolfMeat", "CookedLoxMeat", "CookedBugMeat",
+  "CookedHareMeat", "CookedBjornMeat", "CookedAsksvinMeat", "CookedVoltureMeat",
+  "CookedBoneMawSerpentMeat", "SerpentMeatCooked",
+]);
+
 // ── Determine source (how to obtain) ──
 function getSource(prefab, recipe, itemDrops) {
   const sources = [];
   if (VENDOR_ONLY_PREFABS.has(prefab)) {
     sources.push("Vendor");
+    return sources;
+  }
+  if (FIRE_COOKED_ITEMS.has(prefab)) {
+    sources.push("Cooking");
     return sources;
   }
   if (recipe) sources.push("Crafting");
@@ -1371,6 +1389,19 @@ const seenIds = new Set();
 // Feast*_Material items are craft intermediates with the same display name as the base feast.
 // We skip them as standalone entries and merge their recipe/station/description into the base.
 const feastMaterialMap = {};
+// Also handle oven-baked foods: Uncooked/Dough intermediates → cooked final product
+const OVEN_FOOD_MAP = {
+  "BreadDough": "Bread",
+  "FishAndBreadUncooked": "FishAndBread",
+  "HoneyGlazedChickenUncooked": "HoneyGlazedChicken",
+  "LoxPieUncooked": "LoxPie",
+  "MagicallyStuffedShroomUncooked": "MagicallyStuffedShroom",
+  "MeatPlatterUncooked": "MeatPlatter",
+  "MisthareSupremeUncooked": "MisthareSupreme",
+  "PiquantPieUncooked": "PiquantPie",
+  "RoastedCrustPieUncooked": "RoastedCrustPie",
+  "VikingCupcakeUncooked": "VikingCupcake",
+};
 for (const item of items) {
   if (item.prefab.endsWith("_Material") && item.prefab.startsWith("Feast")) {
     const basePrefab = item.prefab.replace("_Material", "");
@@ -1380,9 +1411,9 @@ for (const item of items) {
       stack: item.maxStackSize,
     };
   }
-  if (item.prefab === "MeatPlatterUncooked") {
-    feastMaterialMap["MeatPlatter"] = {
-      recipe: recipeMap["MeatPlatterUncooked"],
+  if (OVEN_FOOD_MAP[item.prefab]) {
+    feastMaterialMap[OVEN_FOOD_MAP[item.prefab]] = {
+      recipe: recipeMap[item.prefab],
       description: item.description,
       stack: item.maxStackSize,
     };
@@ -1397,15 +1428,12 @@ for (const item of items) {
   // Skip DvergerArbalest_shoot variants (these are attack actions, not the actual crossbow)
   if (item.prefab.includes("_shoot")) continue;
 
-  // Skip feast material variants (merged into base feast entries above)
+  // Skip feast material variants and oven food intermediates (merged into base entries above)
   if (item.prefab.endsWith("_Material") && item.prefab.startsWith("Feast")) continue;
-  if (item.prefab === "MeatPlatterUncooked") continue;
+  if (OVEN_FOOD_MAP[item.prefab]) continue;
   
   const name = loc(item.name);
   if (!name || name.startsWith("$")) continue; // Skip if localization failed
-  
-  // Skip items with generic creature names 
-  if (name.match(/^(lox|boar|wolf|deer|neck)\s/i) && !item.prefab.match(/^(Lox|Boar|Wolf|Deer|Neck)$/)) continue;
 
   // For feast items, use the material variant's recipe/station/description
   const feastMat = feastMaterialMap[item.prefab];
@@ -1465,7 +1493,7 @@ for (const item of items) {
     description: loc(item.description) || (feastMat ? loc(feastMat.description) : ""),
     biomes: biomes,
     source: getSource(item.prefab, recipe, itemDrops),
-    station: recipe ? mapStation(recipe.craftingStation) : "",
+    station: FIRE_COOKED_ITEMS.has(item.prefab) ? "Cooking Station" : (recipe ? mapStation(recipe.craftingStation) : ""),
     stationLevel: recipe ? recipe.minStationLevel : 0,
     maxQuality: item.maxQuality,
     stack: feastMat ? feastMat.stack : item.maxStackSize,

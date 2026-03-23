@@ -1,11 +1,1 @@
-{
-  "version": "0.13.35",
-  "notes": "v0.13.35 - Admin ticket delete with optimistic UI",
-  "pub_date": "2026-03-22T23:47:58Z",
-  "platforms": {
-    "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUpGaXp0YlFVbFZSMitKYzhCWFU0b0hSRkdDcnE4SHJBak1wcGs3WHErYnpPRWNseVlweUZaTTdZdnNJM2U0UW9FN0tvT1BGM3U5ODRiVnFXckJlb2dJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MTgzNjUwCWZpbGU6TWVnYUxvYWRfMC4xMy4zNV94NjQtc2V0dXAubnNpcy56aXAKNFFtcFZLNWlUZjdBenA3c2FSbnNUNitaL01rNStGUktSVk9wbU13elJKVkVqcUdtbjRtTWxPUGYrbi9IZzhNVTJCM283bm1VNmtmUU5lVDJ4OFRZRHc9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.13.35/MegaLoad_0.13.35_x64-setup.nsis.zip"
-    }
-  }
-}
+{"version":"0.13.36","notes":"v0.13.36 - Ashlands biome audit: fix 13 items, blacklist 3 deprecated","pub_date":"2026-03-22T23:48:53Z","platforms":{"windows-x86_64":{"signature":"dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBPK21UOXV6b1Y0dC9MRTZHQTFPRFV3czNNRXovQ1pTTDNxY2UxQnJzWm9aOVNsNzUwdTBYeDFvRTRjS0JYaEZIRG5SbHkxVVNYY0N1MnhsRjR1RGdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MjE0MzkxCWZpbGU6TWVnYUxvYWRfMC4xMy4zNl94NjQtc2V0dXAubnNpcy56aXAKR0ZSMERuVWg2OSs4MjdvWUZEWHpGRkpYL2hOekJUc28vZmNkUm9iZTA1ODNjOE04K2J5OVpoSms3V2dHOURWL2kvR21HUk8vdnJ2bXdGdXNtbW82RHc9PQo=","url":"https://github.com/ccmrik/MegaLoad/releases/download/v0.13.36/MegaLoad_0.13.36_x64-setup.nsis.zip"}}}
