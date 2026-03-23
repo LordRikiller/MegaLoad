@@ -555,8 +555,8 @@ export function PlayerData() {
                   className="px-3 py-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-brand-500/50"
                 >
                   <option value="all">All Types</option>
-                  {["Material", "Weapon", "Armor", "Food", "Potion", "Tool", "Ammo", "BuildPiece", "Misc"].map((t) => (
-                    <option key={t} value={t}>{t === "BuildPiece" ? "Build Piece" : t}</option>
+                  {["Material", "Weapon", "Armor", "Food", "Potion", "Tool", "Ammo", "BuildPiece", "WorldObject", "Misc"].map((t) => (
+                    <option key={t} value={t}>{t === "BuildPiece" ? "Build Piece" : t === "WorldObject" ? "World Object" : t}</option>
                   ))}
                 </select>
               </div>

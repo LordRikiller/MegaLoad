@@ -43,6 +43,7 @@ import {
   Eye,
   EyeOff,
   Shirt,
+  MapPin,
 } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { saveTextFile } from "../lib/tauri-api";
@@ -177,12 +178,13 @@ const TYPE_ICONS: Record<ItemType, typeof Package> = {
   Ammo: Crosshair,
   BuildPiece: Landmark,
   Creature: Skull,
+  WorldObject: MapPin,
   Misc: HelpCircle,
 };
 
 const TYPE_ORDER: ItemType[] = [
   "Material", "Weapon", "Armor", "Clothing", "Food", "Potion",
-  "Tool", "Ammo", "BuildPiece", "Creature", "Misc",
+  "Tool", "Ammo", "BuildPiece", "Creature", "WorldObject", "Misc",
 ];
 
 const TYPE_GROUP_LABELS: Partial<Record<ItemType, string>> = {
@@ -196,6 +198,7 @@ const TYPE_GROUP_LABELS: Partial<Record<ItemType, string>> = {
   Ammo: "Ammo",
   BuildPiece: "Build Pieces",
   Creature: "Creatures",
+  WorldObject: "World Objects",
   Misc: "Misc",
 };
 

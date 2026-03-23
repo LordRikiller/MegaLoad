@@ -1,1 +1,11 @@
-{"version":"0.15.4","notes":"v0.15.4 - Remove duplicate charred_shieldgenerator from item data","pub_date":"2026-03-24T09:55:22Z","platforms":{"windows-x86_64":{"signature":"dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUpHNE56MDJIYS9zQzlBdDJKV3BNY1VEakw5ZkZkSVM4NGIvU1hEYWNsdGNja1BITUpvc0kvWkhiSWE4WDdYRE5PcDNWOW1ESkpUN3FGd2hLYVZGSHdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MzA2NTA3CWZpbGU6TWVnYUxvYWRfMC4xNS40X3g2NC1zZXR1cC5uc2lzLnppcApNbU96TUhld3I5bnZxOTgyNVFZbHR5b3hoem5NemVzelpQM0JZeXk0R1ZjZ0hTT1U0K0Q0VkFTZmxMWWlQdEQ2eCtHQzFab2RMQmVnajV0bXFpVUhDZz09Cg==","url":"https://github.com/ccmrik/MegaLoad/releases/download/v0.15.4/MegaLoad_0.15.4_x64-setup.nsis.zip"}}}
+{
+  "version": "0.15.5",
+  "notes": "v0.15.5 - Spawner drops (Greydwarf Nest), Spawner world source type with skull icon",
+  "pub_date": "2026-03-23T22:58:41Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUt2K2YzWmhDUVpHOXFNRFhWTWJyWmJGTXhIV2NEOUowVTl4bzdWVVhLU2pRMmpFV2dTaEYwMEZKZjdwVURDeW03Y1Vxc1dFa3JZaDkwSlJ4UWp2N2dNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MzA2NzA4CWZpbGU6TWVnYUxvYWRfMC4xNS41X3g2NC1zZXR1cC5uc2lzLnppcAo4S0RRUTRYeEovdlBYaGd6QWFaa29tRFlIcGZKUHk4dUprekdRQVNSUVFJenJHcTFVU3VuN0ZKUG5pRkhQWEhuS2JacVZxVnlBREVvaTYyajg4TmFCZz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.15.5/MegaLoad_0.15.5_x64-setup.nsis.zip"
+    }
+  }
+}

@@ -1180,7 +1180,70 @@ const SPAWNER_DROPS = {
     biome: "Black Forest",
     items: ["AncientSeed"],
   },
+  "Evil Bone Pile": {
+    biome: "Black Forest",
+    items: ["BoneFragments"],
+  },
 };
+
+// ── Creature Spawner Definitions ──
+// What creatures each spawner produces + metadata for WorldObject entries.
+const SPAWNER_DEFS = {
+  "Greydwarf Nest": {
+    prefabId: "Spawner_GreydwarfNest",
+    biomes: ["Black Forest"],
+    health: 100,
+    wikiUrl: "https://valheim.fandom.com/wiki/Greydwarf_nest",
+    creatures: [
+      { id: "Greydwarf", chance: 0.72 },
+      { id: "Greydwarf_Shaman", chance: 0.14 },
+      { id: "Greydwarf_Elite", chance: 0.14 },
+    ],
+  },
+  "Evil Bone Pile": {
+    prefabId: "BonePileSpawner",
+    biomes: ["Black Forest", "Swamp", "Mountain"],
+    health: 50,
+    wikiUrl: "https://valheim.fandom.com/wiki/Evil_bone_pile",
+    creatures: [
+      { id: "Skeleton", chance: 0.80 },
+      { id: "Skeleton_NoArcher", chance: 0.20 },
+    ],
+  },
+  "Body Pile": {
+    prefabId: "Spawner_DraugrPile",
+    biomes: ["Swamp", "Mountain"],
+    health: 100,
+    wikiUrl: "https://valheim.fandom.com/wiki/Body_pile",
+    creatures: [
+      { id: "Draugr", chance: 0.43 },
+      { id: "Draugr_Ranged", chance: 0.43 },
+      { id: "Draugr_Elite", chance: 0.14 },
+    ],
+  },
+  "Monument of Torment": {
+    prefabId: "CharredTwitcherSpawner",
+    biomes: ["Ashlands"],
+    health: 200,
+    wikiUrl: "https://valheim.fandom.com/wiki/Monument_of_Torment",
+    creatures: [
+      { id: "Charred_Twitcher", chance: 1.0 },
+    ],
+  },
+  "Effigy of Malice": {
+    prefabId: "CharredSpawnerCross",
+    biomes: ["Ashlands"],
+    health: 200,
+    wikiUrl: "https://valheim.fandom.com/wiki/Effigy_of_Malice",
+    creatures: [
+      { id: "Charred_Melee", chance: 0.50 },
+      { id: "Charred_Archer", chance: 0.50 },
+    ],
+  },
+};
+
+// ── Loot Chest Wiki URLs ──
+const CHEST_WIKI = "https://valheim.fandom.com/wiki/Loot_chest";
 
 // Auto-generate WORLD_DROPS entries from SPAWNER_DROPS
 for (const [spawnerName, data] of Object.entries(SPAWNER_DROPS)) {
@@ -1578,7 +1641,7 @@ for (const item of items) {
 // Process creatures (as their own entries with drops)
 // Blacklist creature prefabs that are internal/variant/not real enemies
 const CREATURE_BLACKLIST = new Set([
-  "Charred_Melee", "Charred_Melee_Dyrnwyn", "Charred_Melee_Fader",
+  "Charred_Melee_Dyrnwyn", "Charred_Melee_Fader",
   "TrainingDummy", "DvergerTest", "Lox_Calf", "Boar_piggy",
   "Wolf_cub", "Chicken", "Hen", "gd_king",
   "Goblin_Gem",  // Destructible gemstone node, not a creature
@@ -1685,6 +1748,82 @@ for (const p of pieces) {
   
   converted.push(entry);
   seenIds.add(p.prefab);
+}
+
+// ── Generate WorldObject entries for Loot Chests ──
+for (const [chestName, data] of Object.entries(CHEST_LOOT)) {
+  const chestId = "LootChest_" + chestName.replace(/\s+/g, "");
+  if (seenIds.has(chestId)) continue;
+  const drops = data.items.map(id => ({
+    id,
+    name: loc(findItemName(id)) || id,
+    chance: 1,
+    min: 1,
+    max: 1,
+  }));
+  converted.push({
+    id: chestId,
+    token: "",
+    name: chestName,
+    type: "WorldObject",
+    subcategory: "Loot Chest",
+    description: `A loot chest found in the ${data.biome} biome.`,
+    biomes: [data.biome],
+    source: ["World"],
+    station: "",
+    stationLevel: 0,
+    maxQuality: 1,
+    stack: 1,
+    weight: 0,
+    value: 0,
+    recipe: [],
+    upgradeCosts: [],
+    drops: drops,
+    worldSources: [],
+    stats: [],
+    wikiUrl: CHEST_WIKI,
+    wikiGroup: "Loot chests",
+  });
+  seenIds.add(chestId);
+}
+
+// ── Generate WorldObject entries for Creature Spawners ──
+for (const [spawnerName, def] of Object.entries(SPAWNER_DEFS)) {
+  if (seenIds.has(def.prefabId)) continue;
+  const drops = def.creatures.map(c => {
+    const cName = findCreatureName(c.id);
+    return {
+      id: c.id,
+      name: loc(cName) || cName || c.id,
+      chance: c.chance,
+      min: 1,
+      max: 1,
+    };
+  });
+  converted.push({
+    id: def.prefabId,
+    token: "",
+    name: spawnerName,
+    type: "WorldObject",
+    subcategory: "Creature Spawner",
+    description: "",
+    biomes: def.biomes,
+    source: ["World"],
+    station: "",
+    stationLevel: 0,
+    maxQuality: 1,
+    stack: 1,
+    weight: 0,
+    value: 0,
+    recipe: [],
+    upgradeCosts: [],
+    drops: drops,
+    worldSources: [],
+    stats: [{ label: "Health", value: `${def.health}` }],
+    wikiUrl: def.wikiUrl,
+    wikiGroup: "",
+  });
+  seenIds.add(def.prefabId);
 }
 
 function findItemName(prefab) {
@@ -1796,7 +1935,7 @@ for (const entry of converted) {
 console.log(`Inherited biomes for ${inherited} items from their ingredients`);
 
 // ── Sort: Materials, Weapons, Armor, Food, Potions, Tools, Ammo, Creatures, BuildPieces, Misc
-const TYPE_ORDER = ["Material", "Weapon", "Armor", "Food", "Potion", "Tool", "Ammo", "Creature", "BuildPiece", "Misc"];
+const TYPE_ORDER = ["Material", "Weapon", "Armor", "Food", "Potion", "Tool", "Ammo", "Creature", "WorldObject", "BuildPiece", "Misc"];
 converted.sort((a, b) => {
   const ta = TYPE_ORDER.indexOf(a.type);
   const tb = TYPE_ORDER.indexOf(b.type);

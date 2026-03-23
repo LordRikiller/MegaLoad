@@ -70,6 +70,7 @@ const TYPE_ICONS: Record<string, string> = {
   Tool: "🔧",
   Ammo: "🎯",
   BuildPiece: "🏗️",
+  WorldObject: "🗺️",
   Misc: "📦",
 };
 
