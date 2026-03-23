@@ -2033,55 +2033,62 @@ function ProcessingStationDetailView({ stationName, onBack }: { stationName: str
           </div>
         )}
 
-        {/* Conversions */}
-        <div className="glass rounded-xl p-5 border border-zinc-800/50">
-          <h2 className="text-sm font-semibold text-zinc-200 mb-3">
-            Conversions
-            <span className="text-zinc-500 font-normal ml-2 text-xs">
-              {station.conversions.length} recipe{station.conversions.length !== 1 ? "s" : ""}
-            </span>
-          </h2>
-          <div className="space-y-1">
-            {station.conversions.map((conv) => (
-              <div key={`${conv.inputId}-${conv.outputId}`} className="flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-zinc-800/30 transition-colors">
-                {/* Input */}
-                <button
-                  onClick={() => handleNavigate(conv.inputId)}
-                  className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                >
-                  <div className="w-7 h-7 rounded bg-zinc-800/60 flex items-center justify-center shrink-0 overflow-hidden">
-                    <ItemIcon id={conv.inputId} size={28} />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-xs text-brand-400 hover:underline block truncate">{conv.inputName}</span>
-                    {(conv.inputAmount ?? 1) > 1 && (
-                      <span className="text-[10px] text-zinc-500 font-mono">x{conv.inputAmount}</span>
+        {/* Conversions / Accepts Ammo */}
+        {station.conversions.length > 0 && (() => {
+          const isConsumerOnly = station.conversions.every((c) => c.inputId === c.outputId);
+          return (
+            <div className="glass rounded-xl p-5 border border-zinc-800/50">
+              <h2 className="text-sm font-semibold text-zinc-200 mb-3">
+                {isConsumerOnly ? "Accepts Ammo" : "Conversions"}
+                <span className="text-zinc-500 font-normal ml-2 text-xs">
+                  {station.conversions.length} {isConsumerOnly ? "type" : "recipe"}{station.conversions.length !== 1 ? "s" : ""}
+                </span>
+              </h2>
+              <div className="space-y-1">
+                {station.conversions.map((conv) => (
+                  <div key={`${conv.inputId}-${conv.outputId}`} className="flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-zinc-800/30 transition-colors">
+                    {/* Input */}
+                    <button
+                      onClick={() => handleNavigate(conv.inputId)}
+                      className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                    >
+                      <div className="w-7 h-7 rounded bg-zinc-800/60 flex items-center justify-center shrink-0 overflow-hidden">
+                        <ItemIcon id={conv.inputId} size={28} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs text-brand-400 hover:underline block truncate">{conv.inputName}</span>
+                        {(conv.inputAmount ?? 1) > 1 && (
+                          <span className="text-[10px] text-zinc-500 font-mono">x{conv.inputAmount}</span>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Arrow + Output (only for real conversions) */}
+                    {conv.inputId !== conv.outputId && (
+                      <>
+                        <ArrowRight className="w-4 h-4 text-zinc-600 shrink-0" />
+                        <button
+                          onClick={() => handleNavigate(conv.outputId)}
+                          className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                        >
+                          <div className="w-7 h-7 rounded bg-zinc-800/60 flex items-center justify-center shrink-0 overflow-hidden">
+                            <ItemIcon id={conv.outputId} size={28} />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs text-brand-400 hover:underline block truncate">{conv.outputName}</span>
+                            {(conv.outputAmount ?? 1) > 1 && (
+                              <span className="text-[10px] text-zinc-500 font-mono">x{conv.outputAmount}</span>
+                            )}
+                          </div>
+                        </button>
+                      </>
                     )}
                   </div>
-                </button>
-
-                {/* Arrow */}
-                <ArrowRight className="w-4 h-4 text-zinc-600 shrink-0" />
-
-                {/* Output */}
-                <button
-                  onClick={() => handleNavigate(conv.outputId)}
-                  className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                >
-                  <div className="w-7 h-7 rounded bg-zinc-800/60 flex items-center justify-center shrink-0 overflow-hidden">
-                    <ItemIcon id={conv.outputId} size={28} />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-xs text-brand-400 hover:underline block truncate">{conv.outputName}</span>
-                    {(conv.outputAmount ?? 1) > 1 && (
-                      <span className="text-[10px] text-zinc-500 font-mono">x{conv.outputAmount}</span>
-                    )}
-                  </div>
-                </button>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

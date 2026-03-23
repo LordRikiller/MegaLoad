@@ -342,11 +342,31 @@ export const PROCESSING_STATIONS: Record<string, ProcessingStation> = {
       { inputId: "VikingCupcake_uncooked", inputName: "Unbaked Viking Cupcake", outputId: "VikingCupcake", outputName: "Viking Cupcake" },
     ],
   },
+  "Shield Generator": {
+    name: "Shield Generator",
+    prefab: "piece_shieldgenerator",
+    description: "Creates a protective shield against weather and projectiles. Fuelled by bones — consumes Bone Fragments to maintain its barrier.",
+    biome: "Mistlands",
+    fuel: "Bone Fragments",
+    fuelId: "BoneFragments",
+    conversions: [],
+  },
+  "Ballista": {
+    name: "Ballista",
+    prefab: "piece_turret",
+    description: "Automated defensive turret that fires missiles at hostile targets. Must be loaded with turret missiles — available in wood, black metal, and flametal variants.",
+    biome: "Mistlands",
+    conversions: [
+      { inputId: "TurretBoltWood", inputName: "Wooden Missile", outputId: "TurretBoltWood", outputName: "Wooden Missile" },
+      { inputId: "TurretBolt", inputName: "Black Metal Missile", outputId: "TurretBolt", outputName: "Black Metal Missile" },
+      { inputId: "TurretBoltFlametal", inputName: "Flametal Missile", outputId: "TurretBoltFlametal", outputName: "Flametal Missile" },
+    ],
+  },
 };
 
 export const PROCESSING_STATION_LIST = [
   "Charcoal Kiln", "Smelter", "Blast Furnace", "Spinning Wheel",
-  "Windmill", "Eitr Refinery", "Stone Oven",
+  "Windmill", "Eitr Refinery", "Stone Oven", "Shield Generator", "Ballista",
 ] as const;
 
 export const PROCESSING_STATION_ICONS: Record<string, string> = {
@@ -357,6 +377,8 @@ export const PROCESSING_STATION_ICONS: Record<string, string> = {
   "Windmill": "windmill",
   "Eitr Refinery": "eitrrefinery",
   "Stone Oven": "piece_oven",
+  "Shield Generator": "piece_shieldgenerator",
+  "Ballista": "piece_turret",
 };
 
 /** Check if a station name is a processing station (factory) */
@@ -385,6 +407,7 @@ export function getProcessingStationItemIds(stationName: string): Set<string> {
   const ps = PROCESSING_STATIONS[stationName];
   if (!ps) return new Set();
   const ids = new Set<string>();
+  if (ps.fuelId) ids.add(ps.fuelId);
   for (const c of ps.conversions) {
     ids.add(c.inputId);
     ids.add(c.outputId);
@@ -772,12 +795,13 @@ export function getFactoryCounts(
   const baseIds = new Set(base.map((i) => i.id));
   const counts: Record<string, number> = {};
   for (const [name, ps] of Object.entries(PROCESSING_STATIONS)) {
-    let count = 0;
+    const seen = new Set<string>();
+    if (ps.fuelId && baseIds.has(ps.fuelId)) seen.add(ps.fuelId);
     for (const c of ps.conversions) {
-      if (baseIds.has(c.inputId)) count++;
-      if (baseIds.has(c.outputId)) count++;
+      if (baseIds.has(c.inputId)) seen.add(c.inputId);
+      if (baseIds.has(c.outputId)) seen.add(c.outputId);
     }
-    counts[name] = count;
+    counts[name] = seen.size;
   }
   return counts;
 }

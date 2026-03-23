@@ -96,6 +96,10 @@ const BLACKLISTED_PREFABS = new Set([
   "StaminaUpgrade_Greydwarf",
   "StaminaUpgrade_Troll",
   "StaminaUpgrade_Wraith",
+
+  // Duplicate structure prefabs (player uses piece_shieldgenerator / piece_turret)
+  "charred_shieldgenerator", // NPC charred variant of Shield Generator
+  "fuling_turret",           // NPC fuling Ballista variant
 ]);
 
 function isCreatureAttack(prefab) {
@@ -699,7 +703,7 @@ const BIOME_OVERRIDE = {
 
   // ─── Multi-biome foraged/dropped materials ───
   "SurtlingCore": ["Black Forest", "Swamp"],
-  "BoneFragments": ["Meadows", "Black Forest", "Swamp"],
+  "BoneFragments": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],
   "Thistle": ["Black Forest", "Swamp"],
   "Acorn": ["Meadows"],
   "SerpentMeat": ["Ocean"],
@@ -1095,6 +1099,9 @@ const WORLD_DROPS = {
     {source: "Bone Pile", biome: "Meadows", type: "Destructible"},
     {source: "Bone Pile", biome: "Black Forest", type: "Destructible"},
     {source: "Bone Pile", biome: "Swamp", type: "Destructible"},
+    {source: "Bone Pile", biome: "Mountain", type: "Destructible"},
+    {source: "Bone Pile", biome: "Plains", type: "Destructible"},
+    {source: "Bone Pile", biome: "Ashlands", type: "Destructible"},
   ],
 };
 
