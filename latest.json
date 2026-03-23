@@ -1,11 +1,11 @@
 {
-  "version": "0.15.1",
-  "notes": "v0.15.1 - Fix 404 handling for empty user registry and index",
-  "pub_date": "2026-03-24T00:23:17Z",
+  "version": "0.15.2",
+  "notes": "v0.15.2 - MegaChat token optimization: prompt caching, reduced history/output",
+  "pub_date": "2026-03-24T08:45:50Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlIVC9KVjM5aWJvRzlsU2g5VEJISk5pckpjLy9oVStFcUxxOHRJL0xIMldoRzd0dFg5bGdnODQxcXpaTGg0MGFXNkJPY2NFY0QyTy9qeHJLdW5LdVFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MjcyMTY3CWZpbGU6TWVnYUxvYWRfMC4xNS4xX3g2NC1zZXR1cC5uc2lzLnppcAptZXdpRmpONGNGZ2QraExVcU9jTUk0WDQydGtXaEt4M2pGQUZQb1A5eXNuRStrcS9jdm1Jalhlb2Facjl4NU1PSS9aQnp5U2NpN1U0eFVTdXBKNWJBdz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.15.1/MegaLoad_0.15.1_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU5MeXpIVzJsQU1NQnNUZ09QNVdhblQxZytLMzlMN3FDQ0RKME9PT1YvNnVlZG05QS9EQzdSbVdFdndJZTg3bWw4RjRxT3REU0dGdDgwOXJGS0lLR1E4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0MzAyMzI4CWZpbGU6TWVnYUxvYWRfMC4xNS4yX3g2NC1zZXR1cC5uc2lzLnppcApNY3F1UTh1M0VMWmN5TFJuWGdCRjRNZWpvb2RNR0o3blREODFkVGJpSGZyZVZmZzd0STlpQ25BTXU3RzI4Z21DY1cvNzkrUWtlUmVJV0s3SlBPWkxCUT09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.15.2/MegaLoad_0.15.2_x64-setup.nsis.zip"
     }
   }
 }

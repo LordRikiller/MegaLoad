@@ -17,7 +17,7 @@ import { useAppUpdateStore } from "./appUpdateStore";
 import { VALHEIM_ITEMS } from "../data/valheim-items";
 import { VENDORS, PROCESSING_STATIONS } from "./valheimDataStore";
 
-const MAX_HISTORY = 20;
+const MAX_HISTORY = 10;
 const DAILY_TOKEN_LIMIT = 200_000;
 
 export interface DisplayMessage {
@@ -46,35 +46,19 @@ interface ChatState {
   loadHistory: () => Promise<void>;
 }
 
-function buildSystemPrompt(): string {
-  const version = useAppUpdateStore.getState().currentVersion;
-  const profile = useProfileStore.getState().activeProfile();
-  const mods = useModStore.getState().mods;
-  const player = usePlayerDataStore.getState();
-
+/**
+ * Build the STATIC system context — Valheim DB, vendors, stations, core instructions.
+ * This gets prompt-cached by Claude (90% cheaper on turns 2+).
+ */
+function buildStaticContext(): string {
   const sections: string[] = [];
 
-  // ── Core identity ──
-  sections.push(`You are MegaChat, the AI assistant built into MegaLoad v${version} — a Valheim mod manager.
+  sections.push(`You are MegaChat, the AI assistant built into MegaLoad — a Valheim mod manager.
 You have FULL access to the Valheim item database and player character data below.
 Answer questions about items, recipes, creatures, biomes, stats, crafting, character progress, and mod configuration.
 Be helpful, concise, and friendly. Use markdown formatting.
 When referencing items, use their exact names. When listing items, use tables or bullet points for readability.
 You CAN and SHOULD look up data from the databases below to answer questions — that is your primary purpose.`);
-
-  // ── Profile & mods ──
-  if (profile) {
-    sections.push(`Active profile: ${profile.name}`);
-  }
-  if (mods.length > 0) {
-    const enabled = mods.filter((m) => m.enabled);
-    sections.push(`Installed mods (${enabled.length} enabled): ${enabled.map((m) => `${m.name || m.file_name}${m.version ? ` v${m.version}` : ""}`).join(", ")}`);
-  }
-
-  // ── Player character data ──
-  if (player.character) {
-    sections.push(buildPlayerContext(player.character));
-  }
 
   // ── Valheim item database (compact) ──
   sections.push(buildValheimDataContext());
@@ -84,6 +68,35 @@ You CAN and SHOULD look up data from the databases below to answer questions —
 
   // ── Processing stations ──
   sections.push(buildProcessingContext());
+
+  return sections.join("\n\n");
+}
+
+/**
+ * Build the DYNAMIC system context — profile, mods, player data.
+ * Changes between sessions, sent fresh each turn (small payload).
+ */
+function buildDynamicContext(): string {
+  const version = useAppUpdateStore.getState().currentVersion;
+  const profile = useProfileStore.getState().activeProfile();
+  const mods = useModStore.getState().mods;
+  const player = usePlayerDataStore.getState();
+
+  const sections: string[] = [];
+
+  sections.push(`MegaLoad version: ${version}`);
+
+  if (profile) {
+    sections.push(`Active profile: ${profile.name}`);
+  }
+  if (mods.length > 0) {
+    const enabled = mods.filter((m) => m.enabled);
+    sections.push(`Installed mods (${enabled.length} enabled): ${enabled.map((m) => `${m.name || m.file_name}${m.version ? ` v${m.version}` : ""}`).join(", ")}`);
+  }
+
+  if (player.character) {
+    sections.push(buildPlayerContext(player.character));
+  }
 
   return sections.join("\n\n");
 }
@@ -148,7 +161,7 @@ function buildPlayerContext(c: import("../lib/tauri-api").CharacterData): string
 function buildValheimDataContext(): string {
   const lines: string[] = [
     `=== VALHEIM ITEM DATABASE (${VALHEIM_ITEMS.length} items) ===`,
-    `Format: Name | ID | Type | SubCat | Biomes | Station(Level) | Recipe | Stats`,
+    `Format: Name | Type | SubCat | Biomes | Station(Level) | Recipe | Stats`,
   ];
 
   for (const item of VALHEIM_ITEMS) {
@@ -163,8 +176,8 @@ function buildValheimDataContext(): string {
       ? item.stats.map((s) => `${s.label}:${s.value}`).join(",")
       : "";
 
-    // Compact single-line format
-    const parts = [item.name, item.id, item.type, item.subcategory, biomes, station, recipe];
+    // Compact single-line format (no internal ID — not useful for chat)
+    const parts = [item.name, item.type, item.subcategory, biomes, station, recipe];
     if (stats) parts.push(stats);
     lines.push(parts.join("|"));
   }
@@ -242,8 +255,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         content: m.content,
       }));
 
-      const systemContext = buildSystemPrompt();
-      const response = await chatSendMessage(apiMessages, systemContext);
+      const systemContext = buildStaticContext();
+      const dynamicContext = buildDynamicContext();
+      const response = await chatSendMessage(apiMessages, systemContext, dynamicContext);
 
       const assistantMsg: DisplayMessage = {
         id: makeId(),

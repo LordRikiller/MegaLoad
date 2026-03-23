@@ -139,10 +139,25 @@ pub struct ChatMessage {
 }
 
 #[derive(Serialize, Debug)]
+struct SystemBlock {
+    #[serde(rename = "type")]
+    content_type: String,
+    text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cache_control: Option<CacheControl>,
+}
+
+#[derive(Serialize, Debug)]
+struct CacheControl {
+    #[serde(rename = "type")]
+    cache_type: String,
+}
+
+#[derive(Serialize, Debug)]
 struct ClaudeRequest {
     model: String,
     max_tokens: u32,
-    system: String,
+    system: Vec<SystemBlock>,
     messages: Vec<ChatMessage>,
 }
 
@@ -163,6 +178,10 @@ struct ClaudeContent {
 struct ClaudeUsage {
     input_tokens: u64,
     output_tokens: u64,
+    #[serde(default)]
+    cache_creation_input_tokens: u64,
+    #[serde(default)]
+    cache_read_input_tokens: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -190,7 +209,8 @@ pub struct ChatResponse {
 #[command]
 pub fn chat_send_message(
     messages: Vec<ChatMessage>,
-    system_context: String,
+    static_context: String,
+    dynamic_context: String,
 ) -> Result<ChatResponse, String> {
     let token = claude_token()?;
     let admin = is_admin();
@@ -228,10 +248,26 @@ pub fn chat_send_message(
 
     let debug = MEGACHAT_DEBUG.load(Ordering::Relaxed);
 
+    // Build system blocks: static (cached) + dynamic
+    let mut system_blocks = vec![SystemBlock {
+        content_type: "text".to_string(),
+        text: static_context.clone(),
+        cache_control: Some(CacheControl {
+            cache_type: "ephemeral".to_string(),
+        }),
+    }];
+    if !dynamic_context.is_empty() {
+        system_blocks.push(SystemBlock {
+            content_type: "text".to_string(),
+            text: dynamic_context.clone(),
+            cache_control: None,
+        });
+    }
+
     let request = ClaudeRequest {
         model: CLAUDE_MODEL.to_string(),
-        max_tokens: 4096,
-        system: system_context.clone(),
+        max_tokens: 2048,
+        system: system_blocks,
         messages: messages.clone(),
     };
 
@@ -239,10 +275,11 @@ pub fn chat_send_message(
 
     if debug {
         app_log(&format!(
-            "MegaChat request: model={}, messages={}, system_len={}",
+            "MegaChat request: model={}, messages={}, static_len={}, dynamic_len={}",
             CLAUDE_MODEL,
             messages.len(),
-            system_context.len()
+            static_context.len(),
+            dynamic_context.len()
         ));
     }
 
@@ -295,8 +332,9 @@ pub fn chat_send_message(
             let _ = save_usage(&usage);
 
             app_log(&format!(
-                "MegaChat: +{}in/{}out tokens (daily total: {})",
-                claude.usage.input_tokens, claude.usage.output_tokens, usage.total_tokens
+                "MegaChat: +{}in/{}out tokens (daily total: {}) [cache: created={}, read={}]",
+                claude.usage.input_tokens, claude.usage.output_tokens, usage.total_tokens,
+                claude.usage.cache_creation_input_tokens, claude.usage.cache_read_input_tokens
             ));
 
             Ok(ChatResponse {

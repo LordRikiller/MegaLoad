@@ -610,8 +610,8 @@ export interface ChatResponse {
   daily_usage: DailyUsage;
 }
 
-export const chatSendMessage = (messages: ChatMessage[], systemContext: string) =>
-  invoke<ChatResponse>("chat_send_message", { messages, systemContext });
+export const chatSendMessage = (messages: ChatMessage[], staticContext: string, dynamicContext: string) =>
+  invoke<ChatResponse>("chat_send_message", { messages, staticContext, dynamicContext });
 
 export const chatGetUsage = () =>
   invoke<DailyUsage>("chat_get_usage");
