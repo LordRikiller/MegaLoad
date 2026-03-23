@@ -3,7 +3,7 @@ import { VALHEIM_ITEMS, type ValheimItem } from "../data/valheim-items";
 
 export type SortOption = "name-asc" | "name-desc" | "tier-asc" | "tier-desc" | "biome-grouped";
 export type ViewMode = "grid" | "table";
-export type TableSortKey = "name" | "type" | "subcategory" | "biome" | "station" | "weight" | "stack";
+export type TableSortKey = "name" | "type" | "subcategory" | "biome" | "from" | "weight" | "stack";
 export type TableSortDir = "asc" | "desc";
 
 // ── Vendor Data ──────────────────────────────────────────────
@@ -121,7 +121,7 @@ export const VENDORS: Record<string, Vendor> = {
       { id: "PungentPebbles", price: 125, currency: "Coins" },
       { id: "LovePotion", price: 110, currency: "Coins" },
       { id: "IvySeeds", price: 65, currency: "Coins" },
-      { id: "ServingTray", price: 140, currency: "Coins" },
+      { id: "Feaster", price: 140, currency: "Coins" },
       { id: "BlobVial", price: 150, currency: "Coins", requirement: "Defeat The Elder" },
       { id: "SpiceForests", price: 120, currency: "Coins", requirement: "Defeat The Elder" },
       { id: "SpiceSea", price: 130, currency: "Coins", requirement: "Kill a Serpent" },
@@ -710,6 +710,36 @@ export function getDroppedBy(itemId: string): ValheimItem[] {
   return VALHEIM_ITEMS.filter((item) =>
     item.drops?.some((d) => d.id === itemId)
   );
+}
+
+// ── Precomputed "dropped by" index for O(1) lookups in table view ──
+const _droppedByIndex = new Map<string, string[]>();
+for (const item of VALHEIM_ITEMS) {
+  for (const drop of item.drops || []) {
+    const arr = _droppedByIndex.get(drop.id);
+    if (arr) arr.push(item.name);
+    else _droppedByIndex.set(drop.id, [item.name]);
+  }
+}
+
+/** Returns a short "From" label for the table column — station, vendor, creature, or source */
+export function getItemSource(item: ValheimItem): string {
+  // Crafting station takes priority for craftable items
+  if (item.station) return item.station;
+  // Processing station (e.g. Smelter, Fermenter)
+  const ps = getProcessingStationForOutput(item.id);
+  if (ps) return ps.station.name;
+  // Vendor
+  const vendor = getVendorForItem(item.id);
+  if (vendor) return vendor.vendor.name;
+  // Creature drops
+  const creatures = _droppedByIndex.get(item.id);
+  if (creatures?.length) return creatures.length <= 2 ? creatures.join(", ") : `${creatures[0]} +${creatures.length - 1}`;
+  // World sources (trees, rocks, chests, pickups)
+  if (item.worldSources?.length) return item.worldSources[0].source + (item.worldSources.length > 1 ? ` +${item.worldSources.length - 1}` : "");
+  // Fallback to source array
+  if (item.source?.length) return item.source.join(", ");
+  return "";
 }
 
 export function getItemById(id: string): ValheimItem | undefined {

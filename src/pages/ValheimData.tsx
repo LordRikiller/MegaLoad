@@ -42,6 +42,7 @@ import {
   Archive,
   Eye,
   EyeOff,
+  Shirt,
 } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { saveTextFile } from "../lib/tauri-api";
@@ -66,6 +67,7 @@ import {
   getStationItems,
   getStationItemsByLevel,
   getProcessingStationForOutput,
+  getItemSource,
   VENDORS,
   VENDOR_LIST,
   BIOME_ORDER,
@@ -168,6 +170,7 @@ const TYPE_ICONS: Record<ItemType, typeof Package> = {
   Material: Gem,
   Weapon: Sword,
   Armor: Shield,
+  Clothing: Shirt,
   Food: Utensils,
   Potion: FlaskConical,
   Tool: Wrench,
@@ -178,7 +181,7 @@ const TYPE_ICONS: Record<ItemType, typeof Package> = {
 };
 
 const TYPE_ORDER: ItemType[] = [
-  "Material", "Weapon", "Armor", "Food", "Potion",
+  "Material", "Weapon", "Armor", "Clothing", "Food", "Potion",
   "Tool", "Ammo", "BuildPiece", "Creature", "Misc",
 ];
 
@@ -186,6 +189,7 @@ const TYPE_GROUP_LABELS: Partial<Record<ItemType, string>> = {
   Material: "Materials",
   Weapon: "Weapons",
   Armor: "Armour",
+  Clothing: "Clothing",
   Food: "Food",
   Potion: "Potions",
   Tool: "Tools",
@@ -387,6 +391,8 @@ export function ValheimData() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sortRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const savedScrollPos = useRef(0);
 
   // Debounced live search
   useEffect(() => {
@@ -408,6 +414,20 @@ export function ValheimData() {
     if (sortOpen || exportOpen) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [sortOpen, exportOpen]);
+
+  // Save scroll position before navigating to detail, restore on back
+  const selectItem = (item: ValheimItem) => {
+    if (scrollContainerRef.current) {
+      savedScrollPos.current = scrollContainerRef.current.scrollTop;
+    }
+    setSelectedItem(item);
+  };
+
+  useEffect(() => {
+    if (!selectedItem && !selectedStation && !selectedFactory && !selectedVendor && scrollContainerRef.current && savedScrollPos.current > 0) {
+      scrollContainerRef.current.scrollTop = savedScrollPos.current;
+    }
+  }, [selectedItem, selectedStation, selectedFactory, selectedVendor]);
 
   const items = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories);
   const typeCounts = getTypeCounts(query, activeBiomes, activeStations);
@@ -835,7 +855,7 @@ export function ValheimData() {
         </div>
 
         {/* Item Grid / Table — grouped by type */}
-        <div className="flex-1 min-w-0 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex-1 min-w-0 overflow-y-auto">
           {/* Active filter chips */}
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-1.5 mb-3">
@@ -912,7 +932,7 @@ export function ValheimData() {
               <p className="text-zinc-500">No items found</p>
             </div>
           ) : viewMode === "table" ? (
-            <ItemTable items={items} tableSortKey={tableSortKey} tableSortDir={tableSortDir} onSort={setTableSort} onSelect={setSelectedItem} />
+            <ItemTable items={items} tableSortKey={tableSortKey} tableSortDir={tableSortDir} onSort={setTableSort} onSelect={selectItem} />
           ) : (
             <div className="space-y-6">
               {groupedItems.map(({ key, label, icon: GIcon, colorClass, items: groupItems }) => (
@@ -935,7 +955,7 @@ export function ValheimData() {
                     {groupItems.map((item) => (
                       <div
                         key={item.id}
-                        onClick={() => setSelectedItem(item)}
+                        onClick={() => selectItem(item)}
                         className="glass rounded-xl p-3.5 border border-zinc-800/50 hover:border-zinc-700/50 cursor-pointer transition-all duration-200 group"
                       >
                         <div className="flex items-start gap-3">
@@ -988,7 +1008,7 @@ const TABLE_COLUMNS: { key: TableSortKey; label: string; className: string }[] =
   { key: "type", label: "Type", className: "w-[90px]" },
   { key: "subcategory", label: "Sub", className: "w-[100px]" },
   { key: "biome", label: "Biome", className: "flex-1 min-w-[120px]" },
-  { key: "station", label: "Station", className: "w-[110px]" },
+  { key: "from", label: "From", className: "w-[130px]" },
   { key: "weight", label: "Wt", className: "w-[50px] text-right" },
   { key: "stack", label: "Stack", className: "w-[50px] text-right" },
 ];
@@ -999,7 +1019,7 @@ function tableSortValue(item: ValheimItem, key: TableSortKey): string | number {
     case "type": return item.type;
     case "subcategory": return item.subcategory;
     case "biome": return item.biomes[0] || "";
-    case "station": return item.station || getProcessingStationForOutput(item.id)?.station.name || "";
+    case "from": return getItemSource(item);
     case "weight": return item.weight;
     case "stack": return item.stack;
   }
@@ -1088,9 +1108,9 @@ function ItemTable({
                 <span key={b} className={cn("text-[10px] font-medium", BIOME_COLORS[b] || "text-zinc-500")}>{b}</span>
               ))}
             </div>
-            {/* Station */}
-            <div className={cn("px-2 text-[11px] text-zinc-500 truncate", TABLE_COLUMNS[4].className)}>
-              {item.station || getProcessingStationForOutput(item.id)?.station.name || "—"}
+            {/* From */}
+            <div className={cn("px-2 text-[11px] text-zinc-500 truncate", TABLE_COLUMNS[4].className)} title={getItemSource(item)}>
+              {getItemSource(item) || "—"}
             </div>
             {/* Weight */}
             <div className={cn("px-2 text-[11px] text-zinc-500 tabular-nums", TABLE_COLUMNS[5].className)}>

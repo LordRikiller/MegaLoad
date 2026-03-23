@@ -90,6 +90,10 @@ const BLACKLISTED_PREFABS = new Set([
   "BonemawSerpentScale", // Bonemaw Scale — not a player-obtainable item
   "TrophyForestTroll",   // Deprecated — replaced by TrophyFrostTroll
 
+  // Debug/test/unused items
+  "CapeTest",           // Cape test item — not available in game
+  "ShieldKnight",       // Knight Shield UNUSED — not available in game
+
   // Boss altar upgrade pickups — not player-usable items
   "HealthUpgrade_Bonemass",
   "HealthUpgrade_GDKing",
@@ -267,6 +271,13 @@ function mapItemType(gameType, prefab, shared) {
   // Special cases
   if (prefab === "FishingRod") return "Tool";
   if ((prefab.startsWith("Feast") && prefab !== "Feaster") || prefab === "MeatPlatter") return "Food";
+
+  // Drinking items — not weapons, decorative/celebratory
+  if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin") return "Misc";
+
+  // Hildir cosmetic clothing + Midsummer Crown — appearance only, no armour stats
+  if (/^ArmorDress\d+$/.test(prefab) || /^ArmorTunic\d+$/.test(prefab) ||
+      /^HelmetHat\d+$/.test(prefab) || prefab === "HelmetMidsummerCrown") return "Clothing";
   
   switch (gameType) {
     case "Material": return "Material";
@@ -305,6 +316,14 @@ function mapSubcategory(gameType, prefab, shared) {
   // Special cases
   if (prefab === "FishingRod") return "Fishing Rod";
   if ((prefab.startsWith("Feast") && prefab !== "Feaster") || prefab === "MeatPlatter") return "Feast";
+
+  // Drinking items — decorative
+  if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin") return "Misc";
+
+  // Hildir cosmetic clothing + Midsummer Crown
+  if (/^ArmorDress\d+$/.test(prefab) || /^ArmorTunic\d+$/.test(prefab)) return "Dress";
+  if (/^HelmetHat\d+$/.test(prefab)) return "Hat";
+  if (prefab === "HelmetMidsummerCrown") return "Crown";
   
   const skill = shared.skillType;
   
@@ -791,8 +810,6 @@ const BIOME_OVERRIDE = {
 
   // ─── Miscellaneous ───
   "HelmetYule": ["Black Forest"],
-  "CapeTest": ["Meadows"],
-  "ShieldKnight": ["Meadows"],
   "Sparkler": ["Meadows"],
 
   // ─── Build pieces ───
@@ -1111,7 +1128,7 @@ const WORLD_DROPS = {
 const CHEST_LOOT = {
   "Meadows Chest": {
     biome: "Meadows",
-    items: ["Coins", "Amber", "AmberPearl", "Feathers", "Flint", "ArrowFlint", "ArrowFire"],
+    items: ["Coins", "Amber", "AmberPearl", "Feathers", "Flint", "ArrowFlint", "ArrowFire", "Torch"],
   },
   "Burial Chamber Chest": {
     biome: "Black Forest",
@@ -1266,9 +1283,17 @@ const FIRE_COOKED_ITEMS = new Set([
 // ── Determine source (how to obtain) ──
 function getSource(prefab, recipe, itemDrops) {
   const sources = [];
+  // DLC-gated items — recipes exist but require Steam DLC ownership
+  if (prefab === "CapeOdin" || prefab === "HelmetOdin" || prefab === "TankardOdin") {
+    return ["DLC (Unobtainable)"];
+  }
   if (VENDOR_ONLY_PREFABS.has(prefab)) {
     sources.push("Vendor");
     return sources;
+  }
+  // Items sold by vendors (may also be craftable)
+  if (prefab === "FishingRod" || prefab === "Sparkler" || prefab === "BarberKit") {
+    sources.push("Vendor");
   }
   if (FIRE_COOKED_ITEMS.has(prefab)) {
     sources.push("Cooking");
@@ -1810,6 +1835,7 @@ export type ItemType =
   | "Material"
   | "Weapon"
   | "Armor"
+  | "Clothing"
   | "Food"
   | "Potion"
   | "Tool"
