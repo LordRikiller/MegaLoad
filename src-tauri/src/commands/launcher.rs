@@ -231,8 +231,12 @@ fn is_process_running(name: &str) -> bool {
 /// Detect whether Steam Cloud sync is active for Valheim.
 /// Uses three signals:
 ///   1. appmanifest_892970.acf StateFlags has active bits (update/sync in progress)
-///   2. remotecache.vdf was modified recently (sync metadata still being written)
-///   3. Remote save files (.fch, .db, .fwl) were modified recently (files still uploading)
+///   2. remotecache.vdf was modified very recently (sync metadata still being written)
+///   3. Remote save files (.fch, .db, .fwl) were modified very recently (files still uploading)
+///
+/// IMPORTANT: remotecache.vdf is written as the FINAL step of sync completion,
+/// so the window must be short enough to not report "syncing" after sync is done.
+/// 15s for remotecache.vdf and 10s for saves balances detection vs false positives.
 fn is_cloud_syncing(valheim_path: &str) -> bool {
     let game_dir = PathBuf::from(valheim_path);
 
@@ -253,6 +257,7 @@ fn is_cloud_syncing(valheim_path: &str) -> bool {
                 //   16384=Validating, 32768=AddingFiles
                 const ACTIVE_BITS: u32 = 64 | 256 | 512 | 1024 | 4096 | 8192 | 16384 | 32768;
                 if flags & ACTIVE_BITS != 0 {
+                    app_log("[cloud-sync] Signal 1: appmanifest StateFlags has active bits");
                     return true;
                 }
             }
@@ -272,9 +277,12 @@ fn is_cloud_syncing(valheim_path: &str) -> bool {
         for entry in entries.flatten() {
             let app_dir = entry.path().join(VALHEIM_APP_ID);
 
-            // Signal 2: remotecache.vdf modified within 45s (previously 12s — way too narrow)
+            // Signal 2: remotecache.vdf modified within 15s
+            // (Steam writes this as the final sync step, so keep the window tight
+            // to avoid false positives after sync completes)
             let cache_path = app_dir.join("remotecache.vdf");
-            if was_modified_within_secs(&cache_path, 45) {
+            if was_modified_within_secs(&cache_path, 15) {
+                app_log("[cloud-sync] Signal 2: remotecache.vdf modified within 15s");
                 return true;
             }
 
@@ -283,7 +291,8 @@ fn is_cloud_syncing(valheim_path: &str) -> bool {
             // Path: userdata/<ID>/892970/remote/
             let remote_dir = app_dir.join("remote");
             if remote_dir.exists() {
-                if has_recently_modified_saves(&remote_dir, 30) {
+                if has_recently_modified_saves(&remote_dir, 10) {
+                    app_log("[cloud-sync] Signal 3: save files modified within 10s");
                     return true;
                 }
             }
