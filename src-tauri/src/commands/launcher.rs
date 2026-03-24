@@ -229,9 +229,10 @@ fn is_process_running(name: &str) -> bool {
 }
 
 /// Detect whether Steam Cloud sync is active for Valheim.
-/// Uses two signals:
+/// Uses three signals:
 ///   1. appmanifest_892970.acf StateFlags has active bits (update/sync in progress)
-///   2. remotecache.vdf was modified very recently (files still uploading)
+///   2. remotecache.vdf was modified recently (sync metadata still being written)
+///   3. Remote save files (.fch, .db, .fwl) were modified recently (files still uploading)
 fn is_cloud_syncing(valheim_path: &str) -> bool {
     let game_dir = PathBuf::from(valheim_path);
 
@@ -258,24 +259,58 @@ fn is_cloud_syncing(valheim_path: &str) -> bool {
         }
     }
 
-    // Signal 2: Check remotecache.vdf modification time in Steam userdata
-    // Path: <Steam root>/userdata/<SteamID>/892970/remotecache.vdf
     let steam_root = match steamapps.parent() {
         Some(p) => p,
         None => return false,
     };
     let userdata = steam_root.join("userdata");
-    if userdata.exists() {
-        if let Ok(entries) = fs::read_dir(&userdata) {
-            for entry in entries.flatten() {
-                let cache_path = entry.path().join(VALHEIM_APP_ID).join("remotecache.vdf");
-                if was_modified_within_secs(&cache_path, 12) {
+    if !userdata.exists() {
+        return false;
+    }
+
+    if let Ok(entries) = fs::read_dir(&userdata) {
+        for entry in entries.flatten() {
+            let app_dir = entry.path().join(VALHEIM_APP_ID);
+
+            // Signal 2: remotecache.vdf modified within 45s (previously 12s — way too narrow)
+            let cache_path = app_dir.join("remotecache.vdf");
+            if was_modified_within_secs(&cache_path, 45) {
+                return true;
+            }
+
+            // Signal 3: Check actual remote save files — if character/world files
+            // were recently modified, Steam is still writing them during sync.
+            // Path: userdata/<ID>/892970/remote/
+            let remote_dir = app_dir.join("remote");
+            if remote_dir.exists() {
+                if has_recently_modified_saves(&remote_dir, 30) {
                     return true;
                 }
             }
         }
     }
 
+    false
+}
+
+/// Recursively check if any save files (.fch, .db, .fwl) under a directory
+/// were modified within the last N seconds.
+fn has_recently_modified_saves(dir: &Path, secs: u64) -> bool {
+    let save_extensions = ["fch", "db", "fwl"];
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                if has_recently_modified_saves(&path, secs) {
+                    return true;
+                }
+            } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                if save_extensions.contains(&ext) && was_modified_within_secs(&path, secs) {
+                    return true;
+                }
+            }
+        }
+    }
     false
 }
 

@@ -146,13 +146,23 @@ export function Sidebar() {
         if (!steamUp) throw "Steam failed to start within 30 seconds.";
       }
 
-      // Step 2: Wait for cloud sync to finish (poll every 2s, up to 60s)
+      // Step 2: Wait for cloud sync to finish (poll every 2s, up to 90s)
       setLaunchPhase("Waiting for Cloud Sync...");
-      for (let i = 0; i < 30; i++) {
+      let syncCleared = false;
+      for (let i = 0; i < 45; i++) {
         const s = await checkGameStatus(valheimPath);
         setGameStatus(s);
-        if (!s.cloud_syncing) break;
+        if (!s.cloud_syncing) { syncCleared = true; break; }
         await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      // Hard gate: refuse to launch if cloud sync is still active
+      if (!syncCleared) {
+        const finalCheck = await checkGameStatus(valheimPath);
+        setGameStatus(finalCheck);
+        if (finalCheck.cloud_syncing) {
+          throw "Steam Cloud sync is still in progress. Wait for it to finish and try again — launching now could cause save conflicts.";
+        }
       }
 
       // Step 3: Launch
