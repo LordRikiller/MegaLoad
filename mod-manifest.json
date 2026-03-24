@@ -4,8 +4,8 @@
   "mods": [
     {
       "name": "MegaHoe",
-      "version": "4.0.2",
-      "download_url": "https://github.com/ccmrik/MegaHoe/releases/download/v4.0.2/MegaHoe.dll",
+      "version": "4.6.3",
+      "download_url": "https://github.com/ccmrik/MegaHoe/releases/download/v4.6.3/MegaHoe.dll",
       "dll_name": "MegaHoe.dll",
       "plugin_folder": "MegaHoe",
       "description": "Hoe tool overhaul with biome painter, extended terrain editing, and configurable radius"
@@ -16,7 +16,7 @@
       "download_url": "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.7.0/MegaMegingjord.dll",
       "dll_name": "MegaMegingjord.dll",
       "plugin_folder": "MegaMegingjord",
-      "description": "Megingjord belt powers — carry weight, headlamp, swamp key, sealbreaker, wishbone, seafloor walk"
+      "description": "Megingjord belt powers Ã¢â‚¬â€ carry weight, headlamp, swamp key, sealbreaker, wishbone, seafloor walk"
     },
     {
       "name": "MegaFood",
@@ -24,7 +24,7 @@
       "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.3.0/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
-      "description": "MegaFood + MegaMead — 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration"
+      "description": "MegaFood + MegaMead Ã¢â‚¬â€ 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration"
     },
     {
       "name": "MegaShot",
@@ -32,7 +32,7 @@
       "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.3.3/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
-      "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system"
+      "description": "Crossbow & firearms overhaul Ã¢â‚¬â€ scope/zoom, AOE, DoT, fire rate, magazine/reload system"
     },
     {
       "name": "MegaQoL",
@@ -40,7 +40,7 @@
       "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.8.8/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, pet feeder, craft from containers, map teleport, mass farming"
+      "description": "Quality of life Ã¢â‚¬â€ auto repair, refueller, pet feeder, craft from containers, map teleport, mass farming"
     },
     {
       "name": "MegaFishing",
@@ -52,8 +52,8 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.1.12",
-      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.1.12/MegaFactory.dll",
+      "version": "1.1.13",
+      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.1.13/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
       "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with work order system"
@@ -64,7 +64,13 @@
       "download_url": "https://github.com/ccmrik/MegaTrainer/releases/download/v1.5.6/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
-      "description": "In-game cheat trainer — god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
-    }
+      "description": "In-game cheat trainer Ã¢â‚¬â€ god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"    },
+    {
+      "name": "MegaBuilder",
+      "version": "1.0.0",
+      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.0.0/MegaBuilder.dll",
+      "dll_name": "MegaBuilder.dll",
+      "plugin_folder": "MegaBuilder",
+      "description": "Grid alignment for building placement â€” snap pieces to configurable grid sizes (0.5, 1, 2, 4)"    }
   ]
 }

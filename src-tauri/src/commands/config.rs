@@ -147,13 +147,25 @@ fn parse_config_file(path: &Path) -> Result<ConfigFile, String> {
         .to_string_lossy()
         .to_string();
 
-    // Derive mod name from filename (e.g., "com.author.modname.cfg" -> "modname")
-    let mod_name = file_name
-        .trim_end_matches(".cfg")
-        .rsplit('.')
-        .next()
-        .unwrap_or(&file_name)
-        .to_string();
+    // Try to extract display name from BepInEx header comment
+    // Format: "## Settings file was created by plugin <Name> v<Version>"
+    let mod_name = content
+        .lines()
+        .find(|l| l.starts_with("## Settings file was created by plugin "))
+        .and_then(|l| {
+            let after = l.strip_prefix("## Settings file was created by plugin ")?;
+            // Strip trailing version (e.g., " v1.2.3")
+            after.rfind(" v").map(|i| after[..i].trim().to_string())
+        })
+        .unwrap_or_else(|| {
+            // Fallback: derive from filename (e.g., "com.author.modname.cfg" -> "modname")
+            file_name
+                .trim_end_matches(".cfg")
+                .rsplit('.')
+                .next()
+                .unwrap_or(&file_name)
+                .to_string()
+        });
 
     let mut sections: Vec<ConfigSection> = Vec::new();
     let mut current_section: Option<String> = None;
