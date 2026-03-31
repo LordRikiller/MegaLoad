@@ -212,6 +212,8 @@ export const autoUpdateMods = (bepinexPath: string, force = false) =>
   invoke<UpdateCheckResult>("auto_update_mods", { bepinexPath, force });
 export const setModVersion = (bepinexPath: string, modName: string, version: string) =>
   invoke<void>("set_mod_version", { bepinexPath, modName, version });
+export const deployBundledPlugins = (bepinexPath: string) =>
+  invoke<number>("deploy_bundled_plugins", { bepinexPath });
 
 // --- App logging commands ---
 

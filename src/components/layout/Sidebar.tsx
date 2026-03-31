@@ -31,7 +31,7 @@ import { useToastStore } from "../../stores/toastStore";
 import { usePlayerDataStore } from "../../stores/playerDataStore";
 import { useBugStore } from "../../stores/bugStore";
 import { useIdentityStore } from "../../stores/identityStore";
-import { detectValheimPath, launchValheim, checkGameStatus, startSteam } from "../../lib/tauri-api";
+import { detectValheimPath, launchValheim, checkGameStatus, startSteam, deployBundledPlugins } from "../../lib/tauri-api";
 import type { GameStatus } from "../../lib/tauri-api";
 
 const navItems = [
@@ -92,6 +92,8 @@ export function Sidebar() {
     // Profile switch — always auto-update unless game is running
     if (bep !== lastCheckedProfile.current) {
       lastCheckedProfile.current = bep;
+      // Deploy bundled internal plugins (MegaBugs, MegaDataExtractor)
+      deployBundledPlugins(bep).catch(() => {});
       if (gameStatus?.valheim_running) {
         checkUpdates(bep);
       } else {

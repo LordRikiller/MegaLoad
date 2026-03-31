@@ -6,6 +6,7 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::command;
+use tauri::{AppHandle, Manager};
 
 /// URL to the single manifest file — ONE request to check ALL mods.
 /// Hosted as a release asset on the MegaLoad repo.
@@ -31,6 +32,8 @@ struct ManifestMod {
     dll_name: String,
     plugin_folder: String,
     description: Option<String>,
+    #[serde(default)]
+    hidden: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -343,6 +346,7 @@ pub fn get_starter_mods() -> Result<Vec<StarterMod>, String> {
     Ok(manifest
         .mods
         .into_iter()
+        .filter(|m| !m.hidden)
         .map(|m| StarterMod {
             name: m.name,
             version: m.version,
@@ -479,4 +483,51 @@ pub fn set_mod_version(bepinex_path: String, mod_name: String, version: String) 
     versions.insert(mod_name, version);
     save_installed_versions(&bepinex_path, &versions);
     Ok(())
+}
+
+// ── Bundled internal plugins ───────────────────────────────
+
+/// Internal plugins bundled as Tauri resources. These are deployed to BepInEx/plugins
+/// on every profile activation, always overwriting with the bundled version since
+/// MegaLoad is their sole distribution channel.
+const BUNDLED_PLUGINS: &[(&str, &str)] = &[
+    ("MegaBugs", "MegaBugs.dll"),
+    ("MegaDataExtractor", "MegaDataExtractor.dll"),
+];
+
+/// Deploy all bundled internal plugins to the active profile's BepInEx/plugins folder.
+/// Always overwrites existing DLLs since these only update through MegaLoad builds.
+#[command]
+pub fn deploy_bundled_plugins(app: AppHandle, bepinex_path: String) -> Result<u32, String> {
+    let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
+    let mut deployed = 0u32;
+
+    for &(folder, dll) in BUNDLED_PLUGINS {
+        let dest_dir = plugins_dir.join(folder);
+        let dest_dll = dest_dir.join(dll);
+
+        let resource = app
+            .path()
+            .resolve(dll, tauri::path::BaseDirectory::Resource);
+        let source: PathBuf = match resource {
+            Ok(p) if p.exists() => p,
+            _ => {
+                app_log(&format!("{} bundled resource not found (dev mode?) — skipping", dll));
+                continue;
+            }
+        };
+
+        let _ = fs::create_dir_all(&dest_dir);
+        match fs::copy(&source, &dest_dll) {
+            Ok(_) => {
+                app_log(&format!("Deployed bundled {} to {}", dll, dest_dll.display()));
+                deployed += 1;
+            }
+            Err(e) => {
+                app_log(&format!("Failed to deploy {}: {}", dll, e));
+            }
+        }
+    }
+
+    Ok(deployed)
 }
