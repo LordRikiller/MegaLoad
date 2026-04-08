@@ -75,7 +75,7 @@ export function useLiveUpdateChecks() {
     if (available > 0 && available !== prevModUpdateCount.current) {
       const names = modResult.mods
         .filter((m) => m.status === "update-available")
-        .map((m) => m.name)
+        .map((m) => m.latest_version ? `${m.name} v${m.latest_version}` : m.name)
         .join(", ");
 
       addToast({

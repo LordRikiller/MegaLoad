@@ -63,7 +63,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       const result = await autoUpdateMods(bepinexPath, force);
       const newlyUpdated = result.mods
         .filter((m) => m.status === "updated")
-        .map((m) => m.name);
+        .map((m) => m.latest_version ? `${m.name} v${m.latest_version}` : m.name);
       set({
         updateResult: result,
         checking: false,

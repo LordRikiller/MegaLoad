@@ -683,7 +683,7 @@ const BIOME_OVERRIDE = {
   "Amber": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
   "AmberPearl": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
   "Ruby": ["Black Forest", "Swamp", "Mountain", "Plains", "Mistlands"],
-  "SilverNecklace": ["Swamp", "Mountain"],
+  "SilverNecklace": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
   "Coins": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Mistlands", "Ashlands"],
 
   // ─── Vendor-only items (biome = vendor location) ───
@@ -747,16 +747,17 @@ const BIOME_OVERRIDE = {
   // ─── Multi-biome tree/rock/forage materials ───
   "Wood": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
   "FineWood": ["Meadows", "Plains"],
-  "RoundLog": ["Black Forest", "Mountain"],
+  "RoundLog": ["Meadows", "Black Forest", "Mountain", "Plains"],
   "Stone": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],
+  "DeerHide": ["Meadows", "Black Forest", "Plains"],
   "Flint": ["Meadows", "Black Forest"],
   "Resin": ["Meadows", "Black Forest"],
   "Mushroom": ["Meadows", "Black Forest"],
-  "Feathers": ["Meadows", "Black Forest", "Mountain", "Plains"],
+  "Feathers": ["Meadows", "Black Forest", "Mountain", "Plains", "Ashlands"],
   "Coal": ["Meadows", "Black Forest", "Swamp"],
   "LeatherScraps": ["Meadows", "Black Forest"],
   "BirchSeeds": ["Meadows", "Plains"],
-  "PineCone": ["Black Forest", "Mountain"],
+  "PineCone": ["Black Forest"],
   "IronScrap": ["Swamp", "Mountain"],
 
   // ─── Swamp materials ───
@@ -867,6 +868,8 @@ const WORLD_DROPS = {
   "RoundLog": [
     {source: "Pine Tree", biome: "Black Forest", type: "Tree"},
     {source: "Pine Tree", biome: "Mountain", type: "Tree"},
+    {source: "Destroyed Structure", biome: "Meadows", type: "Destructible"},
+    {source: "Destroyed Structure", biome: "Plains", type: "Destructible"},
   ],
   "ElderBark": [
     {source: "Ancient Tree", biome: "Swamp", type: "Tree"},
@@ -891,7 +894,6 @@ const WORLD_DROPS = {
   ],
   "PineCone": [
     {source: "Pine Tree", biome: "Black Forest", type: "Tree"},
-    {source: "Pine Tree", biome: "Mountain", type: "Tree"},
   ],
   "FirCone": [
     {source: "Fir Tree", biome: "Black Forest", type: "Tree"},
@@ -1106,6 +1108,7 @@ const WORLD_DROPS = {
     {source: "Birds", biome: "Black Forest", type: "Destructible"},
     {source: "Birds", biome: "Mountain", type: "Destructible"},
     {source: "Birds", biome: "Plains", type: "Destructible"},
+    {source: "Birds", biome: "Ashlands", type: "Destructible"},
   ],
   "Honey": [
     {source: "Beehive", biome: "Meadows", type: "Destructible"},
@@ -1127,6 +1130,9 @@ const WORLD_DROPS = {
   "SurtlingCore": [
     {source: "Burial Chamber Pylon", biome: "Black Forest", type: "Destructible"},
     {source: "Fire Geyser", biome: "Swamp", type: "Destructible"},
+  ],
+  "DeerHide": [
+    {source: "Destroyed Structure", biome: "Plains", type: "Destructible"},
   ],
   "BoneFragments": [
     {source: "Bone Pile", biome: "Meadows", type: "Destructible"},
@@ -1228,7 +1234,7 @@ const SPAWNER_DEFS = {
   },
   "Body Pile": {
     prefabId: "Spawner_DraugrPile",
-    biomes: ["Swamp", "Mountain"],
+    biomes: ["Meadows", "Swamp", "Mountain"],
     health: 100,
     wikiUrl: "https://valheim.fandom.com/wiki/Body_pile",
     creatures: [
@@ -1699,7 +1705,9 @@ for (const cd of creatureDrops) {
       max: d.max,
     }));
   
-  const biome = guessCreatureBiome(cd.creature);
+  const creatureBiomes = BIOME_OVERRIDE[cd.creature] || [];
+  const biome = creatureBiomes.length > 0 ? creatureBiomes[0] : guessCreatureBiome(cd.creature);
+  const biomeList = creatureBiomes.length > 0 ? creatureBiomes : (biome ? [biome] : []);
   
   const entry = {
     id: cd.creature,
@@ -1708,8 +1716,8 @@ for (const cd of creatureDrops) {
     type: "Creature",
     subcategory: cd.health >= 5000 ? "Boss" : "Creature",
     description: "",
-    biomes: biome ? [biome] : [],
-    source: [biome || "World"],
+    biomes: biomeList,
+    source: biomeList.length > 0 ? [...biomeList] : ["World"],
     station: "",
     stationLevel: 0,
     maxQuality: 1,
@@ -1720,7 +1728,13 @@ for (const cd of creatureDrops) {
     upgradeCosts: [],
     drops: drops,
     worldSources: [],
-    stats: [{ label: "Health", value: `${cd.health}` }],
+    stats: cd.health >= 5000
+      ? [{ label: "Health", value: `${cd.health}` }]
+      : [
+          { label: "Health", value: `${cd.health}` },
+          { label: "Health (1\u2605)", value: `${cd.health * 2}` },
+          { label: "Health (2\u2605)", value: `${cd.health * 3}` },
+        ],
     wikiUrl: WIKI_MAP[cd.creature] ? WIKI_MAP[cd.creature][0] : "",
     wikiGroup: WIKI_MAP[cd.creature] && WIKI_MAP[cd.creature][1] ? WIKI_MAP[cd.creature][1] : "",
   };

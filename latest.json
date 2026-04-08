@@ -1,11 +1,11 @@
 {
-  "version": "0.16.2",
-  "notes": "v0.16.2 - Fix Thunderstore UA drift, update mod-manifest",
-  "pub_date": "2026-03-30T03:34:16Z",
+  "version": "0.16.4",
+  "notes": "v0.16.4 - Hide MegaChat when Claude API key not present",
+  "pub_date": "2026-04-08T19:39:05Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU5wZVdOMThoZmFGMFZ4dlNJRlpHTWVSV2tmRkVRYWppQWZJTkExU2ltam1KMDc4cVI5NTI2dHBVcUNyd2R5UXhhckJmS2RyVEJIRTUySmIreEtLaGdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0ODQxNjM4CWZpbGU6TWVnYUxvYWRfMC4xNi4yX3g2NC1zZXR1cC5uc2lzLnppcApSZ1pSd1NBZXl0QmpGRFkzVUVzWkkrV0pZOEtHeHZtTm8vUGJ3bm9QdWpmNVVHWmRXZXN5YWhmNkNsdlIyMDQ3empsc29xL1p6QVAveTZqWlh2cDVEZz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.16.2/MegaLoad_0.16.2_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUVHUXBFZ29jS0ZRQmo2RzI0Yjl6OVAzTVVGZTY4TkRUOTBqMGY3UHVpN1g0WHZVSEdZR0lzenVJY2dFVkRBQkRkWk5DSGx1TU4xUjNkMGpnaUdKMndRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1NjQxMTI2CWZpbGU6TWVnYUxvYWRfMC4xNi40X3g2NC1zZXR1cC5uc2lzLnppcApmUDZGNTB5MU5qUFNKYStTazNPNERWditIaENFWWVUVjdHSDZ4SHFKUWpCSThvOE1lQWdLYTVhNHpIZzA0dFl1M1Bla0JiQUJmci91Y0pwZ1RHaHhCZz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v0.16.4/MegaLoad_0.16.4_x64-setup.nsis.zip"
     }
   }
 }
