@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useNavigate } from "react-router-dom";
@@ -21,12 +20,9 @@ import {
   Trophy,
   Package,
   Utensils,
-  Target,
   Loader2,
   AlertCircle,
   Sparkles,
-  TreePine,
-  Crosshair,
   Cloud,
   CloudDownload,
 } from "lucide-react";
@@ -436,7 +432,6 @@ export function PlayerData() {
             {/* LEFT: Equipment Paper Doll */}
             <div className="col-span-3 space-y-3">
               <EquipmentPanel
-                equippedItems={equippedItems}
                 getEquippedForSlot={getEquippedForSlot}
                 character={character}
                 onItemClick={goToItem}
@@ -734,12 +729,10 @@ function StatCard({
 
 // ── Equipment Panel ────────────────────────────────────────
 function EquipmentPanel({
-  equippedItems,
   getEquippedForSlot,
   character,
   onItemClick,
 }: {
-  equippedItems: InventoryItem[];
   getEquippedForSlot: (slot: typeof EQUIP_SLOTS[number]) => InventoryItem | undefined;
   character: any;
   onItemClick: (prefabId: string) => void;
@@ -823,7 +816,7 @@ function EquipmentPanel({
 
 // ── Vital Bar ──────────────────────────────────────────────
 function VitalBar({
-  label,
+  label: _label,
   current,
   max,
   color,

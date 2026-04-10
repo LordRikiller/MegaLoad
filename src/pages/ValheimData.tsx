@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -78,11 +77,8 @@ import {
   PROCESSING_STATION_LIST,
   PROCESSING_STATION_ICONS,
   getStationUpgrades,
-  getCartMaterials,
   getSubcategoryCounts,
   type SortOption,
-  type CartEntry,
-  type ViewMode,
   type TableSortKey,
 } from "../stores/valheimDataStore";
 import { VALHEIM_ITEMS, type ValheimItem, type ItemType, itemMap, tokenMap } from "../data/valheim-items";
@@ -378,13 +374,12 @@ export function ValheimData() {
   const {
     query, activeTypes, activeBiomes, activeStations, activeFactories, activeVendors, sortBy,
     selectedItem, selectedStation, selectedFactory, selectedVendor,
-    cartItems, cartOpen, activeSubcategories,
+    cartItems, activeSubcategories,
     viewMode, tableSortKey, tableSortDir,
     setQuery, setActiveType, setActiveSubcategory, setActiveBiome,
     setActiveStation, setActiveFactory, setActiveVendor, setSortBy, setSelectedItem,
     setSelectedStation, setSelectedFactory, setSelectedVendor,
     setViewMode, setTableSort,
-    addToCart, removeFromCart, updateCartLevel, clearCart, setCartOpen,
     toggleType, toggleSubcategory, toggleBiome, toggleStation, toggleFactory, toggleVendor,
   } = useValheimDataStore();
 
@@ -1133,7 +1128,7 @@ function ItemTable({
 // ── Detail View ────────────────────────────────────────────
 
 function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void }) {
-  const { setSelectedItem, setActiveType, setActiveSubcategory, setActiveBiome, setActiveStation, setSelectedStation, setSelectedFactory, setSelectedVendor, cartItems, addToCart, removeFromCart } = useValheimDataStore();
+  const { setSelectedItem, setActiveType, setActiveSubcategory, setActiveBiome, setSelectedStation, setSelectedFactory, setSelectedVendor, cartItems, addToCart, removeFromCart } = useValheimDataStore();
   const character = usePlayerDataStore((s) => s.character);
   const [statsLevel, setStatsLevel] = useState(1);
   const [cartLevel, setCartLevel] = useState(item.maxQuality || 1);
@@ -2249,121 +2244,6 @@ function VendorDetailView({ vendorName, onBack }: { vendorName: string; onBack: 
 
 // ── Cart Panel ─────────────────────────────────────────────
 
-function CartPanel({
-  cartItems,
-  onNavigate,
-  onRemove,
-  onUpdateLevel,
-  onClear,
-}: {
-  cartItems: CartEntry[];
-  onNavigate: (id: string) => void;
-  onRemove: (id: string) => void;
-  onUpdateLevel: (id: string, level: number) => void;
-  onClear: () => void;
-}) {
-  const materials = useMemo(() => getCartMaterials(cartItems), [cartItems]);
-
-  if (cartItems.length === 0) {
-    return (
-      <div className="glass rounded-xl p-5 border border-zinc-800/50 mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
-        <div className="text-center py-4">
-          <ShoppingCart className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-          <p className="text-xs text-zinc-500">Your cart is empty</p>
-          <p className="text-[10px] text-zinc-600 mt-1">Add craftable items from their detail page</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="glass rounded-xl border border-zinc-800/50 mb-4 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
-      {/* Cart header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800/50">
-        <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-          <ShoppingCart className="w-4 h-4 text-brand-400" />
-          Shopping Cart ({cartItems.length})
-        </h2>
-        <button
-          onClick={onClear}
-          className="text-[10px] text-red-400/70 hover:text-red-400 transition-colors"
-        >
-          Clear all
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 divide-x divide-zinc-800/50">
-        {/* Cart items */}
-        <div className="p-4 space-y-1 max-h-64 overflow-y-auto">
-          {cartItems.map((entry) => {
-            const item = getItemById(entry.id);
-            if (!item) return null;
-            return (
-              <div key={entry.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-800/30 transition-colors group">
-                <button
-                  onClick={() => onNavigate(entry.id)}
-                  className="w-6 h-6 shrink-0 flex items-center justify-center"
-                >
-                  <ItemIcon id={entry.id} type={item.type} size={24} />
-                </button>
-                <button
-                  onClick={() => onNavigate(entry.id)}
-                  className="text-xs text-brand-400 hover:underline truncate flex-1 text-left"
-                >
-                  {item.name}
-                </button>
-                {item.maxQuality > 1 && (
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <button
-                      onClick={() => onUpdateLevel(entry.id, Math.max(1, entry.targetLevel - 1))}
-                      className="w-4 h-4 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                      <Minus className="w-2.5 h-2.5" />
-                    </button>
-                    <span className="text-[10px] font-mono text-zinc-400 w-7 text-center">Lv{entry.targetLevel}</span>
-                    <button
-                      onClick={() => onUpdateLevel(entry.id, Math.min(item.maxQuality, entry.targetLevel + 1))}
-                      className="w-4 h-4 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                      <Plus className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
-                )}
-                <button
-                  onClick={() => onRemove(entry.id)}
-                  className="w-4 h-4 shrink-0 flex items-center justify-center text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Total materials */}
-        <div className="p-4 max-h-64 overflow-y-auto">
-          <h3 className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-2">Total Materials</h3>
-          <div className="space-y-0.5">
-            {materials.map((mat) => (
-              <button
-                key={mat.id}
-                onClick={() => onNavigate(mat.id)}
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-zinc-800/50 transition-colors text-left"
-              >
-                <div className="w-5 h-5 shrink-0 flex items-center justify-center">
-                  <ItemIcon id={mat.id} size={20} />
-                </div>
-                <span className="text-[11px] text-brand-400 hover:underline flex-1 truncate">{mat.name}</span>
-                <span className="text-[11px] text-zinc-400 font-mono">x{mat.amount}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Export Helpers ──────────────────────────────────────────
 
 function exportItem(item: ValheimItem) {
@@ -2421,7 +2301,7 @@ function exportTxt(items: ValheimItem[]): string {
     if (item.type !== currentType) {
       currentType = item.type;
       lines.push("");
-      lines.push(`── ${TYPE_GROUP_LABELS[currentType] || `${currentType}s`} ──`);
+      lines.push(`── ${TYPE_GROUP_LABELS[currentType as ItemType] || `${currentType}s`} ──`);
       lines.push("");
     }
     lines.push(`${item.name} (${item.id})`);

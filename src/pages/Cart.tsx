@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,9 +14,8 @@ import {
   getItemById,
   getCartMaterials,
   BIOME_ORDER,
-  type CartEntry,
 } from "../stores/valheimDataStore";
-import type { ValheimItem, ItemType } from "../data/valheim-items";
+import type { ValheimItem } from "../data/valheim-items";
 
 // ── Biome styling (mirrors ValheimData) ──
 
@@ -49,7 +47,7 @@ const BIOME_BG_COLORS: Record<string, string> = {
 
 function getMinBiome(item: ValheimItem): string | null {
   if (!item.biomes || item.biomes.length === 0) return null;
-  let minIdx = BIOME_ORDER.length;
+  let minIdx: number = BIOME_ORDER.length;
   let minBiome: string | null = null;
   for (const b of item.biomes) {
     const idx = (BIOME_ORDER as readonly string[]).indexOf(b);
@@ -61,20 +59,7 @@ function getMinBiome(item: ValheimItem): string | null {
   return minBiome;
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  Weapon: "⚔️",
-  Armor: "🛡️",
-  Food: "🍖",
-  Potion: "🧪",
-  Material: "💎",
-  Tool: "🔧",
-  Ammo: "🎯",
-  BuildPiece: "🏗️",
-  WorldObject: "🗺️",
-  Misc: "📦",
-};
-
-function ItemIcon({ id, type, size = 36 }: { id: string; type?: ItemType; size?: number }) {
+function ItemIcon({ id, size = 36 }: { id: string; size?: number }) {
   const iconPath = `/icons/${id}.png`;
   return (
     <img
@@ -205,7 +190,7 @@ export function Cart() {
                         onClick={() => navigateToItem(entry.id)}
                         className="w-8 h-8 shrink-0 flex items-center justify-center"
                       >
-                        <ItemIcon id={entry.id} type={item.type} size={32} />
+                        <ItemIcon id={entry.id} size={32} />
                       </button>
                       <div className="flex-1 min-w-0">
                         <button

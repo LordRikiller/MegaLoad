@@ -46,6 +46,7 @@ export type ItemType =
   | "Ammo"
   | "BuildPiece"
   | "Creature"
+  | "WorldObject"
   | "Misc";
 
 export interface ValheimItem {

@@ -1,11 +1,11 @@
 {
-  "version": "1.4.1",
-  "notes": "v1.4.1 - Maintenance: fix UA drift, path validation, silent catches, deprecate MegaBugs DLL",
-  "pub_date": "2026-04-11T12:00:00.000Z",
+  "version": "1.4.2",
+  "notes": "v1.4.2 - Re-enable TypeScript checking on Cart, PlayerData, ValheimData pages",
+  "pub_date": "2026-04-11T14:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUYxR085OHY0bXN4QnJYSE1tSVBuVkFoYUE5QnFVNHZEeHE3TzA1OHdLTWg2aXVvRXZ3RG85YkRNVXNHVjZpMWcyNjhiUkFaRFQyT3c1dUZHMkpnQndzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODYwODM3CWZpbGU6TWVnYUxvYWRfMS40LjFfeDY0LXNldHVwLm5zaXMuemlwCjZSN0N0YVU2cThITEtlTmxtOXRaN2o5d1Bka0lpRDV3Q0ljWFNZSFUra0pnTkh0eEx5Ry9zNjFrbDM4MkJ5eS9tL1lkdm5KM0NFUVZ2T1J4aTJieEJRPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.4.1/MegaLoad_1.4.1_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlsWVVxNmFwdWJackJxbWpUV0J5dElzSDBXeDQrTTZwZkhXdDl2TWlmT2FlVjNGaTFmNWp4cFZrY0hqTlp3MzA1QTdXbFltTThHQzZuNjFHV2JNdUFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODYyMzc2CWZpbGU6TWVnYUxvYWRfMS40LjJfeDY0LXNldHVwLm5zaXMuemlwClp1dWxjaUlvZGFYbGJ2YjUydmIvYy82S3F0TUwxcHpNZS9JaWI3ajlxRm5rU3lUQ0RhRUdvM2Z5RnUza2dWb0tsVVNGRld4UXREZFNLNEhHbWlodkFRPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.4.2/MegaLoad_1.4.2_x64-setup.nsis.zip"
     }
   }
 }
