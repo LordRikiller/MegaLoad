@@ -1,11 +1,11 @@
 {
-  "version": "1.3.2",
-  "notes": "v1.3.2 - Fix missing GitHub token in release builds",
-  "pub_date": "2026-04-10T13:00:00.000Z",
+  "version": "1.3.3",
+  "notes": "v1.3.3 - MegaBugs is now core, no longer requires plugin DLL",
+  "pub_date": "2026-04-10T13:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUxrZG9IUE9rdG9HbE5UMjNQQzhKbUl6S1J2ZWgzSTBTTW52YUxwYWZvYzFtQTI3MzZmZlJ4WjBHc2VGVVMzTWtKQ3F3TGo3SHhGU3cxWG5pTXRmcWdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODIzMjAxCWZpbGU6TWVnYUxvYWRfMS4zLjJfeDY0LXNldHVwLm5zaXMuemlwCm9nVlRKM05Sa1I5RUprTTBKbmQ5SkdjcElIZkRaSGx1MExOMncwdzduY1JUS2RxL0pzNkF2SU5UMEtaamtkMzdDRlNLdklSb0pmZTAxS2RmVGxCL0J3PT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.3.2/MegaLoad_1.3.2_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUppWVk5ZHVSaVJoNkhTYW1YVGZEb05iekd6NU9RS1pTVDhoVjR6ZThPL1lsY3lDNXdqN2xtQTNkTGtyM0RYZDRQeDNydFdialE1RjBFVXJQZHl6R3dvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODI0MTU4CWZpbGU6TWVnYUxvYWRfMS4zLjNfeDY0LXNldHVwLm5zaXMuemlwCkg3RHZyMFA5ZzdFY3dKVDY2cUdmZzJydTM3c3YxRnpITTJ4N1l3alpSTHBRTTNiMUtTc0tocUJZVTAzNG42eEF6U2R2bDdQOFNpc0E1VEVEUXQ0dURnPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.3.3/MegaLoad_1.3.3_x64-setup.nsis.zip"
     }
   }
 }

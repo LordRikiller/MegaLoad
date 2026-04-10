@@ -29,7 +29,6 @@ import { useProfileStore } from "../../stores/profileStore";
 import { useUpdateStore } from "../../stores/updateStore";
 import { useToastStore } from "../../stores/toastStore";
 import { usePlayerDataStore } from "../../stores/playerDataStore";
-import { useBugStore } from "../../stores/bugStore";
 import { useIdentityStore } from "../../stores/identityStore";
 import { useSyncStore } from "../../stores/syncStore";
 import { useChatStore } from "../../stores/chatStore";
@@ -52,8 +51,6 @@ const navItems = [
 export function Sidebar() {
   const { activeProfile } = useProfileStore();
   const profile = activeProfile();
-  const bugAccess = useBugStore((s) => s.access);
-  const checkBugAccess = useBugStore((s) => s.checkAccess);
   const isAdmin = useIdentityStore((s) => s.isAdmin);
   const chatAvailable = useChatStore((s) => s.available);
   const checkChatAvailable = useChatStore((s) => s.checkAvailable);
@@ -78,13 +75,6 @@ export function Sidebar() {
   useEffect(() => {
     detectValheimPath().then(setValheimPath).catch(() => {});
   }, []);
-
-  // Check MegaBugs access when profile is available
-  useEffect(() => {
-    if (profile?.bepinex_path) {
-      checkBugAccess(profile.bepinex_path);
-    }
-  }, [profile?.bepinex_path, checkBugAccess]);
 
   // Check MegaChat API key availability
   useEffect(() => {
@@ -256,7 +246,7 @@ export function Sidebar() {
             MegaChat
           </NavLink>
         )}
-        {megabugsEnabled && bugAccess?.enabled && (
+        {megabugsEnabled && (
           <NavLink
             to="/bugs"
             className={({ isActive }) =>
