@@ -504,9 +504,17 @@ function formatSyncLabel(lastPush: string | null, lastPull: string | null): stri
 function SyncStatusIndicator() {
   const enabled = useSyncStore((s) => s.enabled);
   const syncing = useSyncStore((s) => s.syncing);
+  const syncProgress = useSyncStore((s) => s.syncProgress);
   const error = useSyncStore((s) => s.error);
   const lastPush = useSyncStore((s) => s.lastPush);
   const lastPull = useSyncStore((s) => s.lastPull);
+
+  // Auto-clear sync errors after 15 seconds
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => useSyncStore.setState({ error: null }), 15_000);
+    return () => clearTimeout(timer);
+  }, [error]);
 
   if (!enabled) return null;
 
@@ -516,12 +524,12 @@ function SyncStatusIndicator() {
         {syncing ? (
           <>
             <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
-            <span className="text-[10px] text-cyan-400">Syncing...</span>
+            <span className="text-[10px] text-cyan-400 truncate">{syncProgress || "Syncing..."}</span>
           </>
         ) : error ? (
           <>
-            <CloudOff className="w-3 h-3 text-red-400" />
-            <span className="text-[10px] text-red-400 truncate" title={error}>Sync error</span>
+            <CloudOff className="w-3 h-3 text-red-400 flex-shrink-0" />
+            <span className="text-[10px] text-red-400 truncate" title={error}>{error}</span>
           </>
         ) : (
           <>

@@ -1,11 +1,11 @@
 {
-  "version": "1.3.0",
-  "notes": "v1.3.0 - Auto BepInEx install, R2Modman import overhaul, sync progress, update history log, legacy account cleanup",
-  "pub_date": "2026-04-10T12:00:00.000Z",
+  "version": "1.3.1",
+  "notes": "v1.3.1 - Sync error improvements, sidebar shows actual error message, auto-clear after 15s",
+  "pub_date": "2026-04-10T12:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJzeVFxcnJNMnl3UUFVTytTelRXOXg2YTNROFRxZW9jSDZGdEEyT1NFdTBqRGMzUHUySWdmakY4a1NGeTgrQld6UExxYTMwM3JZZExVU0gxZ2JVbEE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODIwOTU5CWZpbGU6TWVnYUxvYWRfMS4zLjBfeDY0LXNldHVwLm5zaXMuemlwCnRveXZoaHNCWEI5bHlUZVNGWDI2ZGNYdjV6NXJrWmZWaW9ndHhQU3V2dnlPbU4vUk9SdjdMUnVLRWp4RHhhOUlyWDJYdHF3cUE3enlFaDdsaGZCWEFRPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.3.0/MegaLoad_1.3.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUhRT0xFRjZjaDVybVRjNlpwWldiUVJwNTFMV2ZaZW1hQ0ZZeHRwbThQcFFCSXk2QmhOSkhwQjE5cDJFRmhCMFViNmhaMXFwbXdwNkxXVklJKzVtalFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODIyMDI4CWZpbGU6TWVnYUxvYWRfMS4zLjFfeDY0LXNldHVwLm5zaXMuemlwCkx4K3FXWndxK0I2djNEZWY1WVFPNmVhSUtqd1RpVGEwdlhia21TYTJvcngwUzR1bmYzcmhXRVZ1SzRaK3JIcVNJV0ZCWnFtM3BRVjBwVGVWSTZTK0FRPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.3.1/MegaLoad_1.3.1_x64-setup.nsis.zip"
     }
   }
 }

@@ -32,7 +32,7 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 export const useAppUpdateStore = create<AppUpdateState>((set, get) => ({
   status: "idle",
-  currentVersion: "1.3.0",
+  currentVersion: "1.3.1",
   newVersion: null,
   downloadProgress: 0,
   error: null,
