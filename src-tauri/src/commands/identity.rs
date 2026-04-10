@@ -318,6 +318,55 @@ pub fn set_megaload_identity(display_name: String) -> Result<MegaLoadIdentity, S
     Ok(identity)
 }
 
+/// Link an existing account by display name — fetches UUID from server-side index.
+#[command]
+pub fn link_existing_account(display_name: String) -> Result<MegaLoadIdentity, String> {
+    let trimmed = display_name.trim().to_string();
+    if trimmed.is_empty() {
+        return Err("Display name cannot be empty".to_string());
+    }
+
+    let index = load_user_index()?;
+    let name_lower = trimmed.to_lowercase();
+    let entry = index
+        .users
+        .iter()
+        .find(|u| u.display_name.to_lowercase() == name_lower)
+        .ok_or_else(|| format!("No account found with name '{}'", trimmed))?;
+
+    let identity = MegaLoadIdentity {
+        user_id: entry.user_id.clone(),
+        display_name: entry.display_name.clone(),
+    };
+
+    // Save locally
+    let dir = megaload_data_dir();
+    let _ = fs::create_dir_all(&dir);
+    let json = serde_json::to_string_pretty(&identity).map_err(|e| e.to_string())?;
+    fs::write(dir.join(IDENTITY_FILE), &json)
+        .map_err(|e| format!("Failed to save identity: {}", e))?;
+    let _ = fs::write(dir.join(LEGACY_IDENTITY_FILE), &json);
+
+    // Bump last_active on server
+    let _ = bump_user_activity(&identity.user_id);
+
+    app_log(&format!(
+        "Linked existing account: {} ({})",
+        identity.display_name, identity.user_id
+    ));
+    Ok(identity)
+}
+
+/// Clear local identity — effectively "logout".
+#[command]
+pub fn clear_megaload_identity() -> Result<(), String> {
+    let dir = megaload_data_dir();
+    let _ = fs::remove_file(dir.join(IDENTITY_FILE));
+    let _ = fs::remove_file(dir.join(LEGACY_IDENTITY_FILE));
+    app_log("MegaLoad identity cleared (logout)");
+    Ok(())
+}
+
 /// Check if the current user is admin (local key file check).
 #[command]
 pub fn check_is_admin() -> bool {

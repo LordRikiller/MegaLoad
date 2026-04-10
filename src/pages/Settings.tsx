@@ -18,6 +18,7 @@ import { useSettingsStore } from "../stores/settingsStore";
 import { useAppUpdateStore } from "../stores/appUpdateStore";
 import { useChatStore } from "../stores/chatStore";
 import { useSyncStore } from "../stores/syncStore";
+import { useIdentityStore } from "../stores/identityStore";
 import {
   FolderOpen,
   RefreshCw,
@@ -39,6 +40,8 @@ import {
   Cloud,
   CloudOff,
   Upload,
+  User,
+  LogOut,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -47,6 +50,8 @@ export function Settings() {
   const { loggingEnabled, loaded: settingsLoaded, fetchSettings, setLoggingEnabled } = useSettingsStore();
   const { debugEnabled, debugLoaded, fetchDebug, setDebugEnabled } = useChatStore();
   const { currentVersion } = useAppUpdateStore();
+  const { identity, clearIdentity } = useIdentityStore();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const {
     enabled: syncEnabled,
     autoSync,
@@ -245,6 +250,55 @@ export function Settings() {
         <h1 className="text-3xl font-bold text-zinc-100">Settings</h1>
         <p className="text-zinc-500 mt-1">Configure MegaLoad</p>
       </div>
+
+      {/* Account */}
+      {identity && (
+        <div className="glass rounded-xl p-5 border border-zinc-800/50 space-y-4">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-brand-400" />
+            <h2 className="text-sm font-semibold text-zinc-300">Account</h2>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-zinc-200">{identity.display_name}</p>
+              <p className="text-[10px] text-zinc-600 font-mono">{identity.user_id}</p>
+            </div>
+            {!showLogoutConfirm ? (
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800/50 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Switch Account
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-500">Are you sure?</span>
+                <button
+                  onClick={async () => {
+                    await clearIdentity();
+                    setShowLogoutConfirm(false);
+                    setToast("Signed out — restart to set up a new identity");
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800/50 text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-zinc-600">
+            Your identity is shared across MegaChat, MegaBugs, and Cloud Sync.
+          </p>
+        </div>
+      )}
 
       {/* Valheim Path */}
       <div className="glass rounded-xl p-5 border border-zinc-800/50 space-y-4">

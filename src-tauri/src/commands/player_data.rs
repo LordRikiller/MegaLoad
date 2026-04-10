@@ -1,6 +1,6 @@
 use crate::commands::app_log::app_log;
 use notify::{Config as NotifyConfig, RecommendedWatcher, RecursiveMode, Watcher};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -220,7 +220,7 @@ pub struct CharacterSummary {
     pub size: u64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CharacterData {
     pub name: String,
     pub version: i32,
@@ -253,7 +253,7 @@ pub struct CharacterData {
     pub world_count: i32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkillData {
     pub id: i32,
     pub name: String,
@@ -261,7 +261,7 @@ pub struct SkillData {
     pub accumulator: f32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InventoryItem {
     pub name: String,
     pub stack: i32,
@@ -275,13 +275,13 @@ pub struct InventoryItem {
     pub world_level: i32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StationKnowledge {
     pub name: String,
     pub level: i32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FoodData {
     pub name: String,
     pub time: f32,
@@ -289,7 +289,7 @@ pub struct FoodData {
     pub stamina: f32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KnownText {
     pub key: String,
     pub value: String,

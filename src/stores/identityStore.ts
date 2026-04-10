@@ -2,6 +2,8 @@ import { create } from "zustand";
 import {
   getMegaloadIdentity,
   setMegaloadIdentity,
+  linkExistingAccount,
+  clearMegaloadIdentity,
   checkUsernameAvailable,
   checkIsAdmin,
   checkUserBanned,
@@ -17,6 +19,8 @@ interface IdentityState {
 
   loadIdentity: () => Promise<void>;
   saveIdentity: (displayName: string) => Promise<void>;
+  linkAccount: (displayName: string) => Promise<void>;
+  clearIdentity: () => Promise<void>;
   checkAvailable: (displayName: string) => Promise<boolean>;
   loadAdminStatus: () => Promise<void>;
   loadBanStatus: () => Promise<void>;
@@ -46,6 +50,26 @@ export const useIdentityStore = create<IdentityState>((set) => ({
     } catch (e) {
       set({ loading: false, error: String(e) });
       throw e;
+    }
+  },
+
+  linkAccount: async (displayName: string) => {
+    set({ loading: true, error: null });
+    try {
+      const identity = await linkExistingAccount(displayName);
+      set({ identity, loading: false, error: null });
+    } catch (e) {
+      set({ loading: false, error: String(e) });
+      throw e;
+    }
+  },
+
+  clearIdentity: async () => {
+    try {
+      await clearMegaloadIdentity();
+      set({ identity: null, isAdmin: false, isBanned: false, error: null });
+    } catch (e) {
+      set({ error: String(e) });
     }
   },
 

@@ -141,6 +141,8 @@ pub fn run() {
             // Identity & user management
             get_megaload_identity,
             set_megaload_identity,
+            link_existing_account,
+            clear_megaload_identity,
             check_username_available,
             check_is_admin,
             check_user_banned,
@@ -163,6 +165,8 @@ pub fn run() {
             sync_pull_configs,
             sync_pull_profile,
             sync_check_remote_changed,
+            sync_push_player_data,
+            sync_pull_player_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

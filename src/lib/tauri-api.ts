@@ -689,6 +689,12 @@ export const setMegaloadIdentity = (displayName: string) =>
 export const checkUsernameAvailable = (displayName: string) =>
   invoke<boolean>("check_username_available", { displayName });
 
+export const linkExistingAccount = (displayName: string) =>
+  invoke<MegaLoadIdentity>("link_existing_account", { displayName });
+
+export const clearMegaloadIdentity = () =>
+  invoke<void>("clear_megaload_identity");
+
 export const checkIsAdmin = () =>
   invoke<boolean>("check_is_admin");
 
@@ -817,3 +823,9 @@ export const syncPullProfile = (profileId: string, bepinexPath: string) =>
 
 export const syncCheckRemoteChanged = () =>
   invoke<boolean>("sync_check_remote_changed");
+
+export const syncPushPlayerData = () =>
+  invoke<number>("sync_push_player_data");
+
+export const syncPullPlayerData = () =>
+  invoke<CharacterData[]>("sync_pull_player_data");

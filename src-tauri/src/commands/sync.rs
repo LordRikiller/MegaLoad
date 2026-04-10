@@ -1,6 +1,7 @@
 use crate::commands::app_log::app_log;
-use crate::commands::github::{github_get_file, github_put_file};
+use crate::commands::github::{github_get_file, github_list_dir, github_put_file};
 use crate::commands::identity::get_megaload_identity;
+use crate::commands::player_data::{CharacterData, list_characters, read_character};
 use crate::models::{
     SyncConfigHash, SyncManifest, SyncModEntry, SyncProfileEntry,
     SyncProfileState, SyncSettings, SyncStatus, SyncThunderstoreMod,
@@ -793,4 +794,102 @@ pub fn sync_check_remote_changed() -> Result<bool, String> {
         }
         Err(_) => Ok(false), // No remote manifest = nothing to pull
     }
+}
+
+// ---------------------------------------------------------------------------
+// Player Data Sync
+// ---------------------------------------------------------------------------
+
+fn sync_character_path(user_id: &str, char_name: &str) -> String {
+    format!("sync/{}/characters/{}.json", user_id, char_name)
+}
+
+/// Push all local character data to the cloud.
+#[command]
+pub fn sync_push_player_data() -> Result<u32, String> {
+    let settings = load_sync_settings();
+    if !settings.enabled {
+        return Err("Cloud sync is not enabled".to_string());
+    }
+
+    let identity = get_megaload_identity()?;
+    let user_id = &identity.user_id;
+    let characters = list_characters()?;
+
+    let mut pushed: u32 = 0;
+
+    for summary in &characters {
+        let char_data = match read_character(summary.path.clone()) {
+            Ok(data) => data,
+            Err(e) => {
+                app_log(&format!("Sync: skipping {} — {}", summary.name, e));
+                continue;
+            }
+        };
+
+        let remote_path = sync_character_path(user_id, &char_data.name);
+        let json = serde_json::to_string_pretty(&char_data).map_err(|e| e.to_string())?;
+
+        // Check if remote already matches (skip if unchanged)
+        let sha = match github_get_file(&remote_path) {
+            Ok((remote_content, sha)) => {
+                if remote_content == json {
+                    continue; // Unchanged
+                }
+                Some(sha)
+            }
+            Err(_) => None,
+        };
+
+        github_put_file(
+            &remote_path,
+            json.as_bytes(),
+            &format!("Sync character {} — {}", char_data.name, identity.display_name),
+            sha.as_deref(),
+        )?;
+
+        pushed += 1;
+        app_log(&format!("Sync pushed character: {}", char_data.name));
+    }
+
+    app_log(&format!("Sync push player data complete: {} characters pushed", pushed));
+    Ok(pushed)
+}
+
+/// Pull all character data from the cloud (read-only — for viewing on other machines).
+#[command]
+pub fn sync_pull_player_data() -> Result<Vec<CharacterData>, String> {
+    let settings = load_sync_settings();
+    if !settings.enabled {
+        return Err("Cloud sync is not enabled".to_string());
+    }
+
+    let identity = get_megaload_identity()?;
+    let user_id = &identity.user_id;
+    let dir_path = format!("sync/{}/characters", user_id);
+
+    let listing = match github_list_dir(&dir_path) {
+        Ok(l) => l,
+        Err(e) if e.contains("404") => return Ok(Vec::new()),
+        Err(e) => return Err(e),
+    };
+
+    let mut characters = Vec::new();
+    for (path, _sha) in &listing {
+        if !path.ends_with(".json") {
+            continue;
+        }
+        match github_get_file(path) {
+            Ok((content, _)) => {
+                match serde_json::from_str::<CharacterData>(&content) {
+                    Ok(data) => characters.push(data),
+                    Err(e) => app_log(&format!("Sync: failed to parse {}: {}", path, e)),
+                }
+            }
+            Err(e) => app_log(&format!("Sync: failed to read {}: {}", path, e)),
+        }
+    }
+
+    app_log(&format!("Sync pull player data: {} characters", characters.len()));
+    Ok(characters)
 }

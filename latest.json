@@ -1,11 +1,11 @@
 {
-  "version": "1.0.2",
-  "notes": "v1.0.2 - Sync timestamps, push/pull toasts, hide MegaChat without API key",
-  "pub_date": "2026-04-10T00:00:00Z",
+  "version": "1.0.3",
+  "notes": "v1.0.3 - Rotate GitHub PAT to fine-grained token, security hardening",
+  "pub_date": "2026-04-10T08:21:12.473Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUxPdHR4dGFvRENIekVJTU9LZDRtanVhUXdqTkxjVUgyeDFRclJjbldUaHNtL2VuOXBqQkVVb3Y3c3djWSt1TXZxei9hakRrNGtFdWJtQ1BvWE5KZ0FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODA2NzYyCWZpbGU6TWVnYUxvYWRfMS4wLjJfeDY0LXNldHVwLm5zaXMuemlwCkhZaWVrR3pXWnlLdGRvTnhvallPOXErTlE4NTdMaFdSTnROZE1TeFVXTGh5TDE0RnZGTVJ1SEtBRDlYL2V1MkdrZis3Mkp1dFhaRGxTaGpwZXdQL0NnPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.0.2/MegaLoad_1.0.2_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU9uZzJqTlRzR21RTXJ5clo3TWFFdnZ1NWUwS1E0STJGMnhHTGorTVhFaEVjaWVYUHNEK1VlZ3RJRTJENi9NYlFBM2hCa1Z0R1dzNmZSOFErRjhISlE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODA5MjI2CWZpbGU6TWVnYUxvYWRfMS4wLjNfeDY0LXNldHVwLm5zaXMuemlwCkhJMGEyOXhmdzV2VXVZSHcyemViS2RPN3E5WmJ3LzNmSEI4RnorT0RFR1RxeFZjWWk3d0JKZzFvSktJWWI3c3YvaWdYK2NPQ3d1SjVVaXY0Y25ZWERnPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.0.3/MegaLoad_1.0.3_x64-setup.nsis.zip"
     }
   }
 }
