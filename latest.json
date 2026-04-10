@@ -1,11 +1,11 @@
 {
-  "version": "1.4.0",
-  "notes": "v1.4.0 - Sync overhaul: bundled profiles, faster polling, stable hashing",
-  "pub_date": "2026-04-11T02:00:00.000Z",
+  "version": "1.4.1",
+  "notes": "v1.4.1 - Maintenance: fix UA drift, path validation, silent catches, deprecate MegaBugs DLL",
+  "pub_date": "2026-04-11T12:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUN6UE9LVWhibEpFSG1iSXJZMStnY09Mc1dCS0wzcjN3NWF5YkNqdHNYbXVCY2Vzcm5KdDQzb2s3Tkh5eDYyMFBDZmxFMXcwbnZVK29qeDlrTWo0WEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODU2NTc0CWZpbGU6TWVnYUxvYWRfMS40LjBfeDY0LXNldHVwLm5zaXMuemlwCnAwd0cxTEpBRVFMQlZOUHFoaElBQ0dxeVZUelhsVTI5NFhKeFZ6QWt0cmw2WmZBNzlZcmdpSjhJbTRGOEFiVGNxOVU0RElpUEpHU05Tdk92aCtmTEJRPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.4.0/MegaLoad_1.4.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUYxR085OHY0bXN4QnJYSE1tSVBuVkFoYUE5QnFVNHZEeHE3TzA1OHdLTWg2aXVvRXZ3RG85YkRNVXNHVjZpMWcyNjhiUkFaRFQyT3c1dUZHMkpnQndzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODYwODM3CWZpbGU6TWVnYUxvYWRfMS40LjFfeDY0LXNldHVwLm5zaXMuemlwCjZSN0N0YVU2cThITEtlTmxtOXRaN2o5d1Bka0lpRDV3Q0ljWFNZSFUra0pnTkh0eEx5Ry9zNjFrbDM4MkJ5eS9tL1lkdm5KM0NFUVZ2T1J4aTJieEJRPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.4.1/MegaLoad_1.4.1_x64-setup.nsis.zip"
     }
   }
 }
