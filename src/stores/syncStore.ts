@@ -2,7 +2,6 @@ import { create } from "zustand";
 import {
   syncSetEnabled,
   syncSetAutoSync,
-  syncPushProfile,
   syncPushAll,
   syncPullManifest,
   syncPullProfile,
@@ -104,20 +103,9 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   },
 
   pushCurrentProfile: async () => {
-    const { enabled, syncing } = get();
-    if (!enabled || syncing) return;
-
-    const profileStore = useProfileStore.getState();
-    const active = profileStore.activeProfile();
-    if (!active) return;
-
-    set({ syncing: true, syncProgress: `Pushing "${active.name}"...`, error: null });
-    try {
-      await syncPushProfile(active.id, active.name, active.bepinex_path);
-      set({ syncing: false, syncProgress: null, lastPush: new Date().toISOString() });
-    } catch (e) {
-      set({ syncing: false, syncProgress: null, error: String(e) });
-    }
+    // Delegate to pushAllProfiles so the manifest (machine_id + timestamp)
+    // is always updated — this is what the other machine polls to detect changes.
+    await get().pushAllProfiles();
   },
 
   pushAllProfiles: async () => {
