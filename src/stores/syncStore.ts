@@ -6,12 +6,15 @@ import {
   syncPushAll,
   syncPullManifest,
   syncPullProfile,
+  syncPullConfigs,
   syncCheckRemoteChanged,
   syncGetSettings,
+  autoUpdateMods,
   type SyncPullResult,
   type SyncProfileEntry,
 } from "../lib/tauri-api";
 import { useProfileStore } from "./profileStore";
+import { useToastStore } from "./toastStore";
 
 interface SyncState {
   // State
@@ -156,6 +159,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     const { enabled, syncing } = get();
     if (!enabled || syncing) return;
 
+    const addToast = useToastStore.getState().addToast;
     set({ syncing: true, error: null });
     try {
       // Fetch remote manifest to see what profiles exist in the cloud
@@ -163,10 +167,14 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       set({ remoteProfiles: manifest.profiles });
 
       const profileStore = useProfileStore.getState();
+      let totalConfigs = 0;
+      let totalMods = 0;
+      let profilesProcessed = 0;
 
       for (const remote of manifest.profiles) {
-        // Check if this profile exists locally
-        let local = profileStore.profiles.find((p) => p.id === remote.id);
+        // Check if this profile exists locally (by ID first, then by name)
+        let local = profileStore.profiles.find((p) => p.id === remote.id)
+          ?? profileStore.profiles.find((p) => p.name === remote.name);
 
         if (!local) {
           // Profile doesn't exist locally — create it, then re-fetch
@@ -174,22 +182,45 @@ export const useSyncStore = create<SyncState>((set, get) => ({
             const { createProfile } = await import("../lib/tauri-api");
             await createProfile(remote.name);
             await profileStore.fetchProfiles();
-            // Find the newly created profile (it gets a new ID locally, but we need its bepinex_path)
             const updated = useProfileStore.getState();
             local = updated.profiles.find((p) => p.name === remote.name);
-          } catch {
-            // Profile creation failed — skip
+          } catch (e) {
+            addToast({ type: "warning", title: "Sync", message: `Failed to create profile "${remote.name}": ${e}`, duration: 5000 });
             continue;
           }
         }
 
-        if (local) {
-          try {
-            await syncPullProfile(remote.id, local.bepinex_path);
-          } catch {
-            // Profile might not have cloud state yet — skip
-          }
+        if (!local) continue;
+
+        // Pull configs from cloud using the REMOTE profile ID (that's where the data is stored)
+        try {
+          const configCount = await syncPullConfigs(remote.id, local.bepinex_path);
+          totalConfigs += configCount;
+        } catch (e) {
+          addToast({ type: "warning", title: "Sync", message: `Config pull failed for "${remote.name}": ${e}`, duration: 5000 });
         }
+
+        // Auto-install any missing mods from the manifest
+        try {
+          const result = await autoUpdateMods(local.bepinex_path, true);
+          totalMods += result.total_updates;
+        } catch {
+          // Non-critical — mods can be installed manually
+        }
+
+        profilesProcessed++;
+      }
+
+      // Refresh profile list to pick up any changes
+      await useProfileStore.getState().fetchProfiles();
+
+      if (profilesProcessed > 0) {
+        addToast({
+          type: "success",
+          title: "Cloud Sync Complete",
+          message: `${profilesProcessed} profile${profilesProcessed !== 1 ? "s" : ""}, ${totalConfigs} configs pulled${totalMods > 0 ? `, ${totalMods} mods updated` : ""}`,
+          duration: 5000,
+        });
       }
 
       set({ syncing: false, lastPull: new Date().toISOString() });

@@ -1,11 +1,11 @@
 {
-  "version": "1.1.4",
-  "notes": "v1.1.4 - Fix sync pull on fresh devices",
-  "pub_date": "2026-04-10T09:24:08.827Z",
+  "version": "1.1.5",
+  "notes": "v1.1.5 - Admin Command Centre overhaul",
+  "pub_date": "2026-04-10T09:32:37.172Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNlaWFORkpQM3pGcFZQek1YeHM2akFPUm80bVhBMnkzOWd5bEJtbGc3S1ZVSjFpNzdrRnZNZFc0SERkVWlxM1N6b2p1WEwzU2ZIeFhHQ1pjOG93VmcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODEzMDM0CWZpbGU6TWVnYUxvYWRfMS4xLjRfeDY0LXNldHVwLm5zaXMuemlwCnB2Z2dZK2tlRDFMTlBib1R3bkpWRlVtQm9ieTU3aTBmSnRFVno2RVF6eUVLaTRDaFFNMFQrY3NNM1dGZ2VnUXdUTEY2S25Ib1Awd0NjYmFMd2ZOYkF3PT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.1.4/MegaLoad_1.1.4_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUozb243M0dsVUhrYVc3bDE0eVkyMzRyai85bUNhUHVxK1NkSmdpdzBYRDNnMjZFVERpcTlBRVc3RjB2QmVPWk82SldJTVl3VHhGU1Q3dDJWNm0rK3dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODEzNTExCWZpbGU6TWVnYUxvYWRfMS4xLjVfeDY0LXNldHVwLm5zaXMuemlwCllmY1psV0l5UTBCL3M3ZjRzYmFyVnh6elAyRWtWanNwZkNoVXVUY2t5d05OU0JqVzZqb0xrVS8vZ1ZDd2xnMlZXeHJMU050UVpnNHY5MlA3eE53UEJRPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.1.5/MegaLoad_1.1.5_x64-setup.nsis.zip"
     }
   }
 }
