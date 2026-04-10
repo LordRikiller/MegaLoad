@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-03-30T04:00:00Z",
+  "updated_at": "2026-03-31T04:00:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -76,8 +76,8 @@
     },
     {
       "name": "MegaSkeletons",
-      "version": "1.0.5",
-      "download_url": "https://github.com/ccmrik/MegaSkeletons/releases/download/v1.0.5/MegaSkeletons.dll",
+      "version": "1.0.6",
+      "download_url": "https://github.com/ccmrik/MegaSkeletons/releases/download/v1.0.6/MegaSkeletons.dll",
       "dll_name": "MegaSkeletons.dll",
       "plugin_folder": "MegaSkeletons",
       "description": "Summoned skeleton buffs (health, speed, HoT, attack speed) + portal/dungeon persistence"

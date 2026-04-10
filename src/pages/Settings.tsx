@@ -17,6 +17,7 @@ import { useProfileStore } from "../stores/profileStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useAppUpdateStore } from "../stores/appUpdateStore";
 import { useChatStore } from "../stores/chatStore";
+import { useSyncStore } from "../stores/syncStore";
 import {
   FolderOpen,
   RefreshCw,
@@ -35,6 +36,9 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  Cloud,
+  CloudOff,
+  Upload,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -43,6 +47,20 @@ export function Settings() {
   const { loggingEnabled, loaded: settingsLoaded, fetchSettings, setLoggingEnabled } = useSettingsStore();
   const { debugEnabled, debugLoaded, fetchDebug, setDebugEnabled } = useChatStore();
   const { currentVersion } = useAppUpdateStore();
+  const {
+    enabled: syncEnabled,
+    autoSync,
+    syncing,
+    lastPush,
+    lastPull,
+    error: syncError,
+    loaded: syncLoaded,
+    fetchSyncStatus,
+    setEnabled: setSyncEnabled,
+    setAutoSync: setSyncAutoSync,
+    pushAllProfiles,
+    pullAllProfiles,
+  } = useSyncStore();
   const [valheimPath, setValheimPath] = useState("");
   const [detecting, setDetecting] = useState(false);
   const [r2Profiles, setR2Profiles] = useState<[string, string][]>([]);
@@ -61,6 +79,7 @@ export function Settings() {
   useEffect(() => {
     fetchSettings();
     fetchDebug();
+    fetchSyncStatus();
     chatGetApiKeyStatus().then(setApiKeyHasKey).catch(() => {});
     detectValheimPath()
       .then((p) => {
@@ -541,6 +560,125 @@ export function Settings() {
             ? "Shows token usage per message, daily totals, and logs API requests to the app log."
             : "Enable to see token usage and API diagnostics in MegaChat."}
         </p>
+      </div>
+
+      {/* Cloud Sync */}
+      <div className="glass rounded-xl p-5 border border-zinc-800/50 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Cloud className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-sm font-semibold text-zinc-300">Cloud Sync</h2>
+          </div>
+          {syncLoaded && (
+            <button
+              onClick={async () => {
+                await setSyncEnabled(!syncEnabled);
+                setToast(syncEnabled ? "Cloud sync disabled" : "Cloud sync enabled — pushing profiles...");
+              }}
+              className="shrink-0"
+            >
+              {syncEnabled ? (
+                <ToggleRight className="w-8 h-8 text-cyan-400" />
+              ) : (
+                <ToggleLeft className="w-8 h-8 text-zinc-600" />
+              )}
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-zinc-500">
+          {syncEnabled
+            ? "Profiles, mods, and configs are synced across your devices. Changes push automatically."
+            : "Enable to sync your profiles, installed mods, and configs across multiple PCs."}
+        </p>
+
+        {syncEnabled && (
+          <div className="space-y-4">
+            {/* Auto-sync toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-300 font-medium">Auto-sync on changes</p>
+                <p className="text-[10px] text-zinc-600">Automatically push when mods or configs change</p>
+              </div>
+              <button
+                onClick={async () => {
+                  await setSyncAutoSync(!autoSync);
+                  setToast(autoSync ? "Auto-sync disabled" : "Auto-sync enabled");
+                }}
+                className="shrink-0"
+              >
+                {autoSync ? (
+                  <ToggleRight className="w-6 h-6 text-cyan-400" />
+                ) : (
+                  <ToggleLeft className="w-6 h-6 text-zinc-600" />
+                )}
+              </button>
+            </div>
+
+            {/* Manual push/pull buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    await pushAllProfiles();
+                    setToast("Profiles pushed to cloud");
+                  } catch (e) {
+                    setToast(`Push failed: ${e}`);
+                  }
+                }}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+              >
+                {syncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                Push All
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await pullAllProfiles();
+                    setToast("Profiles pulled from cloud");
+                  } catch (e) {
+                    setToast(`Pull failed: ${e}`);
+                  }
+                }}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+              >
+                {syncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                Pull All
+              </button>
+            </div>
+
+            {/* Last sync info */}
+            <div className="space-y-1">
+              {lastPush && (
+                <p className="text-[10px] text-zinc-600">
+                  Last push: {new Date(lastPush).toLocaleString()}
+                </p>
+              )}
+              {lastPull && (
+                <p className="text-[10px] text-zinc-600">
+                  Last pull: {new Date(lastPull).toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            {/* Sync error */}
+            {syncError && (
+              <div className="flex items-center gap-2 text-xs text-red-400">
+                <CloudOff className="w-3.5 h-3.5" />
+                {syncError}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Data Location */}

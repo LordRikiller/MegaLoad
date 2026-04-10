@@ -14,6 +14,7 @@ use commands::mods::*;
 use commands::player_data::*;
 use commands::player_data::PlayerDataWatcherState;
 use commands::profiles::*;
+use commands::sync::*;
 use commands::thunderstore::*;
 use commands::trainer::*;
 use commands::updater::*;
@@ -150,6 +151,18 @@ pub fn run() {
             admin_ban_user,
             admin_unban_user,
             admin_get_user_chat_history,
+            // Cloud sync
+            sync_get_status,
+            sync_set_enabled,
+            sync_set_auto_sync,
+            sync_get_settings,
+            sync_push_profile,
+            sync_push_all,
+            sync_pull_manifest,
+            sync_pull_profile_state,
+            sync_pull_configs,
+            sync_pull_profile,
+            sync_check_remote_changed,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

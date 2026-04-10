@@ -4,9 +4,11 @@ import { Sidebar } from "./Sidebar";
 import { IdentityGate } from "./IdentityGate";
 import { ToastContainer } from "../ToastContainer";
 import { useLiveUpdateChecks } from "../../hooks/useLiveUpdateChecks";
+import { useAutoSync } from "../../hooks/useAutoSync";
 
 export function AppShell() {
   useLiveUpdateChecks();
+  useAutoSync();
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">

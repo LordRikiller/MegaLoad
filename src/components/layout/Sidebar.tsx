@@ -31,6 +31,7 @@ import { useToastStore } from "../../stores/toastStore";
 import { usePlayerDataStore } from "../../stores/playerDataStore";
 import { useBugStore } from "../../stores/bugStore";
 import { useIdentityStore } from "../../stores/identityStore";
+import { useSyncStore } from "../../stores/syncStore";
 import { detectValheimPath, launchValheim, checkGameStatus, startSteam, deployBundledPlugins } from "../../lib/tauri-api";
 import type { GameStatus } from "../../lib/tauri-api";
 
@@ -290,6 +291,9 @@ export function Sidebar() {
         </div>
       )}
 
+      {/* Cloud Sync Status */}
+      <SyncStatusIndicator />
+
       {/* Update Status */}
       {profile && (
         <div className="px-3 pt-2 border-t border-zinc-800/50">
@@ -446,5 +450,36 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+  );
+}
+
+function SyncStatusIndicator() {
+  const enabled = useSyncStore((s) => s.enabled);
+  const syncing = useSyncStore((s) => s.syncing);
+  const error = useSyncStore((s) => s.error);
+
+  if (!enabled) return null;
+
+  return (
+    <div className="px-4 py-1">
+      <div className="flex items-center gap-2">
+        {syncing ? (
+          <>
+            <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
+            <span className="text-[10px] text-cyan-400">Syncing...</span>
+          </>
+        ) : error ? (
+          <>
+            <CloudOff className="w-3 h-3 text-red-400" />
+            <span className="text-[10px] text-red-400 truncate" title={error}>Sync error</span>
+          </>
+        ) : (
+          <>
+            <Cloud className="w-3 h-3 text-cyan-500/50" />
+            <span className="text-[10px] text-zinc-600">Cloud sync on</span>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

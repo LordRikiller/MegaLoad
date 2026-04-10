@@ -713,3 +713,107 @@ export const adminUnbanUser = (userId: string) =>
 
 export const adminGetUserChatHistory = (userId: string) =>
   invoke<ChatHistoryFile>("admin_get_user_chat_history", { userId });
+
+// ---------------------------------------------------------------------------
+// Cloud Sync
+// ---------------------------------------------------------------------------
+
+export interface SyncProfileEntry {
+  id: string;
+  name: string;
+  is_active: boolean;
+  is_linked: boolean;
+}
+
+export interface SyncStatus {
+  enabled: boolean;
+  last_push: string | null;
+  last_pull: string | null;
+  syncing: boolean;
+  error: string | null;
+  remote_profiles: SyncProfileEntry[];
+}
+
+export interface SyncSettings {
+  enabled: boolean;
+  auto_sync: boolean;
+  last_push: string | null;
+  last_pull: string | null;
+  machine_id: string;
+}
+
+export interface SyncManifest {
+  user_id: string;
+  last_sync: string;
+  machine_id: string;
+  profiles: SyncProfileEntry[];
+}
+
+export interface SyncModEntry {
+  name: string;
+  file_name: string;
+  version: string | null;
+  enabled: boolean;
+  source: string;
+}
+
+export interface SyncThunderstoreMod {
+  full_name: string;
+  version: string;
+  folder_name: string;
+}
+
+export interface SyncConfigHash {
+  file_name: string;
+  hash: string;
+}
+
+export interface SyncProfileState {
+  profile_id: string;
+  profile_name: string;
+  last_updated: string;
+  mods: SyncModEntry[];
+  thunderstore_mods: SyncThunderstoreMod[];
+  config_hashes: SyncConfigHash[];
+}
+
+export interface SyncPullResult {
+  profile_name: string;
+  toggled_mods: string[];
+  configs_updated: number;
+  missing_mods: string[];
+  last_updated: string;
+}
+
+export const syncGetStatus = () =>
+  invoke<SyncStatus>("sync_get_status");
+
+export const syncSetEnabled = (enabled: boolean) =>
+  invoke<void>("sync_set_enabled", { enabled });
+
+export const syncSetAutoSync = (autoSync: boolean) =>
+  invoke<void>("sync_set_auto_sync", { autoSync });
+
+export const syncGetSettings = () =>
+  invoke<SyncSettings>("sync_get_settings");
+
+export const syncPushProfile = (profileId: string, profileName: string, bepinexPath: string) =>
+  invoke<void>("sync_push_profile", { profileId, profileName, bepinexPath });
+
+export const syncPushAll = (profilesJson: string) =>
+  invoke<void>("sync_push_all", { profilesJson });
+
+export const syncPullManifest = () =>
+  invoke<SyncManifest>("sync_pull_manifest");
+
+export const syncPullProfileState = (profileId: string) =>
+  invoke<SyncProfileState>("sync_pull_profile_state", { profileId });
+
+export const syncPullConfigs = (profileId: string, bepinexPath: string) =>
+  invoke<number>("sync_pull_configs", { profileId, bepinexPath });
+
+export const syncPullProfile = (profileId: string, bepinexPath: string) =>
+  invoke<SyncPullResult>("sync_pull_profile", { profileId, bepinexPath });
+
+export const syncCheckRemoteChanged = () =>
+  invoke<boolean>("sync_check_remote_changed");

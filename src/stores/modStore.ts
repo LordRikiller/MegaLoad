@@ -5,6 +5,7 @@ import {
   deleteMod as apiDelete,
   type ModInfo,
 } from "../lib/tauri-api";
+import { useSyncStore } from "./syncStore";
 
 interface ModState {
   mods: ModInfo[];
@@ -50,6 +51,8 @@ export const useModStore = create<ModState>((set) => ({
     // Refresh mod list
     const mods = await getMods(bepinexPath);
     set({ mods });
+    // Trigger cloud sync
+    useSyncStore.getState().triggerAutoSync();
   },
 
   deleteMod: async (
@@ -61,5 +64,7 @@ export const useModStore = create<ModState>((set) => ({
     await apiDelete(bepinexPath, folder, fileName, enabled);
     const mods = await getMods(bepinexPath);
     set({ mods });
+    // Trigger cloud sync
+    useSyncStore.getState().triggerAutoSync();
   },
 }));

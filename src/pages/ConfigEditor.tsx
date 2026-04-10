@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useProfileStore } from "../stores/profileStore";
+import { useSyncStore } from "../stores/syncStore";
 import {
   getConfigFiles,
   saveConfigValue,
@@ -175,6 +176,8 @@ export function ConfigEditor() {
         )
       );
       setChangeCount((c) => c + 1);
+      // Trigger cloud sync after config change
+      useSyncStore.getState().triggerAutoSync();
     },
     []
   );
