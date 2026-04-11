@@ -121,7 +121,7 @@ fn iso_now() -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Link code helpers — XXXX-XXXX format, no ambiguous chars (0/O, 1/I/L)
+// Link code helpers — XXXX-XXXX-XXXX format, no ambiguous chars (0/O, 1/I/L)
 // ---------------------------------------------------------------------------
 
 const LINK_CODE_CHARS: &[u8] = b"ABCDEFGHJKMNPQRSTUVWXYZ23456789";

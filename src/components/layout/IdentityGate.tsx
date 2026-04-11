@@ -268,7 +268,7 @@ export function IdentityGate({ children }: { children: React.ReactNode }) {
                 placeholder="XXXX-XXXX-XXXX"
                 value={codeInput}
                 onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                maxLength={9}
+                maxLength={14}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && canSubmit) handleSubmit();
                 }}
