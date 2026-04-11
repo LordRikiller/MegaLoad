@@ -220,16 +220,25 @@ export const useBugStore = create<BugState>((set, get) => ({
 
   setStatus: async (ticketId: string, status: string, labels: string[]) => {
     set({ error: null });
+    // Optimistically update the ticket list so the UI reflects the change immediately
+    // (GitHub CDN may serve stale index.json on re-fetch)
+    const { tickets, access } = get();
+    const isAdmin = access?.is_admin ?? false;
+    const updatedTickets = tickets.map((t) =>
+      t.id === ticketId ? { ...t, status, labels, updated_at: new Date().toISOString() } : t
+    );
+    set({ tickets: updatedTickets, notificationCount: computeNotificationCount(updatedTickets, isAdmin) });
     try {
       await updateTicketStatus(ticketId, status, labels);
-      const [ticket] = await Promise.all([
-        fetchTicketDetail(ticketId),
-        get().loadTickets(),
-      ]);
+      const ticket = await fetchTicketDetail(ticketId);
       set({ activeTicket: ticket, offline: false });
+      // Background re-fetch to sync with server (non-blocking)
+      get().loadTickets();
     } catch (e) {
       const offline = isOfflineError(e);
       set({ error: offline ? "Unable to reach MegaBugs — check your internet connection." : String(e), offline });
+      // Revert optimistic update on failure
+      get().loadTickets();
     }
   },
 
@@ -252,6 +261,10 @@ export const useBugStore = create<BugState>((set, get) => ({
 
   markTicketRead: (ticketId: string) => {
     setLastRead(ticketId);
+    // Recompute notification count after marking as read
+    const { tickets, access } = get();
+    const isAdmin = access?.is_admin ?? false;
+    set({ notificationCount: computeNotificationCount(tickets, isAdmin) });
   },
 
   clearActiveTicket: () => set({ activeTicket: null }),
