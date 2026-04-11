@@ -1,11 +1,11 @@
 {
-  "version": "1.5.4",
-  "notes": "v1.5.4 - MegaBugs: chat-style ticket view",
-  "pub_date": "2026-04-11T03:55:00.000Z",
+  "version": "1.5.5",
+  "notes": "v1.5.5 - Fix reply box not sticking to window bottom",
+  "pub_date": "2026-04-11T04:15:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUxYYXlSbUROVHBPT0tPRTFDdXhSR1N5WHcveGZ3eXBQTEVwQVU5cjdMU3lGOWJFMi9FRXQ3QTlPRWdISjgvU3N5RkxHSFR5dFhQS0tVTmVFYmNxa2dVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODc5NTk4CWZpbGU6TWVnYUxvYWRfMS41LjRfeDY0LXNldHVwLm5zaXMuemlwCkIrY2VDOEUrK1lEbmlWektKR3N1RXNid2Q0R3dQZ2IvTmhCTXE4eGlML0hVTlZzYlRRbTFxdTY3Z2JIZ0pKTVZMNS9aSnY0eFRSczhXekFZc2R3dkN3PT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.4/MegaLoad_1.5.4_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNYZlBRd1BXNVRlOVdnS2pyZ0FEQmhDN0FlYzY1QTZoSnFqMmpYWDBkNTBsUi8yRUlVOVhCekREcko5YXVRRlZ2MW9jOSswTzZmN2NTQmMwaEt5ZGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODgxMDM3CWZpbGU6TWVnYUxvYWRfMS41LjVfeDY0LXNldHVwLm5zaXMuemlwCk8xU014d29RZFVIc21pOUFTaUIzb21xWjhXaXBES0VrS01pU0JhamZnT2VYRXd6K2ZYWFZhOXliTGE1bzlZK0FaR2M3dHBhVWFISFZ1Y0ZjNnhZeEFBPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.5/MegaLoad_1.5.5_x64-setup.nsis.zip"
     }
   }
 }

@@ -483,8 +483,8 @@ export function MegaBugs() {
         {/* Lightbox */}
         {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
 
-        {/* Reply box (pinned) */}
-        <div className="shrink-0 px-6 py-4 border-t border-zinc-800/50 bg-zinc-950/80 backdrop-blur-sm shadow-[0_-4px_12px_rgba(0,0,0,0.3)]">
+        {/* Reply box (pinned to bottom) */}
+        <div className="shrink-0 mt-auto px-6 py-4 border-t border-zinc-800/50 bg-zinc-950/80 backdrop-blur-sm shadow-[0_-4px_12px_rgba(0,0,0,0.3)]">
           {error && (
             <div className="mb-3 text-xs text-red-400 flex items-center gap-1.5">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
