@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useProfileStore } from "../stores/profileStore";
 import { useBugStore, hasUnread } from "../stores/bugStore";
 import { useToastStore } from "../stores/toastStore";
@@ -110,9 +111,16 @@ export function MegaBugs() {
   } = useBugStore();
   const addToast = useToastStore((s) => s.addToast);
 
+  const location = useLocation();
   const [view, setView] = useState<View>("list");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Reset to list view when navigating to this page
+  useEffect(() => {
+    setView("list");
+    clearActiveTicket();
+  }, [location.key, clearActiveTicket]);
 
   // New ticket form
   const [ticketType, setTicketType] = useState<TicketType>("bug");

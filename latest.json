@@ -1,11 +1,11 @@
 {
-  "version": "1.5.1",
-  "notes": "v1.5.1 - Fix notification polling, add new user badge for admin",
-  "pub_date": "2026-04-11T21:30:00.000Z",
+  "version": "1.5.2",
+  "notes": "v1.5.2 - MegaBugs: reset to list on nav, no unread dot after own reply",
+  "pub_date": "2026-04-11T22:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJVb0JMYXZxZU9tK2tqWEN1ajNabmdQdjEzb1FVZGg4NmxoODNsR3VnVTd5UXZEZ3FBaWV5b3V3dnBxUnJGdmdXWnNMZzRmN0RNSDhYZUJtWE82OHc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODc4MDYyCWZpbGU6TWVnYUxvYWRfMS41LjFfeDY0LXNldHVwLm5zaXMuemlwCkNWZ01ocUZMQ1BTQTArdHdTQWZ4azlGYnhtSHY4ekZSTlRQbEtqTUVTKzVmMUxMbmZna0VtOUM4Rzhsd00xeFpJZkQvcEx3d3JvUWNoaHJZRVBHZUJnPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.1/MegaLoad_1.5.1_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUt2RUx6UkJMN1ArWU11WDg3MTlJREx2eGRoYlJRMVRJUG8zSHYza3k2N3ZCN2UvRXdhakVDdUhPQ0JwbDRJai9Xci9oSk1yVDlsMW50aUdISmlTN3drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODc4NDkyCWZpbGU6TWVnYUxvYWRfMS41LjJfeDY0LXNldHVwLm5zaXMuemlwCkVkT1EzSjhXYVVLeUUzaW9qdCtKUzNvWUtSOGJKUEVUT3FqdkNUQjVWMm4rRjhvVWlYMDZkbjNKOE1Qbm5lZEpZNGRnNHVLQ2QvSVdNZXJsNjcyM0R3PT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.2/MegaLoad_1.5.2_x64-setup.nsis.zip"
     }
   }
 }

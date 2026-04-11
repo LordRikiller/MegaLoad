@@ -253,7 +253,13 @@ export const useBugStore = create<BugState>((set, get) => ({
         access?.is_admin ?? false,
       );
       const ticket = await fetchTicketDetail(ticketId);
-      set({ activeTicket: ticket, submitting: false, offline: false });
+      // Mark as read after own reply so the notification dot doesn't show
+      setLastRead(ticketId);
+      const { tickets } = get();
+      const updatedTickets = tickets.map((t) =>
+        t.id === ticketId ? { ...t, updated_at: ticket.updated_at, message_count: ticket.messages.length } : t
+      );
+      set({ activeTicket: ticket, tickets: updatedTickets, submitting: false, offline: false, notificationCount: computeNotificationCount(updatedTickets) });
     } catch (e) {
       const offline = isOfflineError(e);
       set({ error: offline ? "Unable to reach MegaBugs — check your internet connection." : String(e), submitting: false, offline });
