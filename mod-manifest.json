@@ -36,8 +36,8 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.9.27",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.9.27/MegaQoL.dll",
+      "version": "1.9.28",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.9.28/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, pet feeder, craft from containers, map teleport, mass farming"
