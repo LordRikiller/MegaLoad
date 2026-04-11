@@ -1,11 +1,11 @@
 {
-  "version": "1.4.3",
-  "notes": "v1.4.3 - Record Thunderstore mod installs/updates in Update History log",
-  "pub_date": "2026-04-11T15:00:00.000Z",
+  "version": "1.4.4",
+  "notes": "v1.4.4 - Fix biome data: 34 corrections to item biomes, sources, and display names",
+  "pub_date": "2026-04-11T18:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBIYXJIekhWSzF0SGI5WTN2NHFIZWJ5YVdjclgvUWJCbEEweklVM0dPQmk1TWNiUDRNcXBZUXd4MkQxdnFRVWp5SlY4RnJSRDVlUFBVZWduOW5JSFFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODYyODkwCWZpbGU6TWVnYUxvYWRfMS40LjNfeDY0LXNldHVwLm5zaXMuemlwClpvWDlKOFVLZkpObmpWU21ab2hPR3hEMXJzQVA1WmZtMTBWdHBsQy9lUEEzai9vZk5mRS9XbytjQ0I3djRRMDEvdVJXVHczaXFlb3NaS2lrY1FrU0NBPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.4.3/MegaLoad_1.4.3_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFoalVyVUp0THFEa3o1Wi9HRmRTd3B2cU1lUkVFT2RCdkRQYnVoN0s1LzJJWW13ZytTcjBuVWdZQjd2cGpVZWpkSDhKM0tFaTY4SFlNQm5ka2ppc3dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODczNjUxCWZpbGU6TWVnYUxvYWRfMS40LjRfeDY0LXNldHVwLm5zaXMuemlwCjdxQTdQREJBODZzODNTNm44emhGUE9QTVR3VndibkdaMDc2ci9EQ0tJeCs1QzNKZGlqNzU5R3Y1UmhyM3hJM25sL0g3aFZXUFdLZ1FYZG5teDJCK0RBPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.4.4/MegaLoad_1.4.4_x64-setup.nsis.zip"
     }
   }
 }
