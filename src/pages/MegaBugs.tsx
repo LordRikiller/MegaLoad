@@ -354,7 +354,7 @@ export function MegaBugs() {
   if (view === "detail" && activeTicket) {
     const StatusIcon = statusIcons[activeTicket.status] || AlertCircle;
     return (
-      <div className="flex-1 flex flex-col min-h-0 animate-in">
+      <div className="-m-6 flex flex-col h-[calc(100vh-2.5rem)] animate-in">
         {/* Header (pinned top) */}
         <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-sm z-10">
           <button onClick={goBack} className="text-zinc-400 hover:text-zinc-200 transition-colors" aria-label="Go back">

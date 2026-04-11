@@ -1,11 +1,11 @@
 {
-  "version": "1.5.5",
-  "notes": "v1.5.5 - Fix reply box not sticking to window bottom",
-  "pub_date": "2026-04-11T04:15:00.000Z",
+  "version": "1.5.6",
+  "notes": "v1.5.6 - Fix reply box sticking to window bottom",
+  "pub_date": "2026-04-11T04:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNYZlBRd1BXNVRlOVdnS2pyZ0FEQmhDN0FlYzY1QTZoSnFqMmpYWDBkNTBsUi8yRUlVOVhCekREcko5YXVRRlZ2MW9jOSswTzZmN2NTQmMwaEt5ZGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODgxMDM3CWZpbGU6TWVnYUxvYWRfMS41LjVfeDY0LXNldHVwLm5zaXMuemlwCk8xU014d29RZFVIc21pOUFTaUIzb21xWjhXaXBES0VrS01pU0JhamZnT2VYRXd6K2ZYWFZhOXliTGE1bzlZK0FaR2M3dHBhVWFISFZ1Y0ZjNnhZeEFBPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.5/MegaLoad_1.5.5_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlRQ29Sb29iRGhyVWhDOWEzTmpUdHRzdWE4ckF3UElXUGNVR25PSnFlenJvcWVOeHdKOUg2bEd5a21vUHgvS3V0b250N2l4d2tsc1dTQ3h3UWRxdFFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1ODgxNTc3CWZpbGU6TWVnYUxvYWRfMS41LjZfeDY0LXNldHVwLm5zaXMuemlwClB5Y2RBWmxTTllCck9wYlRoR0JnNWQzODZOQk9DcnIyYW9qNWwxOFBXaFZwNXZvUHc0SnNGUW1WWktZbGpmdkVuVTdoMEx1NjE1NVplc2YveEptcUJRPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.6/MegaLoad_1.5.6_x64-setup.nsis.zip"
     }
   }
 }
