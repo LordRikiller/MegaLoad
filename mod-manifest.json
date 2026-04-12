@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-11T12:00:00Z",
+  "updated_at": "2026-04-12T12:00:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -28,8 +28,8 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.3.4",
-      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.3.4/MegaShot.dll",
+      "version": "2.3.5",
+      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.3.5/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system"
@@ -52,8 +52,8 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.1.13",
-      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.1.13/MegaFactory.dll",
+      "version": "1.1.14",
+      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.1.14/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
       "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with work order system"
