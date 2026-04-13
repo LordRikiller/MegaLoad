@@ -60,8 +60,8 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.1.15",
-      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.1.15/MegaFactory.dll",
+      "version": "1.2.0",
+      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.2.0/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
       "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with work order system"
