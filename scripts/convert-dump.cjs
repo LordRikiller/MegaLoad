@@ -2134,6 +2134,19 @@ for (const e of converted) {
 const mc = converted.find(e => e.id === "MoltenCore");
 if (mc) mc.stats = mc.stats.filter(s => s.label !== "Duration" && s.label !== "Regen");
 
+// ── Reclassify Food subcategories: Raw Food / Cooked Food / Prepared Food ──
+for (const e of converted) {
+  if (e.type !== "Food") continue;
+  if (e.subcategory === "Feast") continue; // Already classified
+  if (e.station === "Cooking Station" || e.source.includes("Cooking")) {
+    e.subcategory = "Cooked Food";
+  } else if (e.station === "Cauldron" || e.station === "Food Preparation Table") {
+    e.subcategory = "Prepared Food";
+  } else {
+    e.subcategory = "Raw Food";
+  }
+}
+
 let fixupCount = Object.keys(ITEM_FIXUPS).length + ITEM_REMOVE.size + ITEM_ADDITIONS.length;
 console.log(`Applied ${fixupCount} post-processing fixups`);
 
