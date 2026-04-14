@@ -223,9 +223,19 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   },
 
   triggerAutoSync: async () => {
-    const { enabled, autoSync, syncing } = get();
-    if (!enabled || !autoSync || syncing) return;
+    const { enabled, autoSync } = get();
+    if (!enabled || !autoSync) return;
 
-    await get().pushAllProfiles();
+    // Debounce — coalesce bursts of config edits into a single push.
+    // Fires on a background timer so the UI stays responsive.
+    if (_autoSyncTimer) clearTimeout(_autoSyncTimer);
+    _autoSyncTimer = setTimeout(() => {
+      _autoSyncTimer = null;
+      // Fire-and-forget — do NOT await, so the caller returns immediately.
+      void get().pushAllProfiles();
+    }, AUTO_SYNC_DEBOUNCE_MS);
   },
 }));
+
+const AUTO_SYNC_DEBOUNCE_MS = 2000;
+let _autoSyncTimer: ReturnType<typeof setTimeout> | null = null;

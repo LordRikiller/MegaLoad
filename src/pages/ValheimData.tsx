@@ -1213,7 +1213,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
               />
               {item.maxQuality > 1 && (
                 <span className="px-2.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  ★ Max Lv {item.maxQuality}
+                  {item.type === "Creature" ? "★ 0–2 Star" : `★ Max Lv ${item.maxQuality}`}
                 </span>
               )}
             </div>
@@ -1382,20 +1382,26 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                   <h2 className="text-sm font-semibold text-zinc-200">Stats</h2>
                   {showLevelTabs && (
                     <div className="flex gap-1">
-                      {Array.from({ length: item.maxQuality }, (_, i) => i + 1).map((lv) => (
-                        <button
-                          key={lv}
-                          onClick={() => setStatsLevel(lv)}
-                          className={cn(
-                            "px-2 py-0.5 rounded text-[10px] font-medium transition-colors",
-                            statsLevel === lv
-                              ? "bg-brand-500/20 text-brand-400 border border-brand-500/30"
-                              : "text-zinc-500 hover:text-zinc-300 border border-transparent"
-                          )}
-                        >
-                          Lv {lv}
-                        </button>
-                      ))}
+                      {Array.from({ length: item.maxQuality }, (_, i) => i + 1).map((lv) => {
+                        const isCreature = item.type === "Creature";
+                        const label = isCreature
+                          ? lv === 1 ? "Base" : lv === 2 ? "1★" : "2★"
+                          : `Lv ${lv}`;
+                        return (
+                          <button
+                            key={lv}
+                            onClick={() => setStatsLevel(lv)}
+                            className={cn(
+                              "px-2 py-0.5 rounded text-[10px] font-medium transition-colors",
+                              statsLevel === lv
+                                ? "bg-brand-500/20 text-brand-400 border border-brand-500/30"
+                                : "text-zinc-500 hover:text-zinc-300 border border-transparent"
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

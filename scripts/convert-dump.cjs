@@ -1684,6 +1684,14 @@ const CREATURE_SKIP_PATTERNS = [
   /Hildir_nochest$/i, /BruteBros/i,
 ];
 
+// Subcategory overrides for special creatures (minibosses etc)
+const CREATURE_SUBCATEGORY_OVERRIDE = {
+  "GoblinShaman_Hildir": "Miniboss",
+  "GoblinBrute_Hildir": "Miniboss",
+  "Skeleton_Hildir": "Miniboss",
+  "Cultist_Hildir": "Miniboss",
+};
+
 for (const cd of creatureDrops) {
   if (seenIds.has(cd.creature)) continue;
   if (CREATURE_BLACKLIST.has(cd.creature)) continue;
@@ -1709,18 +1717,100 @@ for (const cd of creatureDrops) {
   const biome = creatureBiomes.length > 0 ? creatureBiomes[0] : guessCreatureBiome(cd.creature);
   const biomeList = creatureBiomes.length > 0 ? creatureBiomes : (biome ? [biome] : []);
   
+  const isBoss = cd.boss === true || cd.health >= 5000;
+  const hp = cd.health;
+
+  // ── Stats array ──
+  const stats = [];
+
+  // Health — bosses get flat value, regular creatures get /lvl for star tabs
+  if (isBoss) {
+    stats.push({ label: "Health", value: `${hp}` });
+  } else {
+    // Stars: 1★=2x HP, 2★=3x HP → perLevel = base
+    stats.push({ label: "Health", value: `${hp}/${hp}lvl` });
+  }
+
+  // ── Attack damage (from new extractor fields) ──
+  if (cd.attacks && cd.attacks.length > 0) {
+    // Deduplicate: group by resolved name, keep highest total damage per name
+    const atkMap = new Map(); // name → {atk, totalDmg}
+    for (const atk of cd.attacks) {
+      const totalDmg = (atk.damage || 0) + (atk.blunt || 0) + (atk.slash || 0) + (atk.pierce || 0) +
+        (atk.fire || 0) + (atk.frost || 0) + (atk.lightning || 0) + (atk.poison || 0) + (atk.spirit || 0);
+      if (totalDmg <= 0) continue;
+      const atkName = loc(atk.name) || "Attack";
+      if (!atkMap.has(atkName) || totalDmg > atkMap.get(atkName).totalDmg) {
+        atkMap.set(atkName, { atk, totalDmg });
+      }
+    }
+
+    for (const [atkName, { atk, totalDmg }] of atkMap) {
+      // Star damage scaling: 1★=1.5x, 2★=2x → perLevel = base * 0.5
+      if (isBoss) {
+        stats.push({ label: atkName, value: `${totalDmg}` });
+      } else {
+        const perLvl = Math.round(totalDmg * 0.5);
+        stats.push({ label: atkName, value: `${totalDmg}/${perLvl}lvl` });
+      }
+
+      // Per-type breakdown
+      const dmgTypes = [];
+      if (atk.blunt > 0) dmgTypes.push(`Blunt ${atk.blunt}`);
+      if (atk.slash > 0) dmgTypes.push(`Slash ${atk.slash}`);
+      if (atk.pierce > 0) dmgTypes.push(`Pierce ${atk.pierce}`);
+      if (atk.fire > 0) dmgTypes.push(`Fire ${atk.fire}`);
+      if (atk.frost > 0) dmgTypes.push(`Frost ${atk.frost}`);
+      if (atk.lightning > 0) dmgTypes.push(`Lightning ${atk.lightning}`);
+      if (atk.poison > 0) dmgTypes.push(`Poison ${atk.poison}`);
+      if (atk.spirit > 0) dmgTypes.push(`Spirit ${atk.spirit}`);
+      if (atk.damage > 0) dmgTypes.push(`Physical ${atk.damage}`);
+      if (dmgTypes.length > 0 && dmgTypes.length < 5) {
+        // Only show type breakdown if it's interesting (not too many types)
+        stats.push({ label: `${atkName} Types`, value: dmgTypes.join(", ") });
+      }
+    }
+  }
+
+  // ── Damage resistances / weaknesses ──
+  if (cd.damageModifiers) {
+    const dm = cd.damageModifiers;
+    const resistLabels = { VeryResistant: "Very Resistant", VeryWeak: "Very Weak" };
+    const resist = [];
+    const weak = [];
+    const immune = [];
+    const combatTypes = ["blunt", "slash", "pierce", "fire", "frost", "lightning", "poison", "spirit"];
+
+    for (const t of combatTypes) {
+      const mod = dm[t];
+      if (!mod || mod === "Normal" || mod === "Ignore") continue;
+      const label = t.charAt(0).toUpperCase() + t.slice(1);
+      if (mod === "Immune") immune.push(label);
+      else if (mod === "Resistant" || mod === "VeryResistant") resist.push(label);
+      else if (mod === "Weak" || mod === "VeryWeak") weak.push(label);
+    }
+    if (immune.length > 0) stats.push({ label: "Immune", value: immune.join(", ") });
+    if (resist.length > 0) stats.push({ label: "Resistant", value: resist.join(", ") });
+    if (weak.length > 0) stats.push({ label: "Weak", value: weak.join(", ") });
+  }
+
+  // ── Faction ──
+  if (cd.faction && cd.faction !== "ForestMonsters" && cd.faction !== "") {
+    stats.push({ label: "Faction", value: cd.faction });
+  }
+
   const entry = {
     id: cd.creature,
     token: "",
     name: cleanName,
     type: "Creature",
-    subcategory: cd.health >= 5000 ? "Boss" : "Creature",
+    subcategory: isBoss ? "Boss" : (CREATURE_SUBCATEGORY_OVERRIDE[cd.creature] || "Creature"),
     description: "",
     biomes: biomeList,
     source: biomeList.length > 0 ? [...biomeList] : ["World"],
     station: "",
     stationLevel: 0,
-    maxQuality: 1,
+    maxQuality: isBoss ? 1 : 3,
     stack: 1,
     weight: 0,
     value: 0,
@@ -1728,13 +1818,7 @@ for (const cd of creatureDrops) {
     upgradeCosts: [],
     drops: drops,
     worldSources: [],
-    stats: cd.health >= 5000
-      ? [{ label: "Health", value: `${cd.health}` }]
-      : [
-          { label: "Health", value: `${cd.health}` },
-          { label: "Health (1\u2605)", value: `${cd.health * 2}` },
-          { label: "Health (2\u2605)", value: `${cd.health * 3}` },
-        ],
+    stats: stats,
     wikiUrl: WIKI_MAP[cd.creature] ? WIKI_MAP[cd.creature][0] : "",
     wikiGroup: WIKI_MAP[cd.creature] && WIKI_MAP[cd.creature][1] ? WIKI_MAP[cd.creature][1] : "",
   };
@@ -1975,6 +2059,91 @@ for (const entry of converted) {
 }
 console.log(`Inherited biomes for ${inherited} items from their ingredients`);
 
+// ── Post-processing fixups (corrections verified against wiki / in-game) ──
+// These fix extraction pipeline bugs and item data errors that can't be solved
+// by BIOME_OVERRIDE alone (source changes, stat cleanup, missing items, etc.)
+const ITEM_FIXUPS = {
+  // Ashlands source corrections (extraction misclassifies Destructible as Pickup)
+  "SurtlingCore":     { biomes: ["Black Forest", "Swamp"] },
+  "CharcoalResin":    { source: ["Destructible"] },
+  "BellFragment":     { source: ["Destructible"] },
+  "Charredskull":     { source: ["Destructible", "Chest Loot"] },
+  "Pot_Shard_Green":  { source: ["Destructible"] },
+  "AsksvinCarrionNeck":    { source: ["Destructible"] },
+  "AsksvinCarrionPelvic":  { source: ["Destructible"] },
+  "AsksvinCarrionRibcage": { source: ["Destructible"] },
+  "AsksvinCarrionSkull":   { source: ["Destructible"] },
+  "SulfurStone":      { source: ["Mining", "Creature Drop"] },
+  "CelestialFeather": { source: ["Creature Drop", "Chest Loot"] },
+  "ProustitePowder":  { source: ["Creature Drop", "Destructible"] },
+  "MoltenCore":       { source: ["Pickup", "Chest Loot"] },
+  "VoltureEgg":       { source: ["Creature Drop", "Pickup"] },
+  "Fish11":           { source: ["Fishing"] },  // Magmafish
+  "Ironpit":          { biomes: ["Meadows", "Ashlands"], source: ["Vendor", "Pickup"] },
+  "PungentPebbles":   { biomes: ["Swamp"], source: ["Vendor"] },
+  "CeramicPlate":     { biomes: ["Mistlands"], source: ["Crafting"] },
+  "BoneFragments":    { biomes: ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"] },
+  // Flametal is smelted at Blast Furnace, not chest loot
+  "FlametalNew":      { source: ["Crafting"], station: "Blast Furnace" },
+  // Dyrnwyn fragments are Ashlands, not Mistlands
+  "DyrnwynBladeFragment": { biomes: ["Ashlands"] },
+  "DyrnwynTipFragment":   { biomes: ["Ashlands"] },
+  // Creature renames / subcategory fixes
+  "GoblinShaman_Hildir": { name: "Zil", subcategory: "Miniboss" },
+  "GoblinBrute_Hildir":  { name: "Thungr", subcategory: "Miniboss" },
+};
+
+// Items to remove entirely (internal duplicates / bogus entries)
+const ITEM_REMOVE = new Set([
+  "Leech_cave",         // Duplicate of Leech (internal cave spawner variant)
+  "Skeleton_NoArcher",  // Duplicate of Skeleton (melee-only variant)
+  "TheHive",            // Bogus entry (Drake nest data on a Mistlands "boss")
+  "Hive",               // Redundant with SeekerQueen (The Queen)
+]);
+
+// Items to add (missing from extraction)
+const ITEM_ADDITIONS = [
+  {id:"Pot_Shard_Red",token:"$item_pot_shard_red",name:"Red Pot Shard",type:"Material",subcategory:"Material",description:"A fragment of something brittle.",biomes:["Ashlands"],source:["Destructible"],station:"",stationLevel:0,maxQuality:1,stack:50,weight:2,value:0,recipe:[],upgradeCosts:[],drops:[],worldSources:[],stats:[],wikiUrl:"https://valheim.fandom.com/wiki/Pot_shard",wikiGroup:""},
+];
+
+// Remove blacklisted items
+// Filter in-place (converted is const but array contents are mutable)
+for (let i = converted.length - 1; i >= 0; i--) {
+  if (ITEM_REMOVE.has(converted[i].id)) converted.splice(i, 1);
+}
+
+// Apply fixups
+for (const e of converted) {
+  const fix = ITEM_FIXUPS[e.id];
+  if (!fix) continue;
+  for (const [k, v] of Object.entries(fix)) {
+    e[k] = v;
+  }
+}
+
+// Add missing items
+for (const add of ITEM_ADDITIONS) {
+  if (!converted.some(e => e.id === add.id)) {
+    converted.push(add);
+  }
+}
+
+// Fix recipe references that use raw tokens instead of display names
+for (const e of converted) {
+  for (const r of e.recipe || []) {
+    if (r.name && r.name.startsWith("$")) {
+      r.name = loc(r.name) || r.name;
+    }
+  }
+}
+
+// Remove MoltenCore's bogus food stats (vestigial game data, food=0)
+const mc = converted.find(e => e.id === "MoltenCore");
+if (mc) mc.stats = mc.stats.filter(s => s.label !== "Duration" && s.label !== "Regen");
+
+let fixupCount = Object.keys(ITEM_FIXUPS).length + ITEM_REMOVE.size + ITEM_ADDITIONS.length;
+console.log(`Applied ${fixupCount} post-processing fixups`);
+
 // ── Sort: Materials, Weapons, Armor, Food, Potions, Tools, Ammo, Creatures, BuildPieces, Misc
 const TYPE_ORDER = ["Material", "Weapon", "Armor", "Food", "Potion", "Tool", "Ammo", "Creature", "WorldObject", "BuildPiece", "Misc"];
 converted.sort((a, b) => {
@@ -2040,6 +2209,7 @@ export type ItemType =
   | "Ammo"
   | "BuildPiece"
   | "Creature"
+  | "WorldObject"
   | "Misc";
 
 export interface ValheimItem {

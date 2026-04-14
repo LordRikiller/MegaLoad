@@ -1,11 +1,11 @@
 {
-  "version": "1.5.7",
-  "notes": "v1.5.7 - Fix link code input accepting full 3-group tokens",
-  "pub_date": "2026-04-12T06:00:00.000Z",
+  "version": "1.5.9",
+  "notes": "Valheim Data: creature combat stats (attacks, resistances, weaknesses), Ashlands data audit (25+ fixes), star level tabs for creatures, MegaBugs ticket fix, sync improvements",
+  "pub_date": "2026-04-14T04:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUxMR21URXBWbDEzRmVDa3grVnZsZ3h2NVZFTGVkVGZ1VVovVldrZS9xUmcvVW9mUC9RcU5VTkcvTWtrMlVaSyt1R1E1d28vRkdrVnhnOURlL0l3NGc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1OTQ2MzgxCWZpbGU6TWVnYUxvYWRfMS41LjdfeDY0LXNldHVwLm5zaXMuemlwCkVIN1gvZm9WOUFRUWEzNkVvc25IZm1DeTg4UnVpY0F1ancwNXY0bTNPWG5OYmhjR1ZkNCt5R2tzcGdyaElkTkM2SjlzbXE0TVdZT25BYTAxdXI0eEF3PT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.7/MegaLoad_1.5.7_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUdhRWJGc283QUlIRENYL2NBQzR2ajNVeVFNMm5tci9nVHlIdmxqN0hvd3QwUWdMK3M5VFJyd1FlcVJaVEdqUkRLc3NQa2JxOGZTQkNaaHZ6U3lqR3cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MTM4ODQ5CWZpbGU6TWVnYUxvYWRfMS41LjlfeDY0LXNldHVwLm5zaXMuemlwCklnYjUxYmN1WWgySEVBcXVtOTladGlTdTlCc3VwVlVsSlRSZzVxMnI3LzBPbFFrMngzS21wSDB3U1k2UnFkV1JKZVBwTUVGcDkrL3dBV0JQNmpQaEFRPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.9/MegaLoad_1.5.9_x64-setup.nsis.zip"
     }
   }
 }

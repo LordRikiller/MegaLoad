@@ -12,6 +12,7 @@ import {
   type CheatDef,
   type SavedTrainerProfile,
 } from "../lib/tauri-api";
+import { useSyncStore } from "./syncStore";
 
 interface TrainerState {
   cheats: CheatDef[];
@@ -62,6 +63,7 @@ export const useTrainerStore = create<TrainerState>((set, _get) => ({
     }));
     try {
       await toggleTrainerCheat(bepinexPath, cheatId, enabled);
+      useSyncStore.getState().triggerAutoSync();
     } catch (e) {
       // Revert on failure
       set((s) => ({
@@ -77,17 +79,20 @@ export const useTrainerStore = create<TrainerState>((set, _get) => ({
     await saveTrainerProfile(bepinexPath, name);
     const profiles = await getTrainerProfiles(bepinexPath);
     set({ savedProfiles: profiles });
+    useSyncStore.getState().triggerAutoSync();
   },
 
   loadProfile: async (bepinexPath: string, name: string) => {
     const cheats = await loadTrainerProfile(bepinexPath, name);
     set({ cheats });
+    useSyncStore.getState().triggerAutoSync();
   },
 
   deleteProfile: async (bepinexPath: string, name: string) => {
     await deleteTrainerProfile(bepinexPath, name);
     const profiles = await getTrainerProfiles(bepinexPath);
     set({ savedProfiles: profiles });
+    useSyncStore.getState().triggerAutoSync();
   },
 
   fetchProfiles: async (bepinexPath: string) => {
@@ -99,6 +104,7 @@ export const useTrainerStore = create<TrainerState>((set, _get) => ({
     await resetTrainer(bepinexPath);
     const cheats = await getTrainerCheats(bepinexPath);
     set({ cheats, speedMultiplier: 1.0, jumpMultiplier: 1.0 });
+    useSyncStore.getState().triggerAutoSync();
   },
 
   setMultiplier: async (bepinexPath: string, kind: "speed" | "jump", value: number) => {
@@ -107,6 +113,7 @@ export const useTrainerStore = create<TrainerState>((set, _get) => ({
     else set({ jumpMultiplier: value });
     try {
       await setTrainerMultiplier(bepinexPath, kind, value);
+      useSyncStore.getState().triggerAutoSync();
     } catch (e) {
       // Revert on failure
       if (kind === "speed") set({ speedMultiplier: 1.0 });

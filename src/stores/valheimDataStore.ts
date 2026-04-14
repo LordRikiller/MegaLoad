@@ -427,7 +427,6 @@ const CREATURE_TROPHY_OVERRIDE: Record<string, string> = {
   "BlobLava": "TrophySurtling",
   "SeekerBrood": "TrophySeeker",
   "GoblinBrute_Hildir": "TrophyGoblinBrute",
-  "Bat": "TrophyHatchling",
 };
 
 /** Get the icon ID for a creature (trophy fallback if no direct icon) */

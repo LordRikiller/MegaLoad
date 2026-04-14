@@ -350,6 +350,28 @@ export function MegaBugs() {
     );
   }
 
+  // ─── Ticket Detail Loading/Error ───────────────────────────────────
+  if (view === "detail" && !activeTicket) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 animate-in">
+        {error ? (
+          <>
+            <AlertCircle className="w-8 h-8 text-red-400" />
+            <p className="text-sm text-red-400 max-w-md text-center px-6">{error}</p>
+            <button
+              onClick={goBack}
+              className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-sm text-zinc-200 transition-colors"
+            >
+              Back to list
+            </button>
+          </>
+        ) : (
+          <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+        )}
+      </div>
+    );
+  }
+
   // ─── Ticket Detail View ────────────────────────────────────────────
   if (view === "detail" && activeTicket) {
     const StatusIcon = statusIcons[activeTicket.status] || AlertCircle;
