@@ -1,11 +1,11 @@
 {
-  "version": "1.5.10",
-  "notes": "Valheim Data: creature combat stats (attacks, resistances, weaknesses), Ashlands data audit (25+ fixes), star level tabs for creatures, MegaBugs ticket fix, sync improvements",
-  "pub_date": "2026-04-14T04:10:00Z",
+  "version": "1.5.11",
+  "notes": "Station Required Materials: toggle to see all ingredients needed by selected stations, with multi-station cascade support",
+  "pub_date": "2026-04-14T05:15:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUREcGxJdlB3S1Brc0FCNHYvK2J3R05KV2xrdEE0ZjJqdXlmMjVpZ3ozeHpJcjlxL1lSUXFkQnNFUlN3RmY0a0VVVXB0MEYyTEc3cXhlOUpGaDgwdndvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MTM5Njg4CWZpbGU6TWVnYUxvYWRfMS41LjEwX3g2NC1zZXR1cC5uc2lzLnppcApIQnArcFh4RGthaUJnZlBJRkpDK2RDQUNUTG8zMmtXY0JxZEMvVVhURGhETVVERll5Y0tscWdKVmg1ZDkvQTErQXRvQ3htYkJRRUIyUjIrcy9ZZ2ZDQT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.10/MegaLoad_1.5.10_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNtbmV2RkhJSThGc0J6OCs5RzluemRYKzRCSFFudDd6UTVXdXNEdWdveDZReCtXT1U3QWQwVnd3YiszUkptZ3JWZ2lPbjRqY0dOL3RkdDg5cy9oMGc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MTQzNTc5CWZpbGU6TWVnYUxvYWRfMS41LjExX3g2NC1zZXR1cC5uc2lzLnppcAp0ZEE5SXhRSFhHMWFlQk44SVU0TXAwRXJ1NlFNTG1YUG9TMzRrdm9SU3VKQ3hmZHRFRlZEOUpsaDNQQmJYWlpkcG5nTW12YmhWNlBPTVRtZVV3WC9EUT09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.11/MegaLoad_1.5.11_x64-setup.nsis.zip"
     }
   }
 }

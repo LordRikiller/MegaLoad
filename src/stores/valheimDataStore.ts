@@ -456,6 +456,26 @@ export function getStationItems(stationName: string): ValheimItem[] {
   return VALHEIM_ITEMS.filter((i) => i.station === stationName);
 }
 
+/** Get all unique ingredients needed to craft everything at the given stations */
+export function getStationMaterials(stationNames: string[]): CartMaterial[] {
+  const totals = new Map<string, CartMaterial>();
+  for (const name of stationNames) {
+    for (const item of getStationItems(name)) {
+      for (const ing of item.recipe) {
+        const prev = totals.get(ing.id);
+        totals.set(ing.id, { id: ing.id, name: ing.name, amount: (prev?.amount || 0) + ing.amount });
+      }
+      for (const uc of item.upgradeCosts) {
+        for (const r of uc.resources) {
+          const prev = totals.get(r.id);
+          totals.set(r.id, { id: r.id, name: r.name, amount: (prev?.amount || 0) + r.amount });
+        }
+      }
+    }
+  }
+  return [...totals.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** Get items grouped by station level */
 export function getStationItemsByLevel(stationName: string): Map<number, ValheimItem[]> {
   const items = getStationItems(stationName);
@@ -527,6 +547,9 @@ interface ValheimDataState {
   setSelectedVendor: (vendor: string | null) => void;
   setViewMode: (mode: ViewMode) => void;
   setTableSort: (key: TableSortKey) => void;
+  // Station materials mode
+  stationMaterialsMode: boolean;
+  setStationMaterialsMode: (on: boolean) => void;
   // Cart
   cartItems: CartEntry[];
   cartOpen: boolean;
@@ -560,6 +583,8 @@ export const useValheimDataStore = create<ValheimDataState>((set) => ({
   viewMode: savedViewMode === "table" ? "table" : "grid",
   tableSortKey: "name",
   tableSortDir: "asc",
+  stationMaterialsMode: false,
+  setStationMaterialsMode: (on) => set({ stationMaterialsMode: on }),
   cartItems: [],
   cartOpen: false,
   setQuery: (query) => set({ query }),
@@ -581,9 +606,10 @@ export const useValheimDataStore = create<ValheimDataState>((set) => ({
   toggleBiome: (b) => set((s) => ({
     activeBiomes: s.activeBiomes.includes(b) ? s.activeBiomes.filter(x => x !== b) : [...s.activeBiomes, b],
   })),
-  toggleStation: (st) => set((s) => ({
-    activeStations: s.activeStations.includes(st) ? s.activeStations.filter(x => x !== st) : [...s.activeStations, st],
-  })),
+  toggleStation: (st) => set((s) => {
+    const next = s.activeStations.includes(st) ? s.activeStations.filter(x => x !== st) : [...s.activeStations, st];
+    return { activeStations: next, stationMaterialsMode: next.length === 0 ? false : s.stationMaterialsMode };
+  }),
   toggleFactory: (f) => set((s) => ({
     activeFactories: s.activeFactories.includes(f) ? s.activeFactories.filter(x => x !== f) : [...s.activeFactories, f],
   })),

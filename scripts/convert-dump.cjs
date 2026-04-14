@@ -2101,9 +2101,10 @@ const ITEM_REMOVE = new Set([
   "Hive",               // Redundant with SeekerQueen (The Queen)
 ]);
 
-// Items to add (missing from extraction)
+// Items to add (missing from extraction — oven intermediates merged away, but still used as ingredients)
 const ITEM_ADDITIONS = [
   {id:"Pot_Shard_Red",token:"$item_pot_shard_red",name:"Red Pot Shard",type:"Material",subcategory:"Material",description:"A fragment of something brittle.",biomes:["Ashlands"],source:["Destructible"],station:"",stationLevel:0,maxQuality:1,stack:50,weight:2,value:0,recipe:[],upgradeCosts:[],drops:[],worldSources:[],stats:[],wikiUrl:"https://valheim.fandom.com/wiki/Pot_shard",wikiGroup:""},
+  {id:"BreadDough",token:"$item_breaddough",name:"Bread Dough",type:"Material",subcategory:"Material",description:"Ready for the oven.",biomes:["Plains"],source:["Crafting"],station:"Food Preparation Table",stationLevel:1,maxQuality:1,stack:20,weight:0.5,value:0,recipe:[{"id":"BarleyFlour","name":"Barley Flour","amount":10}],upgradeCosts:[],drops:[],worldSources:[],stats:[],wikiUrl:"","wikiGroup":""},
 ];
 
 // Remove blacklisted items
