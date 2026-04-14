@@ -1073,7 +1073,11 @@ function tableSortValue(item: ValheimItem, key: TableSortKey): string | number {
     case "name": return item.name.toLowerCase();
     case "type": return item.type;
     case "subcategory": return item.subcategory;
-    case "biome": return item.biomes[0] || "";
+    case "biome": {
+      const b = item.biomes[0] || "";
+      const idx = BIOME_ORDER.indexOf(b as any);
+      return idx >= 0 ? idx : BIOME_ORDER.length;
+    }
     case "from": return getItemSource(item);
     case "weight": return item.weight;
     case "stack": return item.stack;

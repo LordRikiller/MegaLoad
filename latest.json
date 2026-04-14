@@ -1,11 +1,11 @@
 {
-  "version": "1.5.14",
-  "notes": "Food subcategories: Raw Food, Cooked Food, Prepared Food, Feast",
-  "pub_date": "2026-04-14T07:00:00Z",
+  "version": "1.5.15",
+  "notes": "Biome column sorts by progression order (Meadows→Deep North), not alphabetically",
+  "pub_date": "2026-04-14T07:15:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUU3MDZTSXJSaHdwYnI3OGp3TjRDZWxIQTVveXFZdzBrZGsyOWFwN0VkWFlJTXcrcGdhMEdPY0NzWjczeWl0UUNGZ1Z1aTFUdlNKU0xOUElTaENRQ0FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MTQ3MDM2CWZpbGU6TWVnYUxvYWRfMS41LjE0X3g2NC1zZXR1cC5uc2lzLnppcApPNXlpbkdiWnpQYU9iT3h0aFRrQitqQzdUMDlkUmVuSnNBVkhCdVVWMElHVlF0U0s5a0laOTJuL1ZMQlR2ZHFERE5xQjBGeDEwWnUwOGloUG1Tb3pCUT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.14/MegaLoad_1.5.14_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUhxREd5ZzJWWWJ3b09hK2wvUUQ5U2cxMXVUT1N1b1FWWDZETXAzTjVJakRCWW9HV3VFay9EazhucittUzdqakxpZy8yT3JsZjRzREV6VUM3ZFlURFFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MTQ4MDQyCWZpbGU6TWVnYUxvYWRfMS41LjE1X3g2NC1zZXR1cC5uc2lzLnppcAovRUJnZ0FHUHNjYjR5WHhuTGRvUWdMaHl3dkNuYW54NTZuOGhmTy9oYlJWbFZUc0Z1Tk5BRm0wdE05SXJ1c0wvYWFadXdDQmpqT1NOZXhLMlkzUmpCQT09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.15/MegaLoad_1.5.15_x64-setup.nsis.zip"
     }
   }
 }
