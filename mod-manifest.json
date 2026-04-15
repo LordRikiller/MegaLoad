@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-13T13:30:00Z",
+  "updated_at": "2026-04-15T00:00:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -44,8 +44,8 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.0.12",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.0.12/MegaStuff.dll",
+      "version": "1.0.13",
+      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.0.13/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
       "description": "Storage & farming — quick deposit, chest auto-pickup, craft from containers, pet feeder, mass harvest, grid planting"
