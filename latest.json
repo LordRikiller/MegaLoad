@@ -1,11 +1,11 @@
 {
-  "version": "1.5.18",
-  "notes": "Valheim data accuracy: corrected Dvergr Chest contents (no Black Core/Extractor — added Sausages, Minor Healing/Stamina/Tasty Mead), reworked Frost Cave / Sunken Crypt / Burial Chamber / Troll Cave / Meadows / Charred Fortress chest loot, moved Hildir/Bog Witch vendor items to correct biomes (Barber Kit, Basic Fireworks → Meadows; Candle Wick, Ivy Seeds, Woodland Herb Blend → Swamp).",
-  "pub_date": "2026-04-15T22:45:00Z",
+  "version": "1.5.19",
+  "notes": "Valheim data accuracy round 2: fixed fish worldSources off-by-one bug (Trollfish/Giant Herring/Grouper/Coral Cod/Tetra/Northern Salmon/Pufferfish), corrected fishing bait biomes (Misty/Heavy/Sticky/Stingy/Cold), added missing biomes for Chain (Plains/Mistlands), Iron Scrap (Mistlands), Leather Scraps (Swamp/Mountain), Skeleton (Plains), and Bukeperries (Plains).",
+  "pub_date": "2026-04-15T23:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtRY3ZienIzN3pjbWtmMUxzdzNBbVNRdThnREZPTzZyYkgrYjRrQ2xta203YjJHT2hXNTQxRVRKM2Z0bWN5N2RMRVhFOUZJNWZXcEw3bkdPZzhIc1FVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MjkyNzc0CWZpbGU6TWVnYUxvYWRfMS41LjE4X3g2NC1zZXR1cC5uc2lzLnppcAowMlBCdnMwalBiZXkrdm1ETG5MYW9vYW5OVUE1eG8xWnNmM0ZaYTk5S3dDRlprMVJGeGNlNTZ3MnBaNGorVFlQWEVTODViZ3NCcXdIays3Ky8xeXRDUT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.18/MegaLoad_1.5.18_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOURzZ2htT1VjbjNKOTVhWCtDVmVpK0dRWEVEQmxJcUZmN2xsaGpjOGdiZ2duRlRIbFdTU2l2VE45SGo3UVFlNXZ5RVllWFk1L2tZQkJOditQeFo1V2dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MjkzNzg3CWZpbGU6TWVnYUxvYWRfMS41LjE5X3g2NC1zZXR1cC5uc2lzLnppcApKVU1PQU4xd3NHR2JOcUIvazVPY2J3RzNPdE4xYVZQb045cEo0ZFlpK3hkVFh5SUhiNUhzek9VUGl4OGZTcE5OZzg3K05PY1hrUXlqRldDTFFIK3hBUT09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.5.19/MegaLoad_1.5.19_x64-setup.nsis.zip"
     }
   }
 }

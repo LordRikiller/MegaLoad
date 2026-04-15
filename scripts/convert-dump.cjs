@@ -755,10 +755,10 @@ const BIOME_OVERRIDE = {
   "Mushroom": ["Meadows", "Black Forest"],
   "Feathers": ["Meadows", "Black Forest", "Mountain", "Plains", "Ashlands"],
   "Coal": ["Meadows", "Black Forest", "Swamp"],
-  "LeatherScraps": ["Meadows", "Black Forest"],
+  "LeatherScraps": ["Meadows", "Black Forest", "Swamp", "Mountain"],  // +Swamp (Sunken Crypts), +Mountain (Bat drops)
   "BirchSeeds": ["Meadows", "Plains"],
   "PineCone": ["Black Forest"],
-  "IronScrap": ["Swamp", "Mountain"],
+  "IronScrap": ["Swamp", "Mountain", "Mistlands"],  // +Mistlands (Ancient Armor/Sword mounds)
 
   // ─── Swamp materials ───
   "WitheredBone": ["Swamp"],
@@ -798,7 +798,7 @@ const BIOME_OVERRIDE = {
   "TrophyDraugr": ["Meadows", "Swamp", "Mountain"],
   "TrophyDraugrFem": ["Meadows", "Swamp", "Mountain"],
   "TrophyDraugrElite": ["Meadows", "Swamp", "Mountain"],
-  "TrophySkeleton": ["Meadows", "Black Forest", "Swamp", "Mountain"],
+  "TrophySkeleton": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],  // +Plains (post-Bonemass night spawns)
   "TrophySkeletonPoison": ["Black Forest"],
   "TrophyDeer": ["Meadows", "Black Forest"],
   "TrophySeekerQueen": ["Mistlands"],
@@ -811,8 +811,8 @@ const BIOME_OVERRIDE = {
   "Draugr": ["Meadows", "Swamp", "Mountain"],
   "Draugr_Ranged": ["Meadows", "Swamp", "Mountain"],
   "Draugr_Elite": ["Meadows", "Swamp", "Mountain"],
-  "Skeleton": ["Meadows", "Black Forest", "Swamp", "Mountain"],
-  "Skeleton_NoArcher": ["Meadows", "Black Forest", "Swamp", "Mountain"],
+  "Skeleton": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],          // +Plains (post-Bonemass night spawns)
+  "Skeleton_NoArcher": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"], // +Plains
   "Skeleton_Poison": ["Black Forest"],
   "Hatchling": ["Mountain"],
   "Hive": ["Meadows"],
@@ -1060,32 +1060,33 @@ const WORLD_DROPS = {
   "Fish3": [
     {source: "Fishing", biome: "Ocean", type: "Pickup"},
   ],
+  // Fish worldSources — biomes match top-level fish biomes (was off-by-one shifted).
   "Fish4_cave": [
-    {source: "Fishing", biome: "Black Forest", type: "Pickup"},
+    {source: "Fishing", biome: "Mountain", type: "Pickup"},   // Tetra (Mountain caves)
   ],
   "Fish5": [
-    {source: "Fishing", biome: "Mountain", type: "Pickup"},
+    {source: "Fishing", biome: "Black Forest", type: "Pickup"},  // Trollfish
   ],
   "Fish6": [
-    {source: "Fishing", biome: "Ocean", type: "Pickup"},
+    {source: "Fishing", biome: "Swamp", type: "Pickup"},          // Giant Herring
   ],
   "Fish7": [
-    {source: "Fishing", biome: "Swamp", type: "Pickup"},
+    {source: "Fishing", biome: "Plains", type: "Pickup"},         // Grouper
   ],
   "Fish8": [
-    {source: "Fishing", biome: "Plains", type: "Pickup"},
+    {source: "Fishing", biome: "Ocean", type: "Pickup"},          // Coral Cod
   ],
   "Fish9": [
-    {source: "Fishing", biome: "Mistlands", type: "Pickup"},
+    {source: "Fishing", biome: "Mistlands", type: "Pickup"},      // Anglerfish
   ],
   "Fish10": [
-    {source: "Fishing", biome: "Mountain", type: "Pickup"},
+    {source: "Fishing", biome: "Deep North", type: "Pickup"},     // Northern Salmon
   ],
   "Fish11": [
-    {source: "Fishing", biome: "Ashlands", type: "Pickup"},
+    {source: "Fishing", biome: "Ashlands", type: "Pickup"},       // Magmafish
   ],
   "Fish12": [
-    {source: "Fishing", biome: "Ocean", type: "Pickup"},
+    {source: "Fishing", biome: "Mistlands", type: "Pickup"},      // Pufferfish (Mistlands offshore)
   ],
   "FishAnglerRaw": [
     {source: "Fishing", biome: "Mistlands", type: "Pickup"},
@@ -2078,6 +2079,18 @@ const ITEM_FIXUPS = {
   "BogWitchKvastur":         { biomes: ["Swamp"] },
   "CeramicPlate":     { biomes: ["Mistlands"], source: ["Crafting"] },
   "BoneFragments":    { biomes: ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"] },
+  // Audit: missing biomes
+  "Chain":            { biomes: ["Swamp", "Plains", "Mistlands"] },  // +Plains (Sealed Tower chests), +Mistlands (Dvergr structures)
+  "Pukeberries":      { biomes: ["Black Forest", "Plains"] },        // Greydwarf Shaman (BF) AND Fuling Shaman (Plains) drops
+  // Section 1 fish bait corrections (prefab IDs do NOT match natural names — verify before changing)
+  "FishingBaitMistlands":  { biomes: ["Mistlands"] },                       // Misty Fishing Bait — for Mistlands (Anglerfish)
+  "FishingBaitForest":     { biomes: ["Black Forest"], source: ["Crafting"] }, // Mossy Fishing Bait — for Black Forest (Trollfish)
+  "FishingBaitOcean":      { biomes: ["Ocean"] },                           // Heavy Fishing Bait — for Ocean (Coral Cod)
+  "FishingBaitSwamp":      { biomes: ["Swamp"] },                           // Sticky Fishing Bait — for Swamp (Giant Herring)
+  "FishingBaitPlains":     { biomes: ["Plains"] },                          // Stingy Fishing Bait — for Plains (Grouper)
+  "FishingBaitCave":       { biomes: ["Mountain"] },                        // Cold Fishing Bait — for Mountain (Tetra cave)
+  // Source-only fixes
+  "BarleyWineBase":   { source: ["Crafting"] },                       // Pure crafting, no foraging
   // Flametal is smelted at Blast Furnace, not chest loot
   "FlametalNew":      { source: ["Crafting"], station: "Blast Furnace" },
   // Dyrnwyn fragments are Ashlands, not Mistlands
