@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-17T12:00:00Z",
+  "updated_at": "2026-04-17T18:10:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -20,8 +20,8 @@
     },
     {
       "name": "MegaFood",
-      "version": "1.3.1",
-      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.3.1/MegaFood.dll",
+      "version": "1.4.0",
+      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.4.0/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
       "description": "MegaFood + MegaMead — 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration"
@@ -44,8 +44,8 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.0.19",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.0.19/MegaStuff.dll",
+      "version": "1.0.22",
+      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.0.22/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
       "description": "Storage & farming — quick deposit, chest auto-pickup, craft from containers, pet feeder, mass harvest, grid planting"
