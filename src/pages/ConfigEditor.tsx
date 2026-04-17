@@ -28,7 +28,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { cn } from "../lib/utils";
+import { cn, formatModName } from "../lib/utils";
 import { SyncingOverlay } from "../components/SyncingOverlay";
 
 /** Natural sort comparator — handles "1 - Foo", "2 - Bar", "10 - Baz" correctly */
@@ -258,6 +258,7 @@ export function ConfigEditor() {
     ? configs.filter(
         (c) =>
           c.mod_name.toLowerCase().includes(search.toLowerCase()) ||
+          formatModName(c.mod_name).toLowerCase().includes(search.toLowerCase()) ||
           c.file_name.toLowerCase().includes(search.toLowerCase())
       )
     : configs;
@@ -326,7 +327,7 @@ export function ConfigEditor() {
             <p className="text-sm text-zinc-400 mb-2">
               Are you sure you want to delete the config file for{" "}
               <span className="font-semibold text-zinc-200">
-                {deleteConfirm.mod_name}
+                {formatModName(deleteConfirm.mod_name)}
               </span>
               ?
             </p>
@@ -431,7 +432,7 @@ export function ConfigEditor() {
                       {result.entry.key}
                     </span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500">
-                      {result.config.mod_name}
+                      {formatModName(result.config.mod_name)}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-500 mt-0.5 truncate">
@@ -489,7 +490,7 @@ export function ConfigEditor() {
                     <div className="flex items-center gap-2">
                       <FileText className="w-3.5 h-3.5 shrink-0 opacity-60" />
                       <span className="text-xs font-medium truncate">
-                        {cfg.mod_name}
+                        {formatModName(cfg.mod_name)}
                       </span>
                     </div>
                     <span className="text-[10px] text-zinc-600 ml-6">
@@ -570,7 +571,7 @@ export function ConfigEditor() {
               <div className="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-sm px-5 py-4 border-b border-zinc-800/50 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-zinc-200">
-                    {selectedConfig.mod_name}
+                    {formatModName(selectedConfig.mod_name)}
                   </h2>
                   <p className="text-xs text-zinc-500 mt-0.5 font-mono">
                     {selectedConfig.file_name}

@@ -12,7 +12,7 @@ import {
   ExternalLink,
   Download,
 } from "lucide-react";
-import { cn } from "../lib/utils";
+import { cn, formatModName } from "../lib/utils";
 import {
   detectR2modmanProfiles,
   getStarterMods,
@@ -347,7 +347,7 @@ export function Profiles() {
                         {selected && <Check className="w-3 h-3 text-zinc-950" />}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold truncate">{mod.name}</p>
+                        <p className="text-xs font-semibold truncate">{formatModName(mod.name)}</p>
                         {mod.description && (
                           <p className="text-[10px] text-zinc-500 line-clamp-2 mt-0.5 leading-tight">
                             {mod.description}

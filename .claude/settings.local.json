@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(cargo check *)",
+      "Bash(npx tsc *)",
+      "Bash(awk -F']' '/^\\\\[\\(Info|Warning\\)/ {split\\($1, a, \":\"\\); tag = a[2]; for \\(i=3; i<=length\\(a\\); i++\\) tag = tag \":\" a[i]; counts[tag]++} END {for \\(t in counts\\) print counts[t] \"\\\\t\" t}' \"C:/Users/Rik/OneDrive/Valheim Mods/LogOutput_2026-04-17_20-02-25_acb85580-738b-4207-999c-25983a713316.log\")",
+      "Bash(dotnet build *)"
     ]
   }
 }

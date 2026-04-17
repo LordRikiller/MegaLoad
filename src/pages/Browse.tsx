@@ -29,7 +29,7 @@ import {
   AlertTriangle,
   Crown,
 } from "lucide-react";
-import { cn } from "../lib/utils";
+import { cn, formatModName } from "../lib/utils";
 import { SyncingOverlay } from "../components/SyncingOverlay";
 
 export function Browse() {
@@ -375,7 +375,7 @@ export function Browse() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-zinc-200 truncate text-sm">{mod.name}</h3>
+                        <h3 className="font-semibold text-zinc-200 truncate text-sm">{formatModName(mod.name)}</h3>
                         <span className="text-[10px] text-zinc-500 font-mono">v{mod.version}</span>
                         {installed && (
                           <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400">

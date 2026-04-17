@@ -1,11 +1,11 @@
 {
-  "version": "1.6.1",
-  "notes": "'Check for Updates' now checks MegaLoad itself alongside your mods — one click surfaces everything in the update pipeline. Bundled plugins (MegaDataExtractor) already show their version after v1.6.0.",
-  "pub_date": "2026-04-17T20:05:00Z",
+  "version": "1.6.2",
+  "notes": "Debug-gating sweep across 8 mods — Mega Stuff, Mega Hoe, Mega Shot, Mega Trainer, Mega Factory, Mega Skeletons, Mega Food, Mega Fishing. Release users now stay silent unless DebugMode=true. Mods page / Config Editor display names normalised to 'Mega {Name}' across the board.",
+  "pub_date": "2026-04-17T20:35:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU5LWFRmUGZ4Sy9hNmlJREtGMWg3T29PVkZ5YnRkOC95UFlPYm9RUjhzQjJjWC80b3lKUW1tSVJxTDVXY2g3ak41L250WjZzRHVRV0Nzak55NmI2UlE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDE5NjUyCWZpbGU6TWVnYUxvYWRfMS42LjFfeDY0LXNldHVwLm5zaXMuemlwCkt2QXhvTDAvRUs2MTg5emFheW5oRXJQTE56N1NIUDJ6SEZSVGQ0SGJHTUUvbXZoRkdIVncyVWtROGl0dTBvWFlQZGZvdnl1WWFPVVlNdTdZbFZZdEFBPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.6.1/MegaLoad_1.6.1_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUh0cWlmZzN6cG9NRzAxL2QvZktqWDh0UmNsOStBMjBoZlNEY2M2bmN2ellPeC9oY3Q0UXhFNW1TdDIrdnBPNDQ1MDVBdG9QcWt0SVIycHJ6T0FxeFFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDI4ODk5CWZpbGU6TWVnYUxvYWRfMS42LjJfeDY0LXNldHVwLm5zaXMuemlwCklCemNDSitZS0hBL1NIT3Brd3lFZHlkQU5JQzB5amw1blU3YURmM3ZNemlLYllnWTNZQnNzbk1IVzA4a3hxQkp3YktuOVRSdGJEVmZWYXIySjZ2OERBPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.6.2/MegaLoad_1.6.2_x64-setup.nsis.zip"
     }
   }
 }

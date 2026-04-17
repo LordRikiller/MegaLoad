@@ -11,7 +11,7 @@ import {
   AlertCircle,
   AlertTriangle,
 } from "lucide-react";
-import { cn } from "../lib/utils";
+import { cn, formatModName } from "../lib/utils";
 import { open } from "@tauri-apps/plugin-dialog";
 import { installMod, validateBepinex, findBepinexSources, installBepinexCore, downloadBepinex, detectValheimPath, type BepInExStatus } from "../lib/tauri-api";
 import { SyncingOverlay } from "../components/SyncingOverlay";
@@ -316,7 +316,7 @@ export function Mods() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-zinc-200 truncate">
-                    {mod.name}
+                    {formatModName(mod.name)}
                   </h3>
                   {hasConflict && (
                     <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-400">

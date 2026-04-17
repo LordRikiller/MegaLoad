@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-17T18:10:00Z",
+  "updated_at": "2026-04-17T20:30:00Z",
   "mods": [
     {
       "name": "MegaHoe",
-      "version": "4.10.0",
-      "download_url": "https://github.com/ccmrik/MegaHoe/releases/download/v4.10.0/MegaHoe.dll",
+      "version": "4.10.1",
+      "download_url": "https://github.com/ccmrik/MegaHoe/releases/download/v4.10.1/MegaHoe.dll",
       "dll_name": "MegaHoe.dll",
       "plugin_folder": "MegaHoe",
       "description": "Hoe tool overhaul with biome painter, extended terrain editing, and configurable radius"
@@ -20,16 +20,16 @@
     },
     {
       "name": "MegaFood",
-      "version": "1.4.0",
-      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.4.0/MegaFood.dll",
+      "version": "1.4.1",
+      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.4.1/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
       "description": "MegaFood + MegaMead — 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration"
     },
     {
       "name": "MegaShot",
-      "version": "2.4.0",
-      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.4.0/MegaShot.dll",
+      "version": "2.4.1",
+      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.4.1/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system"
@@ -44,32 +44,32 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.1.0",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.1.0/MegaStuff.dll",
+      "version": "1.1.1",
+      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.1.1/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
       "description": "Storage & farming — quick deposit, chest auto-pickup, craft from containers, pet feeder, mass harvest, grid planting"
     },
     {
       "name": "MegaFishing",
-      "version": "1.1.0",
-      "download_url": "https://github.com/ccmrik/MegaFishing/releases/download/v1.1.0/MegaFishing.dll",
+      "version": "1.1.1",
+      "download_url": "https://github.com/ccmrik/MegaFishing/releases/download/v1.1.1/MegaFishing.dll",
       "dll_name": "MegaFishing.dll",
       "plugin_folder": "MegaFishing",
       "description": "Fish auto-pull into containers/inventory with quality upgrade and configurable radius"
     },
     {
       "name": "MegaFactory",
-      "version": "1.3.0",
-      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.3.0/MegaFactory.dll",
+      "version": "1.3.1",
+      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.3.1/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
       "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with work order system"
     },
     {
       "name": "MegaTrainer",
-      "version": "1.6.0",
-      "download_url": "https://github.com/ccmrik/MegaTrainer/releases/download/v1.6.0/MegaTrainer.dll",
+      "version": "1.6.1",
+      "download_url": "https://github.com/ccmrik/MegaTrainer/releases/download/v1.6.1/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
       "description": "In-game cheat trainer — god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
@@ -84,8 +84,8 @@
     },
     {
       "name": "MegaSkeletons",
-      "version": "1.1.0",
-      "download_url": "https://github.com/ccmrik/MegaSkeletons/releases/download/v1.1.0/MegaSkeletons.dll",
+      "version": "1.1.1",
+      "download_url": "https://github.com/ccmrik/MegaSkeletons/releases/download/v1.1.1/MegaSkeletons.dll",
       "dll_name": "MegaSkeletons.dll",
       "plugin_folder": "MegaSkeletons",
       "description": "Summoned skeleton buffs (health, speed, HoT, attack speed) + portal/dungeon persistence"
