@@ -10,7 +10,9 @@ import {
   updateTicketStatus,
   deleteTicket as apiDeleteTicket,
   adminListUsers,
+  getMegabugsRole,
   type MegaBugsAccess,
+  type MegaBugsRole,
   type UserIdentity,
   type TicketSummary,
   type Ticket,
@@ -60,6 +62,8 @@ const COOLDOWN_MS = 60_000;
 interface BugState {
   access: MegaBugsAccess | null;
   identity: UserIdentity | null;
+  /** Resolved role — "owner" (admin key), "collaborator" (listed), "user" (default). */
+  role: MegaBugsRole;
   tickets: TicketSummary[];
   activeTicket: Ticket | null;
   loading: boolean;
@@ -75,6 +79,8 @@ interface BugState {
   newUserCount: number;
 
   checkAccess: (bepinexPath: string) => Promise<void>;
+  /** Refresh the caller's role from the backend (reads collaborators.json). */
+  refreshRole: () => Promise<void>;
   loadIdentity: () => Promise<void>;
   saveIdentity: (displayName: string) => Promise<void>;
   loadTickets: () => Promise<void>;
@@ -134,6 +140,7 @@ function computeNotificationCount(tickets: TicketSummary[]): number {
 export const useBugStore = create<BugState>((set, get) => ({
   access: null,
   identity: null,
+  role: "user",
   tickets: [],
   activeTicket: null,
   loading: false,
@@ -148,8 +155,25 @@ export const useBugStore = create<BugState>((set, get) => ({
     try {
       const access = await checkMegabugsAccess(bepinexPath);
       set({ access });
+      // Access check fixes `is_admin`; refresh role so collaborator status is in sync.
+      get().refreshRole();
     } catch (e) {
       set({ access: { enabled: false, is_admin: false } });
+    }
+  },
+
+  refreshRole: async () => {
+    const { identity } = get();
+    if (!identity) {
+      set({ role: "user" });
+      return;
+    }
+    try {
+      const role = await getMegabugsRole(identity.user_id);
+      set({ role });
+    } catch {
+      // Role resolution failures shouldn't block the UI — fall back to user.
+      set({ role: "user" });
     }
   },
 
@@ -157,8 +181,9 @@ export const useBugStore = create<BugState>((set, get) => ({
     try {
       const identity = await getMegabugsIdentity();
       set({ identity });
+      get().refreshRole();
     } catch {
-      set({ identity: null });
+      set({ identity: null, role: "user" });
     }
   },
 
@@ -172,11 +197,12 @@ export const useBugStore = create<BugState>((set, get) => ({
   },
 
   loadTickets: async () => {
-    const { identity, access } = get();
+    const { identity, role } = get();
     if (!identity) return;
     set({ loading: true, error: null });
     try {
-      const userId = access?.is_admin ? undefined : identity.user_id;
+      // Owner and collaborator see every ticket; regular users see only their own.
+      const userId = role === "user" ? identity.user_id : undefined;
       const raw = await fetchTickets(userId);
       const tickets = applyOverrides(raw);
       set({ tickets, loading: false, offline: false, notificationCount: computeNotificationCount(tickets) });
@@ -267,6 +293,12 @@ export const useBugStore = create<BugState>((set, get) => ({
   },
 
   setStatus: async (ticketId: string, status: string, labels: string[]) => {
+    const { identity, role } = get();
+    if (!identity) return;
+    if (status === "closed" && role !== "owner") {
+      set({ error: "Only Rik closes tickets — leave it on open or in-progress." });
+      return;
+    }
     set({ error: null });
     // Register optimistic override that persists through re-fetches (CDN may be stale)
     _statusOverrides.set(ticketId, { status, labels, expiresAt: Date.now() + OVERRIDE_TTL_MS });
@@ -274,7 +306,7 @@ export const useBugStore = create<BugState>((set, get) => ({
     const updatedTickets = applyOverrides(tickets);
     set({ tickets: updatedTickets, notificationCount: computeNotificationCount(updatedTickets) });
     try {
-      await updateTicketStatus(ticketId, status, labels);
+      await updateTicketStatus(ticketId, status, labels, identity.user_id);
       const ticket = await fetchTicketDetail(ticketId);
       set({ activeTicket: ticket, offline: false });
     } catch (e) {

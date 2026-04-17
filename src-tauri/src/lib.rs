@@ -133,6 +133,10 @@ pub fn run() {
             update_ticket_status,
             delete_ticket,
             fetch_attachment,
+            get_megabugs_role,
+            list_collaborators,
+            add_collaborator,
+            remove_collaborator,
             // MegaChat
             chat_check_available,
             chat_send_message,

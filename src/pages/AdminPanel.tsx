@@ -8,6 +8,9 @@ import {
   regenerateLinkCode,
   fetchTickets,
   fetchTicketDetail,
+  listCollaborators,
+  addCollaborator,
+  removeCollaborator,
   type AdminUserInfo,
   type TicketSummary,
   type Ticket,
@@ -46,6 +49,7 @@ export function AdminPanel() {
   const isAdmin = useIdentityStore((s) => s.isAdmin);
   const identity = useIdentityStore((s) => s.identity);
   const [users, setUsers] = useState<AdminUserInfo[]>([]);
+  const [collaboratorIds, setCollaboratorIds] = useState<Set<string>>(new Set());
   const [tickets, setTickets] = useState<TicketSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,9 +71,10 @@ export function AdminPanel() {
     setLoading(true);
     setError(null);
     try {
-      const [userList, ticketList] = await Promise.all([
+      const [userList, ticketList, collaborators] = await Promise.all([
         adminListUsers(),
         fetchTickets(), // No userId = admin sees all
+        listCollaborators().catch(() => []),
       ]);
       userList.sort((a, b) => {
         if (a.is_admin !== b.is_admin) return a.is_admin ? -1 : 1;
@@ -78,6 +83,7 @@ export function AdminPanel() {
       ticketList.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
       setUsers(userList);
       setTickets(ticketList);
+      setCollaboratorIds(new Set(collaborators.map((c) => c.user_id)));
     } catch (e) {
       setError(String(e));
     } finally {
@@ -150,6 +156,29 @@ export function AdminPanel() {
       setToast("User unbanned");
     } catch (e) { setError(String(e)); }
     finally { setActionLoading(null); }
+  };
+
+  const handleToggleCollaborator = async (user: AdminUserInfo) => {
+    const isCollab = collaboratorIds.has(user.user_id);
+    setActionLoading(user.user_id);
+    try {
+      if (isCollab) {
+        await removeCollaborator(user.user_id);
+        setToast(`${user.display_name} is no longer a collaborator`);
+      } else {
+        await addCollaborator(user.user_id, user.display_name);
+        setToast(`${user.display_name} promoted to collaborator`);
+      }
+      // Refresh the collaborator list so the UI stays in sync with the repo.
+      const updated = await listCollaborators().catch(() => []);
+      setCollaboratorIds(new Set(updated.map((c) => c.user_id)));
+      // Also refresh the local role in case Rik is toggling himself.
+      useBugStore.getState().refreshRole();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleViewTicket = async (ticketId: string) => {
@@ -441,6 +470,8 @@ ${messages}
                   onConfirmBan={handleBan}
                   onConfirmUnban={handleUnban}
                   onCancelConfirm={() => setConfirmAction(null)}
+                  isCollaborator={collaboratorIds.has(user.user_id)}
+                  onToggleCollaborator={handleToggleCollaborator}
                 />
               ))}
             </div>
@@ -577,7 +608,7 @@ function DetailItem({ label, value, icon: Icon }: {
   );
 }
 
-function UserRow({ user, isExpanded, onToggle, isConfirming, confirmAction, actionLoading, onBan, onUnban, onConfirmBan, onConfirmUnban, onCancelConfirm }: {
+function UserRow({ user, isExpanded, onToggle, isConfirming, confirmAction, actionLoading, onBan, onUnban, onConfirmBan, onConfirmUnban, onCancelConfirm, isCollaborator, onToggleCollaborator }: {
   user: AdminUserInfo;
   isExpanded: boolean;
   onToggle: () => void;
@@ -589,6 +620,8 @@ function UserRow({ user, isExpanded, onToggle, isConfirming, confirmAction, acti
   onConfirmBan: (id: string) => void;
   onConfirmUnban: (id: string) => void;
   onCancelConfirm: () => void;
+  isCollaborator: boolean;
+  onToggleCollaborator: (user: AdminUserInfo) => void;
 }) {
   const isBanned = user.flags.includes("banned");
 
@@ -612,6 +645,7 @@ function UserRow({ user, isExpanded, onToggle, isConfirming, confirmAction, acti
               {user.display_name}
             </span>
             {user.is_admin && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/20">Admin</span>}
+            {!user.is_admin && isCollaborator && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-400 border border-sky-500/20">Collaborator</span>}
             {isBanned && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/20">Banned</span>}
           </div>
           <p className="text-[10px] text-zinc-600 font-mono truncate">{user.user_id}</p>
@@ -633,6 +667,26 @@ function UserRow({ user, isExpanded, onToggle, isConfirming, confirmAction, acti
             <DetailItem label="Status" value={user.is_admin ? "Administrator" : isBanned ? "Banned" : "Active"} icon={Shield} />
           </div>
           <div className="flex items-center gap-2 pt-2 border-t border-zinc-800/30">
+            {!user.is_admin && !isBanned && !isConfirming && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleCollaborator(user); }}
+                disabled={actionLoading === user.user_id}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  isCollaborator
+                    ? "bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 border border-sky-500/20"
+                    : "bg-zinc-800/50 text-zinc-400 hover:text-sky-400 hover:bg-sky-500/10"
+                )}
+                title={isCollaborator
+                  ? "Revoke collaborator access (can no longer change ticket status)"
+                  : "Promote to collaborator (view all tickets, reply, change status — cannot delete or close)"}
+              >
+                {actionLoading === user.user_id
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <ShieldCheck className="w-3.5 h-3.5" />}
+                {isCollaborator ? "Revoke Collaborator" : "Make Collaborator"}
+              </button>
+            )}
             {!user.is_admin && !isConfirming && (
               <button
                 onClick={(e) => { e.stopPropagation(); isBanned ? onUnban(user.user_id) : onBan(user.user_id); }}

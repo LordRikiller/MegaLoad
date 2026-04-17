@@ -16,6 +16,19 @@ pub struct MegaBugsAccess {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CollaboratorEntry {
+    pub user_id: String,
+    pub display_name: String,
+    pub added_at: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct CollaboratorList {
+    pub collaborators: Vec<CollaboratorEntry>,
+    pub last_updated: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TicketSummary {
     pub id: String,
     #[serde(rename = "type")]
@@ -128,20 +141,163 @@ fn iso_now() -> String {
 }
 
 // ---------------------------------------------------------------------------
+// Role helpers — single 'collaborator' tier backed by collaborators.json on GitHub
+// ---------------------------------------------------------------------------
+
+fn is_local_owner() -> bool {
+    std::env::var("USERPROFILE")
+        .map(|home| Path::new(&home).join(".megaload").join("megabugs-admin.key").exists())
+        .unwrap_or(false)
+}
+
+fn load_collaborator_list() -> CollaboratorList {
+    match github_get_file("collaborators.json") {
+        Ok((content, _sha)) => serde_json::from_str(&content).unwrap_or_default(),
+        Err(_) => CollaboratorList::default(),
+    }
+}
+
+fn is_collaborator(user_id: &str) -> bool {
+    load_collaborator_list()
+        .collaborators
+        .iter()
+        .any(|c| c.user_id == user_id)
+}
+
+// ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
 
 /// Check MegaBugs access — always enabled (core feature since v1.3.3), returns admin status.
 #[command]
 pub fn check_megabugs_access(_bepinex_path: String) -> Result<MegaBugsAccess, String> {
-    let is_admin = std::env::var("USERPROFILE")
-        .map(|home| Path::new(&home).join(".megaload").join("megabugs-admin.key").exists())
-        .unwrap_or(false);
-
     Ok(MegaBugsAccess {
         enabled: true,
-        is_admin,
+        is_admin: is_local_owner(),
     })
+}
+
+/// Resolve the caller's role: "owner" (local admin key present), "collaborator"
+/// (listed in collaborators.json), or "user" (everyone else). Used by the
+/// frontend to gate Delete / Close / admin panel visibility.
+#[command]
+pub fn get_megabugs_role(user_id: String) -> Result<String, String> {
+    if is_local_owner() {
+        return Ok("owner".to_string());
+    }
+    if is_collaborator(&user_id) {
+        return Ok("collaborator".to_string());
+    }
+    Ok("user".to_string())
+}
+
+/// List collaborators currently granted elevated access.
+#[command]
+pub fn list_collaborators() -> Result<Vec<CollaboratorEntry>, String> {
+    Ok(load_collaborator_list().collaborators)
+}
+
+/// Grant collaborator access to a user_id. Owner-only.
+#[command]
+pub fn add_collaborator(user_id: String, display_name: String) -> Result<(), String> {
+    if !is_local_owner() {
+        return Err("Only the owner can add collaborators".to_string());
+    }
+    let user_id = user_id.trim().to_string();
+    if user_id.is_empty() {
+        return Err("user_id cannot be empty".to_string());
+    }
+    let display_name = display_name.trim().to_string();
+
+    for attempt in 0..INDEX_CONFLICT_RETRIES {
+        let (content, sha) = match github_get_file("collaborators.json") {
+            Ok(pair) => pair,
+            Err(e) if e.contains("404") => {
+                // File doesn't exist yet — create fresh.
+                ("{\"collaborators\":[],\"last_updated\":\"\"}".to_string(), String::new())
+            }
+            Err(e) => return Err(e),
+        };
+        let mut list: CollaboratorList = serde_json::from_str(&content).unwrap_or_default();
+        if list.collaborators.iter().any(|c| c.user_id == user_id) {
+            return Ok(()); // already a collaborator — no-op
+        }
+        let now = iso_now();
+        list.collaborators.push(CollaboratorEntry {
+            user_id: user_id.clone(),
+            display_name: display_name.clone(),
+            added_at: now.clone(),
+        });
+        list.last_updated = now;
+
+        let json = serde_json::to_string_pretty(&list).map_err(|e| e.to_string())?;
+        let sha_opt = if sha.is_empty() { None } else { Some(sha.as_str()) };
+        match github_put_file(
+            "collaborators.json",
+            json.as_bytes(),
+            &format!("Add collaborator: {}", user_id),
+            sha_opt,
+        ) {
+            Ok(_) => {
+                app_log(&format!("MegaBugs: added collaborator {}", user_id));
+                return Ok(());
+            }
+            Err(e) if e.contains("409") && attempt < INDEX_CONFLICT_RETRIES - 1 => {
+                app_log(&format!("MegaBugs: collaborators.json conflict, retry {}", attempt + 1));
+                std::thread::sleep(std::time::Duration::from_millis(300 * (attempt as u64 + 1)));
+                continue;
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    Err("Failed to update collaborators.json after retries".to_string())
+}
+
+/// Revoke collaborator access. Owner-only.
+#[command]
+pub fn remove_collaborator(user_id: String) -> Result<(), String> {
+    if !is_local_owner() {
+        return Err("Only the owner can remove collaborators".to_string());
+    }
+    let user_id = user_id.trim().to_string();
+    if user_id.is_empty() {
+        return Err("user_id cannot be empty".to_string());
+    }
+
+    for attempt in 0..INDEX_CONFLICT_RETRIES {
+        let (content, sha) = match github_get_file("collaborators.json") {
+            Ok(pair) => pair,
+            Err(e) if e.contains("404") => return Ok(()), // nothing to remove
+            Err(e) => return Err(e),
+        };
+        let mut list: CollaboratorList = serde_json::from_str(&content).unwrap_or_default();
+        let before = list.collaborators.len();
+        list.collaborators.retain(|c| c.user_id != user_id);
+        if list.collaborators.len() == before {
+            return Ok(()); // was not present — no-op
+        }
+        list.last_updated = iso_now();
+
+        let json = serde_json::to_string_pretty(&list).map_err(|e| e.to_string())?;
+        match github_put_file(
+            "collaborators.json",
+            json.as_bytes(),
+            &format!("Remove collaborator: {}", user_id),
+            Some(&sha),
+        ) {
+            Ok(_) => {
+                app_log(&format!("MegaBugs: removed collaborator {}", user_id));
+                return Ok(());
+            }
+            Err(e) if e.contains("409") && attempt < INDEX_CONFLICT_RETRIES - 1 => {
+                app_log(&format!("MegaBugs: collaborators.json conflict, retry {}", attempt + 1));
+                std::thread::sleep(std::time::Duration::from_millis(300 * (attempt as u64 + 1)));
+                continue;
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    Err("Failed to update collaborators.json after retries".to_string())
 }
 
 /// Get or check if user identity exists — delegates to shared identity.
@@ -455,12 +611,15 @@ pub fn reply_to_ticket(
     Ok(())
 }
 
-/// Update ticket status/labels (admin only).
+/// Update ticket status/labels. Owner can do anything; collaborators can move
+/// between `open` and `in-progress`; regular users are rejected. Closing a
+/// ticket is reserved for the owner — "only the Lord closes tickets, mate".
 #[command]
 pub fn update_ticket_status(
     ticket_id: String,
     status: String,
     labels: Vec<String>,
+    caller_user_id: String,
 ) -> Result<(), String> {
     if !["open", "in-progress", "closed"].contains(&status.as_str()) {
         return Err("Status must be 'open', 'in-progress', or 'closed'".to_string());
@@ -470,6 +629,14 @@ pub fn update_ticket_status(
         .all(|c| c.is_alphanumeric() || c == '-')
     {
         return Err("Invalid ticket ID".to_string());
+    }
+
+    let owner = is_local_owner();
+    if status == "closed" && !owner {
+        return Err("Only the Lord closes tickets, mate — leave it with Rik".to_string());
+    }
+    if !owner && !is_collaborator(&caller_user_id) {
+        return Err("Only the owner or a collaborator can change ticket status".to_string());
     }
 
     let now = iso_now();
@@ -501,9 +668,13 @@ pub fn update_ticket_status(
     Ok(())
 }
 
-/// Delete a ticket and all its attachments (admin only).
+/// Delete a ticket and all its attachments. Owner-only — collaborators
+/// cannot delete.
 #[command]
 pub fn delete_ticket(ticket_id: String) -> Result<(), String> {
+    if !is_local_owner() {
+        return Err("Only the owner can delete tickets".to_string());
+    }
     if !ticket_id
         .chars()
         .all(|c| c.is_alphanumeric() || c == '-')

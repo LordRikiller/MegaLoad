@@ -596,14 +596,40 @@ export const replyToTicket = (
   isAdmin: boolean,
 ) => invoke<void>("reply_to_ticket", { ticketId, text, images, userId, userName, isAdmin });
 
-export const updateTicketStatus = (ticketId: string, status: string, labels: string[]) =>
-  invoke<void>("update_ticket_status", { ticketId, status, labels });
+export const updateTicketStatus = (
+  ticketId: string,
+  status: string,
+  labels: string[],
+  callerUserId: string,
+) => invoke<void>("update_ticket_status", { ticketId, status, labels, callerUserId });
 
 export const deleteTicket = (ticketId: string) =>
   invoke<void>("delete_ticket", { ticketId });
 
 export const fetchAttachment = (path: string) =>
   invoke<string>("fetch_attachment", { path });
+
+// ── Collaborator roles ──────────────────────────────────────────────
+
+export type MegaBugsRole = "owner" | "collaborator" | "user";
+
+export interface CollaboratorEntry {
+  user_id: string;
+  display_name: string;
+  added_at: string;
+}
+
+export const getMegabugsRole = (userId: string) =>
+  invoke<MegaBugsRole>("get_megabugs_role", { userId });
+
+export const listCollaborators = () =>
+  invoke<CollaboratorEntry[]>("list_collaborators");
+
+export const addCollaborator = (userId: string, displayName: string) =>
+  invoke<void>("add_collaborator", { userId, displayName });
+
+export const removeCollaborator = (userId: string) =>
+  invoke<void>("remove_collaborator", { userId });
 
 // ---------------------------------------------------------------------------
 // MegaChat

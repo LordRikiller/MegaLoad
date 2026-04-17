@@ -90,6 +90,7 @@ export function MegaBugs() {
   const {
     access,
     identity,
+    role,
     tickets,
     activeTicket,
     loading,
@@ -109,6 +110,10 @@ export function MegaBugs() {
     clearError,
     cooldownRemaining,
   } = useBugStore();
+
+  // Owner and collaborator both manage tickets; only owner can delete or close.
+  const canManage = role !== "user";
+  const isOwner = role === "owner";
   const addToast = useToastStore((s) => s.addToast);
 
   const location = useLocation();
@@ -409,46 +414,49 @@ export function MegaBugs() {
               by {activeTicket.author_name} · {formatDate(activeTicket.created_at)}
             </p>
           </div>
-          {/* Admin status controls */}
-          {access.is_admin && (
+          {/* Manage controls — owner + collaborator can change status; only owner can delete or close */}
+          {canManage && (
             <div className="flex items-center gap-2">
               <AdminStatusDropdown
                 currentStatus={activeTicket.status}
                 labels={activeTicket.labels}
+                allowClose={isOwner}
                 onUpdate={(status, labels) => setStatus(activeTicket.id, status, labels)}
               />
-              <div className="relative">
-                <button
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-xs text-red-400 hover:text-red-300 transition-colors border border-red-800/30"
-                  onClick={() => setConfirmDelete(true)}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete
-                </button>
-                {confirmDelete && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-zinc-900 border border-zinc-700/50 rounded-lg shadow-xl z-20 p-3">
-                    <p className="text-xs text-zinc-300 mb-2">Delete this ticket permanently?</p>
-                    <div className="flex gap-2">
-                      <button
-                        className="flex-1 px-2 py-1.5 rounded bg-red-600 hover:bg-red-500 text-xs text-white font-medium transition-colors"
-                        onClick={() => {
-                          setConfirmDelete(false);
-                          deleteTicket(activeTicket.id);
-                          goBack();
-                        }}
-                      >
-                        Delete
-                      </button>
-                      <button
-                        className="flex-1 px-2 py-1.5 rounded bg-zinc-700 hover:bg-zinc-600 text-xs text-zinc-300 transition-colors"
-                        onClick={() => setConfirmDelete(false)}
-                      >
-                        Cancel
-                      </button>
+              {isOwner && (
+                <div className="relative">
+                  <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-xs text-red-400 hover:text-red-300 transition-colors border border-red-800/30"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                  {confirmDelete && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-zinc-900 border border-zinc-700/50 rounded-lg shadow-xl z-20 p-3">
+                      <p className="text-xs text-zinc-300 mb-2">Delete this ticket permanently?</p>
+                      <div className="flex gap-2">
+                        <button
+                          className="flex-1 px-2 py-1.5 rounded bg-red-600 hover:bg-red-500 text-xs text-white font-medium transition-colors"
+                          onClick={() => {
+                            setConfirmDelete(false);
+                            deleteTicket(activeTicket.id);
+                            goBack();
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          className="flex-1 px-2 py-1.5 rounded bg-zinc-700 hover:bg-zinc-600 text-xs text-zinc-300 transition-colors"
+                          onClick={() => setConfirmDelete(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -755,7 +763,11 @@ export function MegaBugs() {
         <div>
           <h1 className="text-xl font-bold text-zinc-100">MegaBugs</h1>
           <p className="text-xs text-zinc-500 mt-0.5">
-            {access.is_admin ? "Admin — all tickets" : `Reporting as ${identity.display_name}`}
+            {role === "owner"
+              ? "Owner — all tickets"
+              : role === "collaborator"
+                ? `Collaborator — all tickets (${identity.display_name})`
+                : `Reporting as ${identity.display_name}`}
           </p>
         </div>
         <button
@@ -1000,13 +1012,15 @@ function AdminStatusDropdown({
   currentStatus,
   labels,
   onUpdate,
+  allowClose = false,
 }: {
   currentStatus: string;
   labels: string[];
   onUpdate: (status: string, labels: string[]) => void;
+  allowClose?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const statuses = ["open", "in-progress", "closed"];
+  const statuses = allowClose ? ["open", "in-progress", "closed"] : ["open", "in-progress"];
   return (
     <div className="relative">
       <button
