@@ -8,8 +8,9 @@ covers MegaLoad-specific invariants.
 
 Frontend debug output goes through `src/lib/debug.ts`:
 
-- `debugLog(...args)` — short-circuits unless `useSettingsStore.getState().loggingEnabled` is true, then forwards to `logFromFrontend()` which writes to `megaload.log` via the gated Rust `app_log()` path.
-- Raw `console.log` in store or page code is a bug. `console.error` is OK only for unrecoverable exceptions.
+- `debugLog(...args)` / `debugWarn(...args)` — short-circuit unless `useSettingsStore.getState().loggingEnabled` is true, then forward to `logFromFrontend()` which writes to `megaload.log` via the gated Rust `app_log()` path. Use these for diagnostic chatter ("loaded 12 profiles", "resolved path X").
+- Raw `console.log` in store or page code is a bug — use `debugLog` instead.
+- `console.warn` / `console.error` are permitted **only** inside `.catch` blocks for recoverable and unrecoverable errors respectively. Not for diagnostics.
 - Tauri backend (`src-tauri/src/commands/*.rs`) already gates via `app_log()`. Don't add `println!` outside `#[cfg(test)]`.
 
 Toggle: Settings → Logging Enabled (persists as `logging_enabled` in `%APPDATA%/MegaLoad/settings.json`).
