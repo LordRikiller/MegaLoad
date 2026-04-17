@@ -1374,12 +1374,17 @@ function guessBiomes(prefab, recipePrefab) {
 }
 
 // ── Items cooked on fire/cooking station (no recipe in dump, source should be "Cooking") ──
-const FIRE_COOKED_ITEMS = new Set([
+// Basic Cooking Station handles smaller/faster-cooking meats.
+const COOKING_STATION_ITEMS = new Set([
   "CookedMeat", "NeckTailGrilled", "CookedDeerMeat", "FishCooked",
-  "CookedChickenMeat", "CookedWolfMeat", "CookedLoxMeat", "CookedBugMeat",
-  "CookedHareMeat", "CookedBjornMeat", "CookedAsksvinMeat", "CookedVoltureMeat",
-  "CookedBoneMawSerpentMeat", "SerpentMeatCooked",
+  "CookedChickenMeat", "CookedWolfMeat", "CookedEgg", "CookedBjornMeat",
 ]);
+// Iron Cooking Station adds the tougher high-tier meats the basic rack can't handle.
+const IRON_COOKING_STATION_ITEMS = new Set([
+  "CookedLoxMeat", "SerpentMeatCooked", "CookedBugMeat", "CookedHareMeat",
+  "CookedBoneMawSerpentMeat", "CookedAsksvinMeat", "CookedVoltureMeat",
+]);
+const FIRE_COOKED_ITEMS = new Set([...COOKING_STATION_ITEMS, ...IRON_COOKING_STATION_ITEMS]);
 
 // ── Determine source (how to obtain) ──
 function getSource(prefab, recipe, itemDrops) {
@@ -1632,7 +1637,9 @@ for (const item of items) {
     description: loc(item.description) || (feastMat ? loc(feastMat.description) : ""),
     biomes: biomes,
     source: getSource(item.prefab, recipe, itemDrops),
-    station: FIRE_COOKED_ITEMS.has(item.prefab) ? "Cooking Station" : (recipe ? mapStation(recipe.craftingStation) : ""),
+    station: COOKING_STATION_ITEMS.has(item.prefab) ? "Cooking Station"
+           : IRON_COOKING_STATION_ITEMS.has(item.prefab) ? "Iron Cooking Station"
+           : (recipe ? mapStation(recipe.craftingStation) : ""),
     stationLevel: recipe ? recipe.minStationLevel : 0,
     maxQuality: isClothing ? 1 : item.maxQuality,
     stack: feastMat ? feastMat.stack : item.maxStackSize,

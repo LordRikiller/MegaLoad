@@ -1,11 +1,11 @@
 {
-  "version": "1.6.3",
-  "notes": "MegaBugs: owner can download a ticket's attached log straight to a configured Diagnostic Logs Folder (Settings). Log Viewer exports also default to that folder when set. Lets me triage a user's log without the Downloads-folder dance.",
-  "pub_date": "2026-04-17T20:50:00Z",
+  "version": "1.6.4",
+  "notes": "Valheim data: split Cooking Station and Iron Cooking Station — Lox, Serpent, Seeker, Hare, Bonemaw, Asksvin and Volture meats now correctly route to the Iron rack, while Boar/Deer/Wolf/Chicken/Bear/Egg/Fish stay on the basic Cooking Station. Both stations are listed in Processing Stations with their full conversion tables.",
+  "pub_date": "2026-04-17T23:55:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlNWWsrbC8vaXdKZVAvV2Rjb0VuODFJaFhYbHZpeUF3bXZQRnF1ODNkNGovMDZSZ1VxQm1MNkh2RDNyOUh2Y1NLb2VlaUhzKzNUWXpvTVFVM3N4V0F3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDI5NzMyCWZpbGU6TWVnYUxvYWRfMS42LjNfeDY0LXNldHVwLm5zaXMuemlwCnlwSHZ2eHNLUXNoYzN4bDJPSlN0cG9vclc1aXEvMTRYaGo4QTZkWFoxanVWOFdEYXVmd2o5ZDFJOXJPNjBvdXVJY2xSL3JqVVViQzREU3hVWUlhQ0JRPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.6.3/MegaLoad_1.6.3_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUM5RW9zdXh4aXYrM0ZiSUpYWGhKek1QWEJxL3h3UXhVMG5wVUJQcTdreXY1L1Q2SWpnWnhwV3dXSzBKN3l2ei9FYW1Rd21UNCtDUE5YQVI4QlRaakFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDMzNDE2CWZpbGU6TWVnYUxvYWRfMS42LjRfeDY0LXNldHVwLm5zaXMuemlwCnVKT0kyQjJhUUhSK2tnMGNuMXRJTUhqTHJGbkpPcjc0b3IzeXdBM1NncU5EOHRHeC9oTTRrb01DemMwZjVTQmlmd0llTTJ3M001Z1pHRVNWSkVSNkR3PT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.6.4/MegaLoad_1.6.4_x64-setup.nsis.zip"
     }
   }
 }

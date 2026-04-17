@@ -209,6 +209,8 @@ const NO_BIOME_TIER = BIOME_ORDER.length;
 
 export const STATION_LIST = [
   "Workbench",
+  "Cooking Station",
+  "Iron Cooking Station",
   "Forge",
   "Cauldron",
   "Mead Ketill",
@@ -229,7 +231,9 @@ export const STATION_ICONS: Record<string, string> = {
   "Black Forge": "blackforge",
   "Galdr Table": "piece_magetable",
   "Mead Ketill": "fermenter",
-  "Food Preparation Table": "piece_cookingstation",
+  "Food Preparation Table": "piece_preptable",
+  "Cooking Station": "piece_cookingstation",
+  "Iron Cooking Station": "piece_cookingstation_iron",
 };
 
 // ── Processing Stations (Factories) ──────────────────────────
@@ -256,6 +260,45 @@ export interface ProcessingStation {
 }
 
 export const PROCESSING_STATIONS: Record<string, ProcessingStation> = {
+  "Cooking Station": {
+    name: "Cooking Station",
+    prefab: "piece_cookingstation",
+    description: "Simple wooden rack placed over a fire (campfire, hearth, or hanging brazier) to grill basic raw meats and fish. Holds two items at a time; overcooking produces Coal.",
+    biome: "Meadows",
+    conversions: [
+      { inputId: "RawMeat", inputName: "Boar Meat", outputId: "CookedMeat", outputName: "Cooked Boar Meat" },
+      { inputId: "NeckTail", inputName: "Neck Tail", outputId: "NeckTailGrilled", outputName: "Grilled Neck Tail" },
+      { inputId: "DeerMeat", inputName: "Deer Meat", outputId: "CookedDeerMeat", outputName: "Cooked Deer Meat" },
+      { inputId: "FishRaw", inputName: "Raw Fish", outputId: "FishCooked", outputName: "Cooked Fish" },
+      { inputId: "WolfMeat", inputName: "Wolf Meat", outputId: "CookedWolfMeat", outputName: "Cooked Wolf Meat" },
+      { inputId: "ChickenMeat", inputName: "Chicken Meat", outputId: "CookedChickenMeat", outputName: "Cooked Chicken" },
+      { inputId: "ChickenEgg", inputName: "Chicken Egg", outputId: "CookedEgg", outputName: "Cooked Egg" },
+      { inputId: "BjornMeat", inputName: "Bear Meat", outputId: "CookedBjornMeat", outputName: "Cooked Bear Meat" },
+    ],
+  },
+  "Iron Cooking Station": {
+    name: "Iron Cooking Station",
+    prefab: "piece_cookingstation_iron",
+    description: "Iron-framed grill built at a Forge. Requires a Hearth or two Campfires below. Cooks five items at once and handles the tougher meats the basic rack can't (Lox, Serpent, Seeker, Hare, Bonemaw, Asksvin, Volture) in addition to everything the Cooking Station cooks.",
+    biome: "Swamp",
+    conversions: [
+      { inputId: "RawMeat", inputName: "Boar Meat", outputId: "CookedMeat", outputName: "Cooked Boar Meat" },
+      { inputId: "NeckTail", inputName: "Neck Tail", outputId: "NeckTailGrilled", outputName: "Grilled Neck Tail" },
+      { inputId: "DeerMeat", inputName: "Deer Meat", outputId: "CookedDeerMeat", outputName: "Cooked Deer Meat" },
+      { inputId: "FishRaw", inputName: "Raw Fish", outputId: "FishCooked", outputName: "Cooked Fish" },
+      { inputId: "WolfMeat", inputName: "Wolf Meat", outputId: "CookedWolfMeat", outputName: "Cooked Wolf Meat" },
+      { inputId: "ChickenMeat", inputName: "Chicken Meat", outputId: "CookedChickenMeat", outputName: "Cooked Chicken" },
+      { inputId: "ChickenEgg", inputName: "Chicken Egg", outputId: "CookedEgg", outputName: "Cooked Egg" },
+      { inputId: "BjornMeat", inputName: "Bear Meat", outputId: "CookedBjornMeat", outputName: "Cooked Bear Meat" },
+      { inputId: "LoxMeat", inputName: "Lox Meat", outputId: "CookedLoxMeat", outputName: "Cooked Lox Meat" },
+      { inputId: "SerpentMeat", inputName: "Serpent Meat", outputId: "SerpentMeatCooked", outputName: "Cooked Serpent Meat" },
+      { inputId: "BugMeat", inputName: "Seeker Meat", outputId: "CookedBugMeat", outputName: "Cooked Seeker Meat" },
+      { inputId: "HareMeat", inputName: "Misthare Meat", outputId: "CookedHareMeat", outputName: "Cooked Misthare" },
+      { inputId: "BoneMawSerpentMeat", inputName: "Bonemaw Meat", outputId: "CookedBoneMawSerpentMeat", outputName: "Cooked Bonemaw Meat" },
+      { inputId: "AsksvinMeat", inputName: "Asksvin Tail", outputId: "CookedAsksvinMeat", outputName: "Cooked Asksvin Tail" },
+      { inputId: "VoltureMeat", inputName: "Volture Meat", outputId: "CookedVoltureMeat", outputName: "Cooked Volture Meat" },
+    ],
+  },
   "Charcoal Kiln": {
     name: "Charcoal Kiln",
     prefab: "charcoal_kiln",
@@ -365,11 +408,13 @@ export const PROCESSING_STATIONS: Record<string, ProcessingStation> = {
 };
 
 export const PROCESSING_STATION_LIST = [
-  "Charcoal Kiln", "Smelter", "Blast Furnace", "Spinning Wheel",
-  "Windmill", "Eitr Refinery", "Stone Oven", "Shield Generator", "Ballista",
+  "Cooking Station", "Iron Cooking Station", "Charcoal Kiln", "Smelter", "Blast Furnace",
+  "Spinning Wheel", "Windmill", "Eitr Refinery", "Stone Oven", "Shield Generator", "Ballista",
 ] as const;
 
 export const PROCESSING_STATION_ICONS: Record<string, string> = {
+  "Cooking Station": "piece_cookingstation",
+  "Iron Cooking Station": "piece_cookingstation_iron",
   "Charcoal Kiln": "charcoal_kiln",
   "Smelter": "smelter",
   "Blast Furnace": "blastfurnace",
