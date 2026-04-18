@@ -1,11 +1,11 @@
 {
-  "version": "1.7.10",
-  "notes": "Real in-game character portraits on Player Data and Dashboard (captured by MegaDataExtractor 1.4.0 off Valheim's main-menu preview), and bundled-plugin deploy now keeps a newer installed DLL instead of always overwriting — so MegaDataExtractor updates can be side-loaded without rebuilding MegaLoad.",
-  "pub_date": "2026-04-18T20:35:00Z",
+  "version": "1.7.11",
+  "notes": "MegaDataExtractor 1.4.1 — output path auto-detects OneDrive (works across desktop + laptop with different OneDrive mounts). Falls back to Desktop\\Valheim Mods if no OneDrive folder found. MegaLoad's portrait reader uses the same auto-detect so PNGs are found no matter which OneDrive path produced them.",
+  "pub_date": "2026-04-18T20:50:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUQvZXBSclV4NXQreFZ3T0xOQU9RZ2NNaTZRbzN6cENSNldQTUlFMWVlQjdVL29TcEF2RENQK0ZTYnFsdmpVd3UzNWkyM0NRZDZhaTdQbGU0ektTdVFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTAyOTg1CWZpbGU6TWVnYUxvYWRfMS43LjEwX3g2NC1zZXR1cC5uc2lzLnppcApmZSt4TDhOZXc0VFp4SEJmVEZaSERFeDFEYW5nbTkyZHR4ZEZKYzVjRHdZQjdCU1BKRWpLUWFScFI1cmlkdTlramF0UlJMMk94dzluYVJoS2NBUW1BZz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.10/MegaLoad_1.7.10_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNBYWRMOGMzdU5EYytRaisxS2VRMWhlbDROL0luSTAyOEpQOVJGUUNtV29OM3FTTzdoazhMSmNPb3ZLdDZveGJXMmVvRUhtQjZ1WXlqUkY5UDBQblFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTAzNzQ0CWZpbGU6TWVnYUxvYWRfMS43LjExX3g2NC1zZXR1cC5uc2lzLnppcApLK3NaeDNCVnJiUyt4VUNhSFg3MTFHRmZ6TzQ4bFB2RmVqRlJlQi9veGZ6SDk5Y2tMTGxMK1dWaFFDRUw4YUtPMU5hYS82UEVMV1ZNWVpiZ28vTHVBZz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.11/MegaLoad_1.7.11_x64-setup.nsis.zip"
     }
   }
 }
