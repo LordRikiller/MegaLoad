@@ -1292,7 +1292,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-zinc-100">{item.name}</h1>
+              <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide leading-none">{item.name}</h1>
               <TypeBadge
                 type={item.type}
                 subcategory={item.subcategory}
@@ -1667,70 +1667,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
               </div>
             )}
 
-            {/* Drops (for creatures) */}
-            {item.drops.length > 0 && (
-              <div className="glass rounded-xl p-5 border border-zinc-800/50">
-                <h2 className="text-sm font-semibold text-zinc-200 mb-3">Drops</h2>
-                <div className="space-y-1">
-                  {item.drops.map((drop) => (
-                    <button
-                      key={drop.id}
-                      onClick={() => handleNavigate(drop.id)}
-                      className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
-                    >
-                      <div className="w-6 h-6 shrink-0 flex items-center justify-center">
-                        <ItemIcon id={drop.id} size={24} />
-                      </div>
-                      <span className="text-xs text-brand-400 hover:underline flex-1">{drop.name}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] text-zinc-500">
-                          {drop.min === drop.max ? `x${drop.min}` : `x${drop.min}-${drop.max}`}
-                        </span>
-                        <span className="text-[10px] text-zinc-600 font-mono w-12 text-right">
-                          {Math.round(drop.chance * 100)}%
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Tames With (for tameable creatures) */}
-            {item.tameFoods && item.tameFoods.length > 0 && (
-              <div className="glass rounded-xl p-5 border border-emerald-500/20 bg-emerald-500/[0.02]">
-                <h2 className="text-sm font-semibold text-emerald-400 mb-1 flex items-center gap-2">
-                  Tames With
-                  <span className="text-[10px] font-normal text-zinc-500">
-                    ({item.tameFoods.length} {item.tameFoods.length === 1 ? "food" : "foods"})
-                  </span>
-                </h2>
-                <p className="text-[10px] text-zinc-500 mb-3">
-                  Drop one of these within 1m. Avoid scaring the creature — red "!" resets progress.
-                </p>
-                <div className="space-y-1">
-                  {item.tameFoods.map((foodId) => {
-                    const food = getItemById(foodId);
-                    if (!food) return null;
-                    return (
-                      <button
-                        key={foodId}
-                        onClick={() => handleNavigate(foodId)}
-                        className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
-                      >
-                        <div className="w-6 h-6 shrink-0 flex items-center justify-center">
-                          <ItemIcon id={foodId} type={food.type} size={24} />
-                        </div>
-                        <span className="text-xs text-brand-400 hover:underline flex-1">{food.name}</span>
-                        {food.biomes?.[0] && (
-                          <BiomeBadge biome={food.biomes[0]} onClick={() => navigateToBiome(food.biomes[0])} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* Drops + Tames With moved to right column for creatures */}
 
             {/* Dropped By / World Sources */}
             {(item.worldSources?.length > 0 || droppedBy.length > 0) && (
@@ -1793,6 +1730,71 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
 
           {/* Right Column */}
           <div className="space-y-4">
+            {/* Tames With (tameable creatures) — shown first in right col so it's visible above the fold */}
+            {item.tameFoods && item.tameFoods.length > 0 && (
+              <div className="glass rounded-xl p-5 border border-emerald-500/20 bg-emerald-500/[0.02]">
+                <h2 className="text-sm font-semibold text-emerald-400 mb-1 flex items-center gap-2">
+                  Tames With
+                  <span className="text-[10px] font-normal text-zinc-500">
+                    ({item.tameFoods.length} {item.tameFoods.length === 1 ? "food" : "foods"})
+                  </span>
+                </h2>
+                <p className="text-[10px] text-zinc-500 mb-3">
+                  Drop one of these within 1m. Avoid scaring the creature — red "!" resets progress.
+                </p>
+                <div className="space-y-1">
+                  {item.tameFoods.map((foodId) => {
+                    const food = getItemById(foodId);
+                    if (!food) return null;
+                    return (
+                      <button
+                        key={foodId}
+                        onClick={() => handleNavigate(foodId)}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                      >
+                        <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                          <ItemIcon id={foodId} type={food.type} size={24} />
+                        </div>
+                        <span className="text-xs text-brand-400 hover:underline flex-1">{food.name}</span>
+                        {food.biomes?.[0] && (
+                          <BiomeBadge biome={food.biomes[0]} onClick={() => navigateToBiome(food.biomes[0])} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Drops (creatures) */}
+            {item.drops.length > 0 && (
+              <div className="glass rounded-xl p-5 border border-zinc-800/50">
+                <h2 className="text-sm font-semibold text-zinc-200 mb-3">Drops</h2>
+                <div className="space-y-1">
+                  {item.drops.map((drop) => (
+                    <button
+                      key={drop.id}
+                      onClick={() => handleNavigate(drop.id)}
+                      className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                    >
+                      <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                        <ItemIcon id={drop.id} size={24} />
+                      </div>
+                      <span className="text-xs text-brand-400 hover:underline flex-1">{drop.name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] text-zinc-500">
+                          {drop.min === drop.max ? `x${drop.min}` : `x${drop.min}-${drop.max}`}
+                        </span>
+                        <span className="text-[10px] text-zinc-600 font-mono w-12 text-right">
+                          {Math.round(drop.chance * 100)}%
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Processed In (processing station / factory) */}
             {(() => {
               const ps = getProcessingStationForOutput(item.id);

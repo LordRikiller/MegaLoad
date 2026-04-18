@@ -36,6 +36,9 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        // Norse display font (valheimgame.com style) — for headings, titles, logo only.
+        // Never use for body copy; it's a display face, not a reading face.
+        norse: ["Norse", "serif"],
       },
     },
   },

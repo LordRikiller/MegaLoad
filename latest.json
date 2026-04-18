@@ -1,11 +1,11 @@
 {
-  "version": "1.6.9",
-  "notes": "Valheim Data → Creatures: new wiki-style Details + Resistances panels (Internal ID, Faction, Main biome, Tameable, Immune/Resistant/Weak/Neutral-to damage types, Stagger limit). New Tameable filter in the sidebar — clicking the green Tameable badge on a detail page jumps straight to the filtered creature list. Fixed the duplicate biome chip in the detail header.",
-  "pub_date": "2026-04-18T04:25:00Z",
+  "version": "1.7.0",
+  "notes": "Dashboard reforged — Norse-font hero banner, Character Saga card with live HP/Stamina/Eitr bars, top skills, saga counters (Deaths / Kills / Bosses / Builds), Biomes Walked + Trophies panels, mod-update prompt. Norse display font (from valheimgame.com) now branded across the titlebar logo, dashboard hero and creature detail names. Creature detail page rebalanced — Tames With + Drops now sit in the right column instead of leaving it empty.",
+  "pub_date": "2026-04-18T05:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlYalJwVmFZZlhlUmhibjN1bEZGUTBWZGlzTEh4WTAvTWVQQWdSakRFVWQvRklZSjVVSXQ1WDZ1T05HQllpMHc3UmYyNkJIRDVuZkgranQrZ1NodGdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDg1MDMzCWZpbGU6TWVnYUxvYWRfMS42LjlfeDY0LXNldHVwLm5zaXMuemlwCi95dUoybFZMdnZwcnRWeGFRL0tpb0h1OHJhSnBGS0tMcG5OQlhXd3VyRDVYZHRKZ0ZPL3hUUzNBY2hUTVJCK2Q3eDBZK2YxNWk1cndDSWs3YnM0YkN3PT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.6.9/MegaLoad_1.6.9_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZENmMzRjhYZ2ZWZ2RXSHhtUVQzWEd6c1kyQWdrOWtialBoWmk0Rjk2NzdxdWpMTitzUjlucE1XYVhSUEZSTnVkbGJtQ3hlUnI3UFRTNk83M25GQXdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDg2NDQwCWZpbGU6TWVnYUxvYWRfMS43LjBfeDY0LXNldHVwLm5zaXMuemlwCkpkeUxwVGhGWXNFeWdwdjFWQ1JUNVR1TExrZENJeVdzL2EwOTZzZ21mZnZJTVpvczU3U3d4QjVZRzhveDdRRE9LeWNmYzBOU3A1ZllnTVUyZkhBc0F3PT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.0/MegaLoad_1.7.0_x64-setup.nsis.zip"
     }
   }
 }

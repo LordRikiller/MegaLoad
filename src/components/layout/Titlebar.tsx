@@ -23,7 +23,7 @@ export function Titlebar() {
     >
       <div data-tauri-drag-region className="flex items-center gap-2 px-4">
         <img src="/megaload-icon.png" alt="MegaLoad" className="w-6 h-6 rounded" draggable={false} />
-        <span className="text-sm font-semibold text-zinc-300 tracking-wide">
+        <span className="font-norse font-bold text-lg text-brand-400 tracking-wider leading-none">
           MegaLoad
         </span>
         <span className="text-[10px] text-zinc-600 ml-1">v{currentVersion}</span>
