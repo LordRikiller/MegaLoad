@@ -240,7 +240,7 @@ export function Browse() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-100">
+          <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">
             Browse Mods
           </h1>
           <p className="text-zinc-500 mt-1">
@@ -645,7 +645,7 @@ function ModDetailView({
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-zinc-100">
+              <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">
                 {detail.name}
               </h1>
               {detail.is_deprecated && (

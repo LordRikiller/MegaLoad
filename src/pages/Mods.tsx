@@ -158,7 +158,7 @@ export function Mods() {
       <SyncingOverlay />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-100">Mods</h1>
+          <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">Mods</h1>
           <p className="text-zinc-500 mt-1">
             Profile: {profile.name} &middot; {mods.length} mod
             {mods.length !== 1 ? "s" : ""}

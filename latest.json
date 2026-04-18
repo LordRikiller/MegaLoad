@@ -1,11 +1,11 @@
 {
-  "version": "1.7.0",
-  "notes": "Dashboard reforged — Norse-font hero banner, Character Saga card with live HP/Stamina/Eitr bars, top skills, saga counters (Deaths / Kills / Bosses / Builds), Biomes Walked + Trophies panels, mod-update prompt. Norse display font (from valheimgame.com) now branded across the titlebar logo, dashboard hero and creature detail names. Creature detail page rebalanced — Tames With + Drops now sit in the right column instead of leaving it empty.",
-  "pub_date": "2026-04-18T05:00:00Z",
+  "version": "1.7.1",
+  "notes": "Dashboard polish + fixes: Player Data blank-window bug fixed (wrong route). Biomes Walked chips are clickable and biome-coloured, linking through to filtered Valheim Data. Boss count now derives from boss trophies (x/7) — the raw boss_kills save value was unreliable. New Achievements row — Bosses, Runestones Read, Recipes Mastered, Worlds Explored. Copy-to-clipboard button on every item in the grid, table and detail page. Norse font now on every page heading. Player-data sync watcher runs globally and refreshes the local store on every .fch change so stats stay live.",
+  "pub_date": "2026-04-18T06:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZENmMzRjhYZ2ZWZ2RXSHhtUVQzWEd6c1kyQWdrOWtialBoWmk0Rjk2NzdxdWpMTitzUjlucE1XYVhSUEZSTnVkbGJtQ3hlUnI3UFRTNk83M25GQXdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDg2NDQwCWZpbGU6TWVnYUxvYWRfMS43LjBfeDY0LXNldHVwLm5zaXMuemlwCkpkeUxwVGhGWXNFeWdwdjFWQ1JUNVR1TExrZENJeVdzL2EwOTZzZ21mZnZJTVpvczU3U3d4QjVZRzhveDdRRE9LeWNmYzBOU3A1ZllnTVUyZkhBc0F3PT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.0/MegaLoad_1.7.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUw3Uy9sNDloSUNJMGRYbHFzYmtlUXFpYnhiR0ptMnZUSWkrNVRjOWRISjZpVjZMWHlLY0N4am0vVVZBVk9IOGJOcDVCaVVoRVA4UEtVY21rWnJFT3dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDg3NjQ1CWZpbGU6TWVnYUxvYWRfMS43LjFfeDY0LXNldHVwLm5zaXMuemlwCjFSV2M5RnFmeFRzRU9jZnFKY3cxa2VYTzFuLzNTa21ETjNtQzFsVnVHQmhYZ2lieWRDY3RwcjJ1YWs4RmpqZklqRkFUcURBOWl2MzB3bW9UZ05CY0JnPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.1/MegaLoad_1.7.1_x64-setup.nsis.zip"
     }
   }
 }

@@ -337,7 +337,7 @@ ${messages}
             <Crown className="w-6 h-6 text-amber-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-100">Command Centre</h1>
+            <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">Command Centre</h1>
             <p className="text-sm text-amber-400/70">
               Welcome back, <span className="text-amber-400 font-semibold">{identity?.display_name}</span>
             </p>

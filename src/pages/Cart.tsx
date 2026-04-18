@@ -128,7 +128,7 @@ export function Cart() {
               Back to data
             </button>
           </div>
-          <h1 className="text-3xl font-bold text-zinc-100 mt-2 flex items-center gap-3">
+          <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide mt-2 flex items-center gap-3">
             <ShoppingCart className="w-7 h-7 text-brand-400" />
             Shopping Cart
             {cartItems.length > 0 && (

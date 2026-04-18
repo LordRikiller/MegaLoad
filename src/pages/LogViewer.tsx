@@ -171,7 +171,7 @@ export function LogViewer() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-100">Log Viewer</h1>
+          <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">Log Viewer</h1>
           {/* Tabs */}
           <div className="flex items-center gap-1 mt-2">
             <button

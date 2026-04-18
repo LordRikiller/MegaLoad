@@ -152,7 +152,7 @@ export function Profiles() {
       )}
 
       <div>
-        <h1 className="text-3xl font-bold text-zinc-100">Profiles</h1>
+        <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">Profiles</h1>
         <p className="text-zinc-500 mt-1">
           Manage separate mod configurations
         </p>

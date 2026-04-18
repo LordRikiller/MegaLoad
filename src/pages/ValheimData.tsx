@@ -43,6 +43,7 @@ import {
   EyeOff,
   Shirt,
   MapPin,
+  Copy,
 } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { saveTextFile } from "../lib/tauri-api";
@@ -84,6 +85,7 @@ import {
 } from "../stores/valheimDataStore";
 import { VALHEIM_ITEMS, type ValheimItem, type ItemType, itemMap, tokenMap } from "../data/valheim-items";
 import { usePlayerDataStore } from "../stores/playerDataStore";
+import { useToastStore } from "../stores/toastStore";
 
 /** Renders a game icon with Lucide fallback */
 function ItemIcon({ id, type, size = 36, className = "" }: { id: string; type?: ItemType; size?: number; className?: string }) {
@@ -204,7 +206,7 @@ const TYPE_GROUP_LABELS: Partial<Record<ItemType, string>> = {
   Misc: "Misc",
 };
 
-const BIOME_COLORS: Record<string, string> = {
+export const BIOME_COLORS: Record<string, string> = {
   Meadows: "text-lime-400",
   "Black Forest": "text-teal-400",
   Swamp: "text-green-500",
@@ -216,7 +218,7 @@ const BIOME_COLORS: Record<string, string> = {
   "Deep North": "text-sky-400",
 };
 
-const BIOME_BG_COLORS: Record<string, string> = {
+export const BIOME_BG_COLORS: Record<string, string> = {
   Meadows: "bg-lime-500/10 border-lime-500/20",
   "Black Forest": "bg-teal-500/10 border-teal-500/20",
   Swamp: "bg-green-500/10 border-green-500/20",
@@ -312,6 +314,57 @@ function TypeBadge({ type, subcategory, onClick, onSubcategoryClick }: { type: s
         </button>
       )}
     </>
+  );
+}
+
+// ── Copy-to-clipboard ──────────────────────────────────────
+
+/** Copies item.name to clipboard and fires a toast. Stops event propagation so it works inside clickable cards/rows. */
+function copyItemName(item: ValheimItem, e?: React.MouseEvent) {
+  e?.stopPropagation();
+  e?.preventDefault();
+  navigator.clipboard.writeText(item.name).then(
+    () =>
+      useToastStore.getState().addToast({
+        type: "success",
+        title: "Copied",
+        message: item.name,
+        duration: 1500,
+      }),
+    () =>
+      useToastStore.getState().addToast({
+        type: "warning",
+        title: "Copy failed",
+        message: "Clipboard not available",
+        duration: 2500,
+      })
+  );
+}
+
+function CopyButton({
+  item,
+  size = 14,
+  className = "",
+  title = "Copy name",
+}: {
+  item: ValheimItem;
+  size?: number;
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => copyItemName(item, e)}
+      title={title}
+      aria-label={title}
+      className={cn(
+        "p-1 rounded text-zinc-500 hover:text-brand-400 hover:bg-zinc-800/60 transition-colors",
+        className
+      )}
+    >
+      <Copy style={{ width: size, height: size }} />
+    </button>
   );
 }
 
@@ -553,7 +606,7 @@ export function ValheimData() {
       {/* Header: Title + Search + Buttons in one row */}
       <div className="flex items-center gap-3 mb-3">
         <div className="shrink-0">
-          <h1 className="text-2xl font-bold text-zinc-100 leading-tight">Valheim Data</h1>
+          <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide leading-tight">Valheim Data</h1>
           <p className="text-zinc-500 text-xs">
             {totalMatching.toLocaleString()} item{totalMatching !== 1 ? "s" : ""}
             {hasActiveFilters ? " matching" : " in database"}
@@ -1038,8 +1091,14 @@ export function ValheimData() {
                       <div
                         key={item.id}
                         onClick={() => selectItem(item)}
-                        className="glass rounded-xl p-3.5 border border-zinc-800/50 hover:border-zinc-700/50 cursor-pointer transition-all duration-200 group"
+                        className="relative glass rounded-xl p-3.5 border border-zinc-800/50 hover:border-zinc-700/50 cursor-pointer transition-all duration-200 group"
                       >
+                        <CopyButton
+                          item={item}
+                          size={12}
+                          className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title={`Copy "${item.name}"`}
+                        />
                         <div className="flex items-start gap-3">
                           <div className="w-9 h-9 rounded-lg bg-zinc-800/80 flex items-center justify-center shrink-0 overflow-hidden">
                             <ItemIcon id={item.id} type={item.type} size={36} />
@@ -1177,8 +1236,14 @@ function ItemTable({
               </div>
             </div>
             {/* Name */}
-            <div className={cn("px-2 truncate text-sm text-zinc-200 group-hover:text-brand-400 transition-colors font-medium", TABLE_COLUMNS[0].className)}>
-              {item.name}
+            <div className={cn("px-2 flex items-center gap-1 text-sm text-zinc-200 group-hover:text-brand-400 transition-colors font-medium", TABLE_COLUMNS[0].className)}>
+              <span className="truncate flex-1">{item.name}</span>
+              <CopyButton
+                item={item}
+                size={12}
+                className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                title={`Copy "${item.name}"`}
+              />
             </div>
             {/* Type */}
             <div className={cn("px-2 text-[11px] text-zinc-500", TABLE_COLUMNS[1].className)}>
@@ -1293,6 +1358,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide leading-none">{item.name}</h1>
+              <CopyButton item={item} size={16} title={`Copy "${item.name}"`} />
               <TypeBadge
                 type={item.type}
                 subcategory={item.subcategory}
@@ -2139,7 +2205,7 @@ function StationDetailView({ station, onBack }: { station: string; onBack: () =>
             <StationIcon station={station} size={48} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-100">{station}</h1>
+            <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">{station}</h1>
             <p className="text-sm text-zinc-400 mt-1">
               {allItems.length} item{allItems.length !== 1 ? "s" : ""} craftable
               {maxLevel > 1 && <> · Max level {maxLevel}</>}
@@ -2299,7 +2365,7 @@ function ProcessingStationDetailView({ stationName, onBack }: { stationName: str
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-zinc-100">{station.name}</h1>
+              <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">{station.name}</h1>
               <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">
                 Factory
               </span>
@@ -2456,7 +2522,7 @@ function VendorDetailView({ vendorName, onBack }: { vendorName: string; onBack: 
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-zinc-100">{vendor.name}</h1>
+              <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">{vendor.name}</h1>
               <BiomeBadge biome={vendor.biome} />
             </div>
             <p className="text-sm text-zinc-400 mt-2 leading-relaxed">{vendor.description}</p>

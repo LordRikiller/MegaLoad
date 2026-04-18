@@ -8,22 +8,22 @@ import {
 import { useSyncStore } from "../stores/syncStore";
 import { useIdentityStore } from "../stores/identityStore";
 import { useToastStore } from "../stores/toastStore";
+import { usePlayerDataStore } from "../stores/playerDataStore";
 
 const PUSH_DEBOUNCE_MS = 5_000;
-const INITIAL_PUSH_DELAY_MS = 3_000; // Give the UI time to render first
+const INITIAL_PUSH_DELAY_MS = 3_000;
 
 /**
- * Auto-sync player data (characters) — runs globally regardless of which page
- * the user is on. When a .fch change is detected and cloud sync is enabled,
- * pushes characters to the cloud after a short debounce.
+ * Global player-data lifecycle. Two responsibilities:
  *
- * Startup policy:
- *   - Waits for identity to be loaded (so IdentityGate completes first)
- *   - Then waits 3s to let the UI settle
- *   - Only THEN does the initial push
+ * 1. **Local store freshness** — always on. Starts the Tauri .fch watcher
+ *    and on every change event re-reads the selected character into the
+ *    Zustand store. Ensures Dashboard / sidebar stats stay live regardless
+ *    of which page the user is on (previously only PlayerData.tsx wired
+ *    this, so leaving the page left the store stale).
  *
- * The Tauri command itself runs via spawn_blocking so it doesn't occupy the
- * Tauri IPC pool and block other commands.
+ * 2. **Cloud push** — gated on `enabled && autoSync && identity`. On change
+ *    event, debounced 5s, pushes all characters to the cloud.
  *
  * Mount once in AppShell.
  */
@@ -36,10 +36,8 @@ export function useAutoPlayerSync() {
   const initialPushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialPushDone = useRef(false);
 
-  // Start watcher + listen for changes (no sync here, just setup)
+  // Watcher + listener — always on so local store stays fresh
   useEffect(() => {
-    if (!enabled || !autoSync || !identity) return;
-
     let unlistenFn: (() => void) | null = null;
     let cancelled = false;
 
@@ -53,6 +51,11 @@ export function useAutoPlayerSync() {
       if (cancelled) return;
 
       unlistenFn = await listen("player-data-changed", () => {
+        // Always refresh the local store so every page sees fresh data.
+        usePlayerDataStore.getState().refreshSelected();
+
+        // Cloud push is optional — debounced + only when sync is on.
+        if (!enabled || !autoSync || !identity) return;
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = setTimeout(async () => {
           debounceTimerRef.current = null;
@@ -84,8 +87,7 @@ export function useAutoPlayerSync() {
     };
   }, [enabled, autoSync, identity, addToast]);
 
-  // Deferred initial push — only after identity is loaded + 3s delay so the
-  // UI has already rendered and IdentityGate has cleared its loader
+  // Deferred initial cloud push — only after identity is loaded + 3s delay
   useEffect(() => {
     if (!enabled || !autoSync || !identity || initialPushDone.current) return;
 

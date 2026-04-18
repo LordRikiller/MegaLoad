@@ -3,6 +3,9 @@ import { useProfileStore } from "../stores/profileStore";
 import { useModStore } from "../stores/modStore";
 import { usePlayerDataStore } from "../stores/playerDataStore";
 import { useUpdateStore } from "../stores/updateStore";
+import { BIOME_ORDER, useValheimDataStore } from "../stores/valheimDataStore";
+import { BIOME_COLORS, BIOME_BG_COLORS } from "./ValheimData";
+import { cn } from "../lib/utils";
 import {
   Package,
   Users,
@@ -19,6 +22,9 @@ import {
   Sparkles,
   MapPin,
   TrendingUp,
+  BookOpen,
+  Scroll,
+  Compass,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -35,13 +41,40 @@ function prettySkillName(name: string): string {
   return name.replace(/([A-Z])/g, " $1").trim();
 }
 
+/** The 7 Valheim boss trophies. character.boss_kills is unreliable — this is authoritative. */
+const BOSS_TROPHY_IDS = new Set([
+  "TrophyEikthyr",
+  "TrophyTheElder",
+  "TrophyBonemass",
+  "TrophyDragonQueen", // Moder
+  "TrophyGoblinKing",  // Yagluth
+  "TrophySeekerQueen",
+  "TrophyFader",
+]);
+const TOTAL_BOSSES = BOSS_TROPHY_IDS.size;
+
 export function Dashboard() {
   const { activeProfileId, fetchProfiles, activeProfile } = useProfileStore();
   const { mods, fetchMods } = useModStore();
-  const { character, characters } = usePlayerDataStore();
+  const {
+    character,
+    characters,
+    selectedPath,
+    fetchCharacters,
+    selectCharacter,
+    refreshSelected,
+  } = usePlayerDataStore();
   const { sessionUpdatedMods, updateResult } = useUpdateStore();
+  const setActiveBiome = useValheimDataStore((s) => s.setActiveBiome);
+  const setSelectedItem = useValheimDataStore((s) => s.setSelectedItem);
   const navigate = useNavigate();
   const profile = activeProfile();
+
+  const openBiome = (biome: string) => {
+    setSelectedItem(null);
+    setActiveBiome(biome);
+    navigate("/valheim-data");
+  };
 
   useEffect(() => {
     fetchProfiles();
@@ -51,11 +84,40 @@ export function Dashboard() {
     if (profile?.bepinex_path) fetchMods(profile.bepinex_path);
   }, [profile?.bepinex_path, fetchMods]);
 
+  // Ensure character list + selected character are fresh on Dashboard mount.
+  // Without this, users landing on Dashboard first see stale data (or no data
+  // at all if PlayerData has never been visited this session).
+  useEffect(() => {
+    fetchCharacters();
+  }, [fetchCharacters]);
+
+  useEffect(() => {
+    if (characters.length > 0 && !selectedPath) {
+      selectCharacter(characters[0].path);
+    } else if (selectedPath) {
+      // Have a selection — re-read to catch any post-gameplay file changes
+      refreshSelected();
+    }
+  }, [characters, selectedPath, selectCharacter, refreshSelected]);
+
   const skillSum = useMemo(
     () => character?.skills.reduce((s, k) => s + Math.floor(k.level), 0) ?? 0,
     [character]
   );
   const top = useMemo(() => topSkills(character?.skills ?? []), [character]);
+
+  // Game has 9 canonical biomes — filter out "Unknown Biome" and any stray values
+  const knownBiomes = useMemo(() => {
+    if (!character) return [];
+    const canon = new Set<string>(BIOME_ORDER);
+    return character.known_biomes.filter((b) => canon.has(b));
+  }, [character]);
+
+  // Derive bosses-defeated from trophies (character.boss_kills is unreliable — caps below true count)
+  const bossesDefeated = useMemo(() => {
+    if (!character) return 0;
+    return character.trophies.filter((t) => BOSS_TROPHY_IDS.has(t)).length;
+  }, [character]);
 
   const availableUpdates = updateResult?.mods.filter((m) => m.status === "outdated").length ?? 0;
 
@@ -134,7 +196,7 @@ export function Dashboard() {
                   )}
                 </div>
                 <button
-                  onClick={() => navigate("/player")}
+                  onClick={() => navigate("/player-data")}
                   className="text-[11px] text-zinc-500 hover:text-brand-400 transition-colors"
                 >
                   View details →
@@ -173,7 +235,7 @@ export function Dashboard() {
               <div className="grid grid-cols-4 gap-3 mb-5">
                 <SagaStat icon={Skull} label="Deaths" value={character.deaths} color="text-zinc-300" />
                 <SagaStat icon={Swords} label="Kills" value={character.kills} color="text-red-300" />
-                <SagaStat icon={Crown} label="Bosses" value={character.boss_kills} color="text-amber-300" />
+                <SagaStat icon={Crown} label="Bosses" value={bossesDefeated} suffix={`/ ${TOTAL_BOSSES}`} color="text-amber-300" />
                 <SagaStat icon={Hammer} label="Builds" value={character.builds} color="text-cyan-300" />
               </div>
 
@@ -210,7 +272,7 @@ export function Dashboard() {
                 Select a character in Player Data to see your vitals, skills and saga stats here.
               </p>
               <button
-                onClick={() => navigate("/player")}
+                onClick={() => navigate("/player-data")}
                 className="mt-4 text-xs px-4 py-2 rounded-lg bg-brand-500/15 border border-brand-500/30 text-brand-400 hover:bg-brand-500/25 transition-colors"
               >
                 Open Player Data
@@ -230,18 +292,25 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-4xl font-norse font-bold text-brand-300 leading-none">
-              {character?.known_biomes.length ?? 0}
-              <span className="text-sm text-zinc-500 ml-1">/ 9</span>
+              {knownBiomes.length}
+              <span className="text-sm text-zinc-500 ml-1">/ {BIOME_ORDER.length}</span>
             </div>
-            {character && character.known_biomes.length > 0 && (
+            {knownBiomes.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-3">
-                {character.known_biomes.slice(0, 9).map((b) => (
-                  <span
+                {knownBiomes.map((b) => (
+                  <button
                     key={b}
-                    className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800/60 text-zinc-400 border border-zinc-700/40"
+                    type="button"
+                    onClick={() => openBiome(b)}
+                    title={`Filter Valheim Data to ${b}`}
+                    className={cn(
+                      "text-[10px] font-semibold px-2 py-0.5 rounded border transition-all hover:brightness-125 cursor-pointer",
+                      BIOME_BG_COLORS[b] || "bg-zinc-800/60 border-zinc-700/40",
+                      BIOME_COLORS[b] || "text-zinc-400"
+                    )}
                   >
                     {b}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}
@@ -285,6 +354,50 @@ export function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ─── ACHIEVEMENTS ─── */}
+      {character && (
+        <div>
+          <h2 className="font-norse font-bold text-xl text-zinc-200 tracking-wide mb-3">
+            Achievements
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <AchievementCard
+              icon={Crown}
+              label="Bosses Defeated"
+              value={bossesDefeated}
+              max={TOTAL_BOSSES}
+              hint={bossesDefeated === TOTAL_BOSSES ? "All Forsaken fallen" : `${TOTAL_BOSSES - bossesDefeated} remain`}
+              color="text-amber-300"
+              ringColor="ring-amber-500/30"
+            />
+            <AchievementCard
+              icon={Scroll}
+              label="Runestones Read"
+              value={character.known_texts.length}
+              hint="Whispers of the old gods"
+              color="text-purple-300"
+              ringColor="ring-purple-500/30"
+            />
+            <AchievementCard
+              icon={BookOpen}
+              label="Recipes Mastered"
+              value={character.known_recipes.length}
+              hint={`${character.known_materials.length} materials known`}
+              color="text-cyan-300"
+              ringColor="ring-cyan-500/30"
+            />
+            <AchievementCard
+              icon={Compass}
+              label="Worlds Explored"
+              value={character.world_count}
+              hint={character.world_count === 1 ? "One world wandered" : "Worlds wandered"}
+              color="text-emerald-300"
+              ringColor="ring-emerald-500/30"
+            />
+          </div>
+        </div>
+      )}
 
       {/* ─── QUICK ACTIONS ─── */}
       <div>
@@ -433,17 +546,22 @@ function SagaStat({
   icon: Icon,
   label,
   value,
+  suffix,
   color,
 }: {
   icon: typeof Skull;
   label: string;
-  value: number;
+  value: number | string;
+  suffix?: string;
   color: string;
 }) {
   return (
     <div className="bg-zinc-800/30 rounded-lg p-2.5 border border-zinc-800/40">
       <Icon className={`w-3.5 h-3.5 ${color} mb-1.5`} />
-      <div className={`font-norse font-bold text-2xl leading-none ${color}`}>{value}</div>
+      <div className={`font-norse font-bold text-2xl leading-none ${color}`}>
+        {value}
+        {suffix && <span className="text-sm text-zinc-600 ml-1">{suffix}</span>}
+      </div>
       <div className="text-[9px] text-zinc-500 uppercase tracking-wider mt-1">{label}</div>
     </div>
   );
@@ -455,6 +573,47 @@ const GLOW_CLASSES: Record<string, string> = {
   purple: "hover:border-purple-500/40 hover:bg-purple-500/[0.06]",
   red: "hover:border-red-500/40 hover:bg-red-500/[0.06]",
 };
+
+function AchievementCard({
+  icon: Icon,
+  label,
+  value,
+  max,
+  hint,
+  color,
+  ringColor,
+}: {
+  icon: typeof Crown;
+  label: string;
+  value: number;
+  max?: number;
+  hint?: string;
+  color: string;
+  ringColor: string;
+}) {
+  const complete = max != null && value >= max;
+  return (
+    <div
+      className={cn(
+        "glass rounded-2xl p-5 border-zinc-800/50 relative overflow-hidden transition-all",
+        complete && `ring-1 ${ringColor}`
+      )}
+    >
+      {complete && (
+        <div className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/15 border border-amber-500/30 rounded-full px-2 py-0.5">
+          Complete
+        </div>
+      )}
+      <Icon className={`w-5 h-5 ${color} mb-3 opacity-80`} />
+      <div className={`font-norse font-bold text-3xl leading-none ${color}`}>
+        {value}
+        {max != null && <span className="text-sm text-zinc-600 ml-1">/ {max}</span>}
+      </div>
+      <div className="text-[10px] text-zinc-400 uppercase tracking-wider mt-2 font-semibold">{label}</div>
+      {hint && <div className="text-[10px] text-zinc-500 mt-0.5">{hint}</div>}
+    </div>
+  );
+}
 
 function ActionTile({
   to,

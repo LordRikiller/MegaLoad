@@ -768,7 +768,7 @@ export function MegaBugs() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/50">
         <div>
-          <h1 className="text-xl font-bold text-zinc-100">MegaBugs</h1>
+          <h1 className="font-norse font-bold text-2xl text-zinc-100 tracking-wide">MegaBugs</h1>
           <p className="text-xs text-zinc-500 mt-0.5">
             {role === "owner"
               ? "Owner — all tickets"
