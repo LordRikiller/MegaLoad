@@ -1,11 +1,11 @@
 {
-  "version": "1.7.8",
-  "notes": "Fix: MegaDataExtractor was still shipping v1.2.0 because the bundled copy in src-tauri/resources/ wasn't updated — only the Latest Release staging copy was. This release bundles the real MegaDataExtractor v1.3.0 with the new worldPrefabs extraction pass. Also moved the search + discovery + sort + export + view + cart controls below the Valheim Data title for breathing room.",
-  "pub_date": "2026-04-18T10:05:00Z",
+  "version": "1.7.9",
+  "notes": "Fix: v1.7.8 actually did ship the new MegaDataExtractor DLL, but the Mods list didn't refresh after the bundled-plugin deploy completed, so users still saw the previously-installed version. The sidebar now refetches the mod list once the deploy finishes, so you'll see the upgraded DLL version on first launch after updating MegaLoad.",
+  "pub_date": "2026-04-18T19:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJBWkFNR29jVUVlVlZCMGNDT3NwSm1EczNYc0dIUzhVQWp2SjFuSHN1TkU3SElLRHdHQVRaaDNaSVQwNnlJSjlEVklSbmxmaVYrMlZvaThRNDNaRVFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDk0Njk5CWZpbGU6TWVnYUxvYWRfMS43LjhfeDY0LXNldHVwLm5zaXMuemlwCmpzTHhubm1rUHFSNW9HQmhzd1JsUWg3Y3pRZmtPYmpVemJQQTZqWTZwYkJEcmZKbkIvRTQzK3RnWmY0OTVGZTdWUjJFaVAvWWFncHZraE1TYS9BVEFRPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.8/MegaLoad_1.7.8_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUhSeXFNK0w1alRER05Xa1Q0Y0t5ZmNmZmp4NzJlOUJSME1hcFdwQUNpSUJOTlhydGpqWllieVFXanhBWDNmNTBkSnFDS2FsNUZlcUE2TklRVys2cUFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTAyMjIwCWZpbGU6TWVnYUxvYWRfMS43LjlfeDY0LXNldHVwLm5zaXMuemlwCm45WTFxNXl1ZEhGekN1anA2WFFua0RiTDJUa2djNkZ3RXNqQVd5cUJ6cEdtay8yYVBaOUlmcGxvUFV5dS9OSVpYbXlFWlVpNnkrdmNESWZ3MzdtMUFBPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.9/MegaLoad_1.7.9_x64-setup.nsis.zip"
     }
   }
 }

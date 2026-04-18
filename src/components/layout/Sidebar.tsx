@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useProfileStore } from "../../stores/profileStore";
+import { useModStore } from "../../stores/modStore";
 import { useUpdateStore } from "../../stores/updateStore";
 import { useAppUpdateStore } from "../../stores/appUpdateStore";
 import { useToastStore } from "../../stores/toastStore";
@@ -101,8 +102,15 @@ export function Sidebar() {
     // Profile switch — always auto-update unless game is running
     if (bep !== lastCheckedProfile.current) {
       lastCheckedProfile.current = bep;
-      // Deploy bundled internal plugins (MegaBugs, MegaDataExtractor)
-      deployBundledPlugins(bep).catch((e) => console.warn("[MegaLoad]", e));
+      // Deploy bundled internal plugins (MegaBugs, MegaDataExtractor). Idempotent:
+      // the Rust side compares versions and only overwrites when bundled > installed.
+      // We refetch mods AFTER deploy so the list reflects the just-upgraded DLL
+      // version instead of showing the pre-deploy installed version until the
+      // next refresh. Fixes the "v1.7.8 ships v1.3.0 but Mods list still shows
+      // v1.2.0" bug Milord hit.
+      deployBundledPlugins(bep)
+        .then(() => useModStore.getState().fetchMods(bep))
+        .catch((e) => console.warn("[MegaLoad]", e));
       if (gameStatus?.valheim_running) {
         checkUpdates(bep);
       } else {
