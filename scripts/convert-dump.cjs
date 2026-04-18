@@ -1688,6 +1688,15 @@ const TAMEABLE_CREATURES = new Set([
   "Asksvin",
 ]);
 
+// Foods each tameable creature accepts (prefab IDs, in display order).
+// Sourced from valheim.fandom.com/wiki/Taming + per-creature wiki pages.
+const TAMEABLE_CREATURE_FOODS = {
+  Boar:    ["Raspberry", "Blueberries", "Carrot", "Turnip", "Mushroom", "Onion"],
+  Wolf:    ["RawMeat", "DeerMeat", "NeckTail", "LoxMeat", "FishRaw", "SerpentMeat", "Sausages"],
+  Lox:     ["Barley", "Cloudberry", "Flax"],
+  Asksvin: ["MushroomSmokePuff", "Vineberry", "Fiddleheadfern"],
+};
+
 for (const cd of creatureDrops) {
   if (seenIds.has(cd.creature)) continue;
   if (CREATURE_BLACKLIST.has(cd.creature)) continue;
@@ -1816,6 +1825,7 @@ for (const cd of creatureDrops) {
     worldSources: [],
     stats: stats,
     ...(TAMEABLE_CREATURES.has(cd.creature) ? { tameable: true } : {}),
+    ...(TAMEABLE_CREATURE_FOODS[cd.creature] ? { tameFoods: TAMEABLE_CREATURE_FOODS[cd.creature] } : {}),
     wikiUrl: WIKI_MAP[cd.creature] ? WIKI_MAP[cd.creature][0] : "",
     wikiGroup: WIKI_MAP[cd.creature] && WIKI_MAP[cd.creature][1] ? WIKI_MAP[cd.creature][1] : "",
   };
@@ -2282,6 +2292,7 @@ export interface ValheimItem {
   worldSources: WorldSource[];  // Trees, rocks, destructibles that drop this item
   stats: ItemStat[];    // Flexible stats (damage, armor, duration, etc.)
   tameable?: boolean;   // Creatures only — true for Boar, Wolf, Lox, Asksvin
+  tameFoods?: string[]; // Creatures only — prefab IDs of foods this creature will eat to tame
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
 }

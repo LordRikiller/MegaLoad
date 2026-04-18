@@ -1581,6 +1581,42 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
               </div>
             )}
 
+            {/* Tames With (for tameable creatures) */}
+            {item.tameFoods && item.tameFoods.length > 0 && (
+              <div className="glass rounded-xl p-5 border border-emerald-500/20 bg-emerald-500/[0.02]">
+                <h2 className="text-sm font-semibold text-emerald-400 mb-1 flex items-center gap-2">
+                  Tames With
+                  <span className="text-[10px] font-normal text-zinc-500">
+                    ({item.tameFoods.length} {item.tameFoods.length === 1 ? "food" : "foods"})
+                  </span>
+                </h2>
+                <p className="text-[10px] text-zinc-500 mb-3">
+                  Drop one of these within 1m. Avoid scaring the creature — red "!" resets progress.
+                </p>
+                <div className="space-y-1">
+                  {item.tameFoods.map((foodId) => {
+                    const food = getItemById(foodId);
+                    if (!food) return null;
+                    return (
+                      <button
+                        key={foodId}
+                        onClick={() => handleNavigate(foodId)}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                      >
+                        <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                          <ItemIcon id={foodId} type={food.type} size={24} />
+                        </div>
+                        <span className="text-xs text-brand-400 hover:underline flex-1">{food.name}</span>
+                        {food.biomes?.[0] && (
+                          <BiomeBadge biome={food.biomes[0]} onClick={() => navigateToBiome(food.biomes[0])} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Dropped By / World Sources */}
             {(item.worldSources?.length > 0 || droppedBy.length > 0) && (
               <div className="glass rounded-xl p-5 border border-zinc-800/50">

@@ -1,11 +1,11 @@
 {
-  "version": "1.6.7",
-  "notes": "Valheim Data → Creatures: Base / 1★ / 2★ tabs now actually scale Health and attack damage per star, and Boar, Wolf, Lox and Asksvin show a green Tameable badge next to their biome chips. Stat parser was only reading the item format (\"N (+N/lvl)\") and skipped the creature format (\"N/Nlvl\"), so the star tabs were showing the same numbers — fixed.",
-  "pub_date": "2026-04-18T03:30:00Z",
+  "version": "1.6.8",
+  "notes": "Valheim Data → Creatures: new green \"Tames With\" panel on Boar, Wolf, Lox and Asksvin detail pages listing every food each one will eat to tame — clickable rows with icons + biome tags. Lists sourced from the Valheim wiki Taming page.",
+  "pub_date": "2026-04-18T03:55:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFhS1cwSU9DTTVwYzIzNTcxOTIzNUtJVnNZMFhBcjFhY01jeExkS0l4d292ajZObDBaenRmZnhsb0RmZVJxUFhEVFd2OHVSMkh2YnEyem90ZFNzRWdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDgzNDYxCWZpbGU6TWVnYUxvYWRfMS42LjdfeDY0LXNldHVwLm5zaXMuemlwCm05MHRuQ2JJaU1yN0s1MnkzQWprZEl0UHJSb1ZwNTB6NjVDZTNuanlLYmo2bzgwOEJWVmdqYVZ0OTJ0c3JMNGhEUWF3cVY5Z1NXb2ZFc3dPM2NMVkJBPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.6.7/MegaLoad_1.6.7_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU15d0xzd0dsNlVmZU5SUlJkTXNFWDYwSEFPcWpPeTZSMktlYklQenhZZkduaVR3QVpRRGZpSHpEWFNRUW5RMmVwSnROTWVJcmFhRWpJQzU0Uk1tQ2drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDg0MzE5CWZpbGU6TWVnYUxvYWRfMS42LjhfeDY0LXNldHVwLm5zaXMuemlwCmRkd0FlQTB2dG5KZjFCNTF2cE9pWnd6SVMvUk9TdEErQlNkaFlKbHFoK1V4MnRMN0hCZ1ZIb2xld1hFa04ySlczZW0xam1jOWxUOG9IY2JQbGJHMUFnPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.6.8/MegaLoad_1.6.8_x64-setup.nsis.zip"
     }
   }
 }
