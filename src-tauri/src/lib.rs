@@ -184,6 +184,7 @@ pub fn run() {
             sync_check_remote_changed,
             sync_push_player_data,
             sync_pull_player_data,
+            sync_reconcile_player_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

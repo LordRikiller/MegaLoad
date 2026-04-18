@@ -1,11 +1,14 @@
 use crate::commands::app_log::app_log;
 use crate::commands::github::{github_get_file, github_list_dir, github_put_file};
 use crate::commands::identity::get_megaload_identity;
-use crate::commands::player_data::{CharacterData, list_characters, read_character};
+use crate::commands::player_data::{
+    self, CharacterData, list_characters, read_character,
+};
 use crate::models::{
     SyncManifest, SyncModEntry, SyncProfileEntry,
     SyncSettings, SyncStatus, SyncThunderstoreMod,
 };
+use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -663,17 +666,89 @@ pub fn sync_check_remote_changed() -> Result<bool, String> {
 }
 
 // ---------------------------------------------------------------------------
-// Player Data Sync (unchanged)
+// Player Data Sync (v2 — binary-safe, mtime-aware)
 // ---------------------------------------------------------------------------
+//
+// The legacy format (v1) uploaded a parsed CharacterData JSON snapshot and
+// provided no round-trip back to the Valheim save file. Pulls showed the
+// remote in the UI but never wrote anything to disk, so the local `.fch`
+// stayed stale. Auto-push on startup would then happily overwrite the cloud
+// with the desktop's stale JSON — the exact "pushing when should be pulling"
+// bug Milord reported.
+//
+// v2 stores the raw `.fch` bytes (base64) alongside the source file's mtime,
+// and every push/pull decision is gated on comparing mtimes. Whichever side
+// was most recently written wins. Pulling actually writes the bytes to the
+// local `.fch` and restamps the mtime so the next reconcile doesn't ping-pong.
+//
+// Shape on GitHub:
+//   {
+//     "version": 2,
+//     "name":        "Lagertha",
+//     "mtime_secs":  1776492000,      // source .fch mtime at time of push
+//     "source":      "MegaLoad/desktop",
+//     "bytes_b64":   "<base64 .fch>",
+//     "preview":     { ...CharacterData }   // optional; purely for GitHub UI readability
+//   }
+
+const PLAYER_SYNC_VERSION: u32 = 2;
+
+#[derive(Serialize, Deserialize)]
+struct PlayerSyncPayload {
+    version: u32,
+    name: String,
+    mtime_secs: u64,
+    source: String,
+    bytes_b64: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    preview: Option<CharacterData>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct PlayerReconcileSummary {
+    pub pushed: u32,
+    pub pulled: u32,
+    pub skipped: u32,
+    pub details: Vec<String>,
+}
 
 fn sync_character_path(user_id: &str, char_name: &str) -> String {
     format!("sync/{}/characters/{}.json", user_id, char_name)
 }
 
+fn push_source_label() -> String {
+    let host = std::env::var("COMPUTERNAME").unwrap_or_else(|_| "unknown".to_string());
+    format!("MegaLoad/{}", host)
+}
+
+fn build_payload(char_name: &str, path: &Path) -> Result<(PlayerSyncPayload, Vec<u8>, u64), String> {
+    let (bytes, mtime) = player_data::read_fch_with_mtime(path)?;
+    let preview = read_character(path.to_string_lossy().to_string()).ok();
+    let payload = PlayerSyncPayload {
+        version: PLAYER_SYNC_VERSION,
+        name: char_name.to_string(),
+        mtime_secs: mtime,
+        source: push_source_label(),
+        bytes_b64: B64.encode(&bytes),
+        preview,
+    };
+    Ok((payload, bytes, mtime))
+}
+
+fn parse_remote(content: &str) -> Option<PlayerSyncPayload> {
+    // v2 payload only. v1 rows don't carry the bytes, so we can't round-trip
+    // them — silently skip and log. Any client on >= v2 will overwrite the
+    // row with a v2 payload on the next local change.
+    match serde_json::from_str::<PlayerSyncPayload>(content) {
+        Ok(p) if p.version >= 2 => Some(p),
+        _ => None,
+    }
+}
+
+/// Push local .fch files to cloud. Only pushes a character when the local
+/// file is strictly newer than the remote copy (or the remote doesn't exist).
 #[command]
 pub async fn sync_push_player_data() -> Result<u32, String> {
-    // Run on a blocking thread so the Tauri IPC pool stays free for other
-    // commands (IdentityGate, identity checks, UI queries, etc.)
     tauri::async_runtime::spawn_blocking(sync_push_player_data_impl)
         .await
         .map_err(|e| format!("Player sync task panicked: {}", e))?
@@ -689,74 +764,81 @@ fn sync_push_player_data_impl() -> Result<u32, String> {
 
     let identity = get_megaload_identity()?;
     let user_id = &identity.user_id;
-    let characters = match list_characters() {
-        Ok(c) => c,
-        Err(e) => {
-            app_log(&format!("Sync push player data: list_characters failed — {}", e));
-            return Err(e);
-        }
-    };
+    let characters = list_characters().map_err(|e| {
+        app_log(&format!("Sync push: list_characters failed — {}", e));
+        e
+    })?;
     app_log(&format!("Sync push player data: found {} local characters", characters.len()));
 
     let mut pushed: u32 = 0;
     let mut skipped: u32 = 0;
 
     for summary in &characters {
-        let char_data = match read_character(summary.path.clone()) {
-            Ok(data) => data,
+        let local_path = PathBuf::from(&summary.path);
+        let (payload, _bytes, local_mtime) = match build_payload(&summary.name, &local_path) {
+            Ok(t) => t,
             Err(e) => {
-                app_log(&format!("Sync: skipping {} — {}", summary.name, e));
+                app_log(&format!("Sync push: skipping {} — {}", summary.name, e));
                 skipped += 1;
                 continue;
             }
         };
 
-        let remote_path = sync_character_path(user_id, &char_data.name);
-        let json = serde_json::to_string_pretty(&char_data).map_err(|e| e.to_string())?;
-
+        let remote_path = sync_character_path(user_id, &summary.name);
         let sha = match github_get_file(&remote_path) {
-            Ok((remote_content, sha)) => {
-                if remote_content == json {
-                    skipped += 1;
-                    continue;
+            Ok((content, sha)) => {
+                if let Some(remote) = parse_remote(&content) {
+                    if remote.mtime_secs >= local_mtime {
+                        app_log(&format!(
+                            "Sync push: {} remote mtime {} >= local {} — skip",
+                            summary.name, remote.mtime_secs, local_mtime
+                        ));
+                        skipped += 1;
+                        continue;
+                    }
                 }
                 Some(sha)
             }
-            Err(_) => None,
+            Err(_) => None, // remote doesn't exist yet
         };
 
+        let body = serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?;
         match github_put_file(
             &remote_path,
-            json.as_bytes(),
-            &format!("Sync character {} — {}", char_data.name, identity.display_name),
+            body.as_bytes(),
+            &format!("Sync push {} (mtime {}) — {}", summary.name, local_mtime, identity.display_name),
             sha.as_deref(),
         ) {
             Ok(_) => {
                 pushed += 1;
-                app_log(&format!("Sync pushed character: {}", char_data.name));
+                app_log(&format!("Sync push: uploaded {} (mtime {})", summary.name, local_mtime));
             }
             Err(e) => {
-                app_log(&format!("Sync push failed for {}: {}", char_data.name, e));
+                app_log(&format!("Sync push failed for {}: {}", summary.name, e));
                 return Err(e);
             }
         }
     }
 
     app_log(&format!(
-        "Sync push player data: {} pushed, {} skipped (unchanged or unreadable)",
+        "Sync push player data: {} pushed, {} skipped",
         pushed, skipped
     ));
     Ok(pushed)
 }
 
+/// Pull characters from cloud. Writes the raw .fch bytes to disk when the
+/// remote mtime is strictly newer than any local copy (or the character
+/// doesn't exist locally). Returns the number of characters that were
+/// actually written, and a previews list for the UI to refresh from.
 #[command]
 pub async fn sync_pull_player_data() -> Result<Vec<CharacterData>, String> {
-    tauri::async_runtime::spawn_blocking(sync_pull_player_data_impl)
+    tauri::async_runtime::spawn_blocking(|| sync_pull_player_data_impl().map(|r| r.1))
         .await
         .map_err(|e| format!("Player pull task panicked: {}", e))?
 }
 
-fn sync_pull_player_data_impl() -> Result<Vec<CharacterData>, String> {
+fn sync_pull_player_data_impl() -> Result<(PlayerReconcileSummary, Vec<CharacterData>), String> {
     let settings = load_sync_settings();
     if !settings.enabled {
         return Err("Cloud sync is not enabled".to_string());
@@ -768,24 +850,126 @@ fn sync_pull_player_data_impl() -> Result<Vec<CharacterData>, String> {
 
     let listing = match github_list_dir(&dir_path) {
         Ok(l) => l,
-        Err(e) if e.contains("404") => return Ok(Vec::new()),
+        Err(e) if e.contains("404") => {
+            return Ok((PlayerReconcileSummary { pushed: 0, pulled: 0, skipped: 0, details: vec![] }, Vec::new()));
+        }
         Err(e) => return Err(e),
     };
 
-    let mut characters = Vec::new();
+    let mut summary = PlayerReconcileSummary { pushed: 0, pulled: 0, skipped: 0, details: vec![] };
+    let mut previews: Vec<CharacterData> = Vec::new();
+
     for (path, _sha) in &listing {
         if !path.ends_with(".json") { continue; }
-        match github_get_file(path) {
-            Ok((content, _)) => {
-                match serde_json::from_str::<CharacterData>(&content) {
-                    Ok(data) => characters.push(data),
-                    Err(e) => app_log(&format!("Sync: failed to parse {}: {}", path, e)),
+        let (content, _) = match github_get_file(path) {
+            Ok(x) => x,
+            Err(e) => {
+                app_log(&format!("Sync pull: failed to read {}: {}", path, e));
+                continue;
+            }
+        };
+
+        let remote = match parse_remote(&content) {
+            Some(p) => p,
+            None => {
+                app_log(&format!("Sync pull: {} is legacy v1 (no bytes) — skip", path));
+                summary.skipped += 1;
+                summary.details.push(format!("{}: legacy v1, skipped", path));
+                continue;
+            }
+        };
+
+        // Resolve local path. If the character doesn't exist locally yet,
+        // land it in the primary character dir (Steam Cloud if present).
+        let local_path = match player_data::find_fch_path_for_name(&remote.name) {
+            Some(p) => p,
+            None => match player_data::get_primary_character_dir() {
+                Some(dir) => dir.join(format!("{}.fch", remote.name)),
+                None => {
+                    app_log("Sync pull: no character directory available to write new character");
+                    summary.skipped += 1;
+                    summary.details.push(format!("{}: no local dir, skipped", remote.name));
+                    continue;
+                }
+            },
+        };
+
+        let local_mtime = fs::metadata(&local_path)
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        if remote.mtime_secs <= local_mtime {
+            app_log(&format!(
+                "Sync pull: {} local mtime {} >= remote {} — skip",
+                remote.name, local_mtime, remote.mtime_secs
+            ));
+            summary.skipped += 1;
+            if let Some(p) = remote.preview { previews.push(p); }
+            continue;
+        }
+
+        let bytes = match B64.decode(remote.bytes_b64.as_bytes()) {
+            Ok(b) => b,
+            Err(e) => {
+                app_log(&format!("Sync pull: base64 decode failed for {}: {}", remote.name, e));
+                summary.skipped += 1;
+                continue;
+            }
+        };
+
+        match player_data::write_fch_with_mtime(&local_path, &bytes, remote.mtime_secs) {
+            Ok(_) => {
+                summary.pulled += 1;
+                summary.details.push(format!(
+                    "{}: pulled (local {} → remote {})", remote.name, local_mtime, remote.mtime_secs
+                ));
+                app_log(&format!(
+                    "Sync pull: wrote {} ({} bytes, mtime {})",
+                    local_path.display(), bytes.len(), remote.mtime_secs
+                ));
+                // Re-parse after write so we return fresh preview data
+                if let Ok(parsed) = read_character(local_path.to_string_lossy().to_string()) {
+                    previews.push(parsed);
+                } else if let Some(p) = remote.preview {
+                    previews.push(p);
                 }
             }
-            Err(e) => app_log(&format!("Sync: failed to read {}: {}", path, e)),
+            Err(e) => {
+                app_log(&format!("Sync pull: failed to write {}: {}", remote.name, e));
+                summary.skipped += 1;
+                summary.details.push(format!("{}: write failed — {}", remote.name, e));
+            }
         }
     }
 
-    app_log(&format!("Sync pull player data: {} characters", characters.len()));
-    Ok(characters)
+    app_log(&format!(
+        "Sync pull player data: {} pulled, {} skipped",
+        summary.pulled, summary.skipped
+    ));
+    Ok((summary, previews))
+}
+
+/// Reconcile local + remote in a single pass: pull anything remote-newer,
+/// then push anything local-newer. Use this on startup instead of the old
+/// "initial push" which could clobber fresh remote data with stale local.
+#[command]
+pub async fn sync_reconcile_player_data() -> Result<PlayerReconcileSummary, String> {
+    tauri::async_runtime::spawn_blocking(sync_reconcile_player_data_impl)
+        .await
+        .map_err(|e| format!("Player reconcile task panicked: {}", e))?
+}
+
+fn sync_reconcile_player_data_impl() -> Result<PlayerReconcileSummary, String> {
+    app_log("Sync reconcile: starting");
+    let (mut summary, _) = sync_pull_player_data_impl()?;
+    let pushed = sync_push_player_data_impl()?;
+    summary.pushed = pushed;
+    app_log(&format!(
+        "Sync reconcile: {} pulled, {} pushed, {} skipped",
+        summary.pulled, summary.pushed, summary.skipped
+    ));
+    Ok(summary)
 }

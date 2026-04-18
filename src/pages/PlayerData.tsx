@@ -24,7 +24,6 @@ import {
   AlertCircle,
   Sparkles,
   Cloud,
-  CloudDownload,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { usePlayerDataStore } from "../stores/playerDataStore";
@@ -43,7 +42,7 @@ import {
   type ValheimItem,
 } from "../data/valheim-items";
 import type { InventoryItem, SkillData } from "../lib/tauri-api";
-import { startPlayerDataWatcher, stopPlayerDataWatcher, syncPushPlayerData, syncPullPlayerData } from "../lib/tauri-api";
+import { startPlayerDataWatcher, stopPlayerDataWatcher, syncReconcilePlayerData } from "../lib/tauri-api";
 import { useSyncStore } from "../stores/syncStore";
 
 // ── Guardian power display names ───────────────────────────
@@ -378,50 +377,40 @@ export function PlayerData() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Sync buttons */}
+          {/* Sync button — one button, always moves bytes in the newer-wins direction */}
           {syncEnabled && (
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={async () => {
-                  setSyncing(true);
-                  try {
-                    const count = await syncPushPlayerData();
-                    setSyncToast(`Pushed ${count} character${count !== 1 ? "s" : ""} to cloud`);
-                  } catch (e) {
-                    setSyncToast(`Push failed: ${e}`);
-                  } finally {
-                    setSyncing(false);
-                    setTimeout(() => setSyncToast(null), 3000);
+            <button
+              onClick={async () => {
+                setSyncing(true);
+                try {
+                  const r = await syncReconcilePlayerData();
+                  if (r.pulled === 0 && r.pushed === 0) {
+                    setSyncToast("Already up to date");
+                  } else {
+                    const parts: string[] = [];
+                    if (r.pulled > 0) parts.push(`pulled ${r.pulled}`);
+                    if (r.pushed > 0) parts.push(`pushed ${r.pushed}`);
+                    setSyncToast(`Sync — ${parts.join(" · ")}`);
                   }
-                }}
-                disabled={syncing}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-40"
-                title="Push character data to cloud"
-              >
-                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
-                Push
-              </button>
-              <button
-                onClick={async () => {
-                  setSyncing(true);
-                  try {
-                    const chars = await syncPullPlayerData();
-                    setSyncToast(`Pulled ${chars.length} character${chars.length !== 1 ? "s" : ""} from cloud`);
-                  } catch (e) {
-                    setSyncToast(`Pull failed: ${e}`);
-                  } finally {
-                    setSyncing(false);
-                    setTimeout(() => setSyncToast(null), 3000);
+                  // Re-read whichever character was landed so the UI refreshes
+                  if (r.pulled > 0) {
+                    await usePlayerDataStore.getState().fetchCharacters();
+                    await usePlayerDataStore.getState().refreshSelected();
                   }
-                }}
-                disabled={syncing}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-40"
-                title="Pull character data from cloud"
-              >
-                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CloudDownload className="w-3.5 h-3.5" />}
-                Pull
-              </button>
-            </div>
+                } catch (e) {
+                  setSyncToast(`Sync failed: ${e}`);
+                } finally {
+                  setSyncing(false);
+                  setTimeout(() => setSyncToast(null), 3000);
+                }
+              }}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-40"
+              title="Sync this character — latest save wins"
+            >
+              {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
+              Sync
+            </button>
           )}
 
           {/* Character Dropdown */}

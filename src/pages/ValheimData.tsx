@@ -526,6 +526,21 @@ export function ValheimData() {
   const [searchInput, setSearchInput] = useState(query);
   const [sortOpen, setSortOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [discoveryFilter, setDiscoveryFilter] = useState<"all" | "discovered" | "undiscovered">("all");
+  const pageCharacter = usePlayerDataStore((s) => s.character);
+  const pageKnownPrefabs = useMemo(() => {
+    if (!pageCharacter) return new Set<string>();
+    const set = new Set<string>();
+    for (const token of [...pageCharacter.known_materials, ...pageCharacter.known_recipes]) {
+      if (itemMap.has(token)) {
+        set.add(token);
+      } else {
+        const resolved = tokenMap.get(token.toLowerCase());
+        if (resolved) set.add(resolved.id);
+      }
+    }
+    return set;
+  }, [pageCharacter]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sortRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -567,7 +582,18 @@ export function ValheimData() {
     }
   }, [selectedItem, selectedStation, selectedFactory, selectedVendor]);
 
-  const items = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo);
+  const rawItems = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo);
+  // Apply discovery filter. Creatures are skipped from this filter since they
+  // aren't "discovered" in the save-file knowledge lists (those cover
+  // materials / recipes / pieces).
+  const items = useMemo(() => {
+    if (discoveryFilter === "all" || !pageCharacter) return rawItems;
+    return rawItems.filter((i) => {
+      if (i.type === "Creature") return true;
+      const known = pageKnownPrefabs.has(i.id);
+      return discoveryFilter === "discovered" ? known : !known;
+    });
+  }, [rawItems, discoveryFilter, pageCharacter, pageKnownPrefabs]);
   const typeCounts = getTypeCounts(query, activeBiomes, activeStations);
   const biomeCounts = getBiomeCounts(query, activeTypes, activeStations);
   const stationCounts = getStationCounts(query, activeTypes, activeBiomes);
@@ -730,6 +756,37 @@ export function ValheimData() {
             </button>
           )}
         </div>
+
+        {/* Discovery filter — only when a character is loaded */}
+        {pageCharacter && (
+          <div className="flex items-center glass rounded-lg border border-zinc-800 overflow-hidden h-[36px]">
+            {([
+              { key: "all", label: "All" },
+              { key: "discovered", label: "Discovered" },
+              { key: "undiscovered", label: "Undiscovered" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setDiscoveryFilter(opt.key)}
+                title={
+                  opt.key === "discovered"
+                    ? "Only items this character has seen / crafted"
+                    : opt.key === "undiscovered"
+                      ? "Only items this character hasn't yet seen"
+                      : "Show every item"
+                }
+                className={cn(
+                  "px-3 h-full text-xs font-medium whitespace-nowrap transition-colors border-l border-zinc-800 first:border-l-0",
+                  discoveryFilter === opt.key
+                    ? "bg-brand-500/15 text-brand-400"
+                    : "text-zinc-500 hover:text-zinc-200"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Sort Dropdown */}
         <div className="relative" ref={sortRef}>

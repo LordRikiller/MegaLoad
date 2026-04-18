@@ -348,7 +348,7 @@ fn biome_name(id: i32) -> &'static str {
 // 2. Local: AppData\LocalLow\IronGate\Valheim\characters\ (old local saves)
 // 3. Local new: AppData\LocalLow\IronGate\Valheim\characters_local\ (if cloud disabled)
 
-fn find_character_dirs() -> Vec<PathBuf> {
+pub fn find_character_dirs() -> Vec<PathBuf> {
     let mut dirs = Vec::new();
 
     // Steam Cloud — scan all Steam user IDs for Valheim (892970)
@@ -380,6 +380,71 @@ fn find_character_dirs() -> Vec<PathBuf> {
     }
 
     dirs
+}
+
+/// Resolve the primary .fch file path for a given character name.
+/// Case-insensitive name match. Prefers `.fch` over `.fch.old` and
+/// Steam Cloud over local dirs (matching `find_character_dirs` order).
+pub fn find_fch_path_for_name(name: &str) -> Option<PathBuf> {
+    let target = name.trim().to_lowercase();
+    let dirs = find_character_dirs();
+    let mut candidate_old: Option<PathBuf> = None;
+
+    for dir in &dirs {
+        let entries = match fs::read_dir(dir) {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let fname = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+            if fname.contains("_backup_") { continue; }
+
+            if let Some(stem) = fname.strip_suffix(".fch") {
+                if stem.to_lowercase() == target {
+                    return Some(path);
+                }
+            } else if let Some(stem) = fname.strip_suffix(".fch.old") {
+                if stem.to_lowercase() == target && candidate_old.is_none() {
+                    candidate_old = Some(path);
+                }
+            }
+        }
+    }
+    candidate_old
+}
+
+/// Preferred directory for writing a new .fch file when syncing a
+/// character that doesn't exist locally yet. Picks the first directory
+/// returned by `find_character_dirs` (Steam Cloud first when present).
+pub fn get_primary_character_dir() -> Option<PathBuf> {
+    find_character_dirs().into_iter().next()
+}
+
+/// Read a character file into raw bytes + its last-modified time (seconds since epoch).
+pub fn read_fch_with_mtime(path: &std::path::Path) -> Result<(Vec<u8>, u64), String> {
+    let bytes = fs::read(path).map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+    let meta = fs::metadata(path).map_err(|e| format!("Failed to stat {}: {}", path.display(), e))?;
+    let mtime = meta
+        .modified()
+        .map_err(|e| format!("No mtime: {}", e))?
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| format!("Pre-epoch mtime: {}", e))?
+        .as_secs();
+    Ok((bytes, mtime))
+}
+
+/// Write raw bytes to a .fch file and set its mtime. Creates parent dir if needed.
+pub fn write_fch_with_mtime(path: &std::path::Path, bytes: &[u8], mtime_secs: u64) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("mkdir {}: {}", parent.display(), e))?;
+    }
+    fs::write(path, bytes).map_err(|e| format!("Failed to write {}: {}", path.display(), e))?;
+    // Set mtime so future sync cycles see the remote timestamp (avoids re-pushing what we just pulled).
+    let when = std::time::UNIX_EPOCH + std::time::Duration::from_secs(mtime_secs);
+    filetime::set_file_mtime(path, filetime::FileTime::from_system_time(when))
+        .map_err(|e| format!("Failed to set mtime on {}: {}", path.display(), e))?;
+    Ok(())
 }
 
 // ── List Characters ────────────────────────────────────────

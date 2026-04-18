@@ -927,5 +927,15 @@ export const checkThunderstoreUpdates = (bepinexPath: string) =>
 export const syncPushPlayerData = () =>
   invoke<number>("sync_push_player_data");
 
-export const syncPullPlayerData = () =>
+export interface PlayerReconcileSummary {
+  pushed: number;
+  pulled: number;
+  skipped: number;
+  details: string[];
+}
+
+export const syncReconcilePlayerData = () =>
+  invoke<PlayerReconcileSummary>("sync_reconcile_player_data");
+
+export const _syncPullPlayerDataLegacy = () =>
   invoke<CharacterData[]>("sync_pull_player_data");
