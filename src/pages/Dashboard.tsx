@@ -11,6 +11,7 @@ import {
 } from "../stores/valheimDataStore";
 import { BIOME_COLORS, BIOME_BG_COLORS } from "./ValheimData";
 import { cn } from "../lib/utils";
+import { CharacterPortrait } from "../components/CharacterPortrait";
 import {
   Package,
   Users,
@@ -290,8 +291,23 @@ export function Dashboard() {
           )}
         </div>
 
-        {/* Side column: biomes + meta */}
+        {/* Side column: portrait + biomes + meta */}
         <div className="space-y-4">
+          {/* Character portrait */}
+          {character && (
+            <div className="glass rounded-2xl p-5 border-zinc-800/50">
+              <CharacterPortrait
+                model={character.model}
+                beard={character.beard}
+                hair={character.hair}
+                skinColor={character.skin_color}
+                hairColor={character.hair_color}
+                name={character.name}
+                compact
+              />
+            </div>
+          )}
+
           {/* Biomes discovered */}
           <div className="glass rounded-2xl p-5 border-zinc-800/50">
             <div className="flex items-center gap-2 mb-3">

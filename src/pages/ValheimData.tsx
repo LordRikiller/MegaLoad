@@ -323,14 +323,19 @@ function TypeBadge({ type, subcategory, onClick, onSubcategoryClick }: { type: s
 
 /** Copies item.name to clipboard and fires a toast. Stops event propagation so it works inside clickable cards/rows. */
 function copyItemName(item: ValheimItem, e?: React.MouseEvent) {
+  copyText(item.name, e);
+}
+
+/** Copies arbitrary text to clipboard with a toast. */
+function copyText(text: string, e?: React.MouseEvent) {
   e?.stopPropagation();
   e?.preventDefault();
-  navigator.clipboard.writeText(item.name).then(
+  navigator.clipboard.writeText(text).then(
     () =>
       useToastStore.getState().addToast({
         type: "success",
         title: "Copied",
-        message: item.name,
+        message: text,
         duration: 1500,
       }),
     () =>
@@ -340,6 +345,76 @@ function copyItemName(item: ValheimItem, e?: React.MouseEvent) {
         message: "Clipboard not available",
         duration: 2500,
       })
+  );
+}
+
+/**
+ * Clickable pill for a damage type or faction/tameable value on a creature detail.
+ * Matches the visual weight of BiomeBadge so cards feel consistent.
+ */
+function DetailChip({
+  label,
+  tone = "zinc",
+  onClick,
+  title,
+}: {
+  label: string;
+  tone?: "red" | "orange" | "emerald" | "zinc" | "purple" | "amber" | "blue";
+  onClick?: () => void;
+  title?: string;
+}) {
+  const tones: Record<string, string> = {
+    red: "bg-red-500/10 text-red-300 border-red-500/25 hover:bg-red-500/20",
+    orange: "bg-orange-500/10 text-orange-300 border-orange-500/25 hover:bg-orange-500/20",
+    emerald: "bg-emerald-500/10 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/20",
+    zinc: "bg-zinc-800/60 text-zinc-300 border-zinc-700/40 hover:bg-zinc-800",
+    purple: "bg-purple-500/10 text-purple-300 border-purple-500/25 hover:bg-purple-500/20",
+    amber: "bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20",
+    blue: "bg-blue-500/10 text-blue-300 border-blue-500/25 hover:bg-blue-500/20",
+  };
+  const base = "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-colors";
+  if (!onClick) {
+    return <span className={cn(base, tones[tone], "cursor-default")}>{label}</span>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      title={title ?? label}
+      className={cn(base, tones[tone], "cursor-pointer")}
+    >
+      {label}
+    </button>
+  );
+}
+
+function CopyTextButton({
+  text,
+  size = 16,
+  title,
+  className = "",
+}: {
+  text: string;
+  size?: number;
+  title?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => copyText(text, e)}
+      title={title ?? `Copy "${text}"`}
+      aria-label={title ?? "Copy"}
+      className={cn(
+        "p-1 rounded text-zinc-500 hover:text-brand-400 hover:bg-zinc-800/60 transition-colors",
+        className
+      )}
+    >
+      <Copy style={{ width: size, height: size }} />
+    </button>
   );
 }
 
@@ -821,17 +896,19 @@ export function ValheimData() {
               })}
             </FilterAccordion>
 
-            {/* Special */}
-            <FilterAccordion title="Special" defaultOpen>
-              <FilterCheckbox
-                checked={onlyTameable}
-                onChange={toggleOnlyTameable}
-                count={VALHEIM_ITEMS.filter((i) => i.tameable).length}
-                labelClassName="text-emerald-400"
-              >
-                Tameable
-              </FilterCheckbox>
-            </FilterAccordion>
+            {/* Special — only when viewing creatures or no type filter */}
+            {(activeTypes.length === 0 || activeTypes.includes("Creature")) && (
+              <FilterAccordion title="Special" defaultOpen>
+                <FilterCheckbox
+                  checked={onlyTameable}
+                  onChange={toggleOnlyTameable}
+                  count={VALHEIM_ITEMS.filter((i) => i.tameable).length}
+                  labelClassName="text-emerald-400"
+                >
+                  Tameable
+                </FilterCheckbox>
+              </FilterAccordion>
+            )}
 
             {/* Subcategory — only shown when types are selected and subcategories exist */}
             {activeTypes.length > 0 && subcategoryEntries.length > 1 && (
@@ -924,7 +1001,8 @@ export function ValheimData() {
               </>
             )}
 
-            {/* Station */}
+            {/* Station — hidden when no matching stations */}
+            {STATION_LIST.some((s) => (stationCounts[s] || 0) > 0 || activeStations.includes(s)) && (
             <FilterAccordion title="Station" defaultOpen>
               {activeStations.length > 0 && (
                 <div className="flex items-center rounded-md bg-zinc-800/40 border border-zinc-700/30 overflow-hidden mb-1.5 mx-1">
@@ -989,11 +1067,14 @@ export function ValheimData() {
                 );
               })}
             </FilterAccordion>
+            )}
 
-            {/* Vendor */}
+            {/* Vendor — hidden when no matching vendor items */}
+            {VENDOR_LIST.some((v) => (vendorCounts[v] || 0) > 0 || activeVendors.includes(v)) && (
             <FilterAccordion title="Vendor" defaultOpen>
               {VENDOR_LIST.map((vendor) => {
                 const count = vendorCounts[vendor] || 0;
+                if (count === 0 && !activeVendors.includes(vendor) && (query || activeTypes.length > 0 || activeBiomes.length > 0)) return null;
                 return (
                   <div key={vendor} className="flex items-center gap-0">
                     <FilterCheckbox
@@ -1016,12 +1097,14 @@ export function ValheimData() {
                 );
               })}
             </FilterAccordion>
+            )}
 
-            {/* Factory */}
+            {/* Factory — hidden when no matching processing stations */}
+            {PROCESSING_STATION_LIST.some((f) => (factoryCounts[f] || 0) > 0 || activeFactories.includes(f)) && (
             <FilterAccordion title="Factory" defaultOpen>
               {PROCESSING_STATION_LIST.map((factory) => {
                 const count = factoryCounts[factory] || 0;
-                if (count === 0 && (query || activeTypes.length > 0 || activeBiomes.length > 0)) return null;
+                if (count === 0 && !activeFactories.includes(factory) && (query || activeTypes.length > 0 || activeBiomes.length > 0)) return null;
                 const iconId = PROCESSING_STATION_ICONS[factory];
                 return (
                   <div key={factory} className="flex items-center gap-0">
@@ -1045,6 +1128,7 @@ export function ValheimData() {
                 );
               })}
             </FilterAccordion>
+            )}
           </div>
         </div>
 
@@ -1659,17 +1743,15 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                   {item.faction && (
                     <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/30">
                       <span className="text-xs text-zinc-500">Faction</span>
-                      <button
-                        type="button"
+                      <DetailChip
+                        label={item.faction}
+                        tone="purple"
+                        title={`Filter to all ${item.faction} creatures`}
                         onClick={() => {
                           setSelectedItem(null);
                           useValheimDataStore.setState({ activeFactions: [item.faction!], activeTypes: ["Creature"] });
                         }}
-                        title={`Filter to all ${item.faction} creatures`}
-                        className="text-xs text-purple-300 font-medium hover:underline"
-                      >
-                        {item.faction}
-                      </button>
+                      />
                     </div>
                   )}
                   {item.biomes.length > 0 && (
@@ -1681,21 +1763,20 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                   <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/30">
                     <span className="text-xs text-zinc-500">Tameable</span>
                     {item.tameable ? (
-                      <button
-                        type="button"
+                      <DetailChip
+                        label="Yes"
+                        tone="emerald"
+                        title="Filter to all tameable creatures"
                         onClick={() => { setSelectedItem(null); setOnlyTameable(true); setActiveType("Creature"); }}
-                        className="text-xs text-emerald-400 font-semibold hover:underline"
-                      >
-                        Yes
-                      </button>
+                      />
                     ) : (
-                      <span className="text-xs text-zinc-500">No</span>
+                      <DetailChip label="No" tone="zinc" />
                     )}
                   </div>
                   {item.subcategory === "Boss" && (
                     <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/30">
                       <span className="text-xs text-zinc-500">Boss</span>
-                      <span className="text-xs text-amber-400 font-semibold">Yes</span>
+                      <DetailChip label="Yes" tone="amber" />
                     </div>
                   )}
                 </div>
@@ -1733,56 +1814,123 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                   )}
                 </div>
                 <div className="space-y-0">
-                  {displayStats.map((stat, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-zinc-800/30 last:border-0">
-                      <span className="text-xs text-zinc-500">{stat.label}</span>
-                      <span className="text-xs text-zinc-200 font-medium">
-                        {showLevelTabs ? statAtLevel(stat.value, statsLevel) : stat.value}
-                      </span>
-                    </div>
-                  ))}
+                  {displayStats.map((stat, i) => {
+                    // Attack Types row ("Swing attack Types", value "Blunt 60, Slash 30") →
+                    // render each damage type as a badge that links to Deals Damage filter.
+                    const isTypesRow = item.type === "Creature" && /\bTypes$/.test(stat.label);
+                    if (isTypesRow) {
+                      const parts = stat.value.split(",").map((s) => s.trim()).filter(Boolean);
+                      return (
+                        <div key={i} className="flex items-start justify-between gap-3 py-1.5 border-b border-zinc-800/30 last:border-0">
+                          <span className="text-xs text-zinc-500 pt-0.5">{stat.label}</span>
+                          <div className="flex flex-wrap gap-1 justify-end">
+                            {parts.map((p, j) => {
+                              const m = p.match(/^([A-Za-z]+)\s+(\d+(?:\.\d+)?)$/);
+                              if (!m) return <DetailChip key={j} label={p} tone="zinc" />;
+                              const [, dmgName, dmgValue] = m;
+                              return (
+                                <DetailChip
+                                  key={j}
+                                  label={`${dmgName} ${dmgValue}`}
+                                  tone="red"
+                                  title={`Filter to creatures that deal ${dmgName}`}
+                                  onClick={() => {
+                                    setSelectedItem(null);
+                                    useValheimDataStore.setState({
+                                      activeDealsDamage: [dmgName],
+                                      activeTypes: ["Creature"],
+                                    });
+                                  }}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-zinc-800/30 last:border-0">
+                        <span className="text-xs text-zinc-500">{stat.label}</span>
+                        <span className="text-xs text-zinc-200 font-medium">
+                          {showLevelTabs ? statAtLevel(stat.value, statsLevel) : stat.value}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Resistances (creatures) */}
-            {item.type === "Creature" && (item.immuneTo?.length || item.resistantTo?.length || item.weakTo?.length || item.neutralTo?.length || item.staggerLimit) && (
-              <div className="glass rounded-xl p-5 border border-zinc-800/50">
-                <h2 className="text-sm font-semibold text-zinc-200 mb-3">Resistances</h2>
-                <div className="space-y-0">
-                  {item.immuneTo && item.immuneTo.length > 0 && (
-                    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-zinc-800/30">
-                      <span className="text-xs text-zinc-500 shrink-0">Immune to</span>
-                      <span className="text-xs text-red-400 font-medium text-right">{item.immuneTo.join(", ")}</span>
-                    </div>
-                  )}
-                  {item.resistantTo && item.resistantTo.length > 0 && (
-                    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-zinc-800/30">
-                      <span className="text-xs text-zinc-500 shrink-0">Resistant to</span>
-                      <span className="text-xs text-orange-400 font-medium text-right">{item.resistantTo.join(", ")}</span>
-                    </div>
-                  )}
-                  {item.weakTo && item.weakTo.length > 0 && (
-                    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-zinc-800/30">
-                      <span className="text-xs text-zinc-500 shrink-0">Weak to</span>
-                      <span className="text-xs text-emerald-400 font-medium text-right">{item.weakTo.join(", ")}</span>
-                    </div>
-                  )}
-                  {item.neutralTo && item.neutralTo.length > 0 && (
-                    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-zinc-800/30">
-                      <span className="text-xs text-zinc-500 shrink-0">Neutral to</span>
-                      <span className="text-xs text-zinc-400 text-right">{item.neutralTo.join(", ")}</span>
-                    </div>
-                  )}
-                  {item.staggerLimit && (
-                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/30 last:border-0">
-                      <span className="text-xs text-zinc-500">Stagger limit</span>
-                      <span className="text-xs text-zinc-200 font-medium">{item.staggerLimit}</span>
-                    </div>
-                  )}
+            {item.type === "Creature" && (item.immuneTo?.length || item.resistantTo?.length || item.weakTo?.length || item.neutralTo?.length || item.staggerLimit) && (() => {
+              // Applies the Weak-To filter to a given damage type and returns to the list.
+              const filterWeakTo = (dmg: string) => {
+                setSelectedItem(null);
+                useValheimDataStore.setState({
+                  activeWeakTo: [dmg],
+                  activeTypes: ["Creature"],
+                });
+              };
+              return (
+                <div className="glass rounded-xl p-5 border border-zinc-800/50">
+                  <h2 className="text-sm font-semibold text-zinc-200 mb-3">Resistances</h2>
+                  <div className="space-y-0">
+                    {item.immuneTo && item.immuneTo.length > 0 && (
+                      <div className="flex items-start justify-between gap-3 py-1.5 border-b border-zinc-800/30">
+                        <span className="text-xs text-zinc-500 shrink-0 pt-0.5">Immune to</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {item.immuneTo.map((d) => (
+                            <DetailChip key={d} label={d} tone="red" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {item.resistantTo && item.resistantTo.length > 0 && (
+                      <div className="flex items-start justify-between gap-3 py-1.5 border-b border-zinc-800/30">
+                        <span className="text-xs text-zinc-500 shrink-0 pt-0.5">Resistant to</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {item.resistantTo.map((d) => (
+                            <DetailChip key={d} label={d} tone="orange" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {item.weakTo && item.weakTo.length > 0 && (
+                      <div className="flex items-start justify-between gap-3 py-1.5 border-b border-zinc-800/30">
+                        <span className="text-xs text-zinc-500 shrink-0 pt-0.5">Weak to</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {item.weakTo.map((d) => (
+                            <DetailChip
+                              key={d}
+                              label={d}
+                              tone="emerald"
+                              title={`Filter to creatures weak to ${d}`}
+                              onClick={() => filterWeakTo(d)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {item.neutralTo && item.neutralTo.length > 0 && (
+                      <div className="flex items-start justify-between gap-3 py-1.5 border-b border-zinc-800/30">
+                        <span className="text-xs text-zinc-500 shrink-0 pt-0.5">Neutral to</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {item.neutralTo.map((d) => (
+                            <DetailChip key={d} label={d} tone="zinc" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {item.staggerLimit && (
+                      <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/30 last:border-0">
+                        <span className="text-xs text-zinc-500">Stagger limit</span>
+                        <DetailChip label={item.staggerLimit} tone="zinc" />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Armor Set */}
             {armorSet && (
@@ -2317,6 +2465,7 @@ function StationDetailView({ station, onBack }: { station: string; onBack: () =>
           </div>
           <div>
             <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">{station}</h1>
+            <CopyTextButton text={station} />
             <p className="text-sm text-zinc-400 mt-1">
               {allItems.length} item{allItems.length !== 1 ? "s" : ""} craftable
               {maxLevel > 1 && <> · Max level {maxLevel}</>}
@@ -2477,6 +2626,7 @@ function ProcessingStationDetailView({ stationName, onBack }: { stationName: str
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">{station.name}</h1>
+              <CopyTextButton text={station.name} />
               <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">
                 Factory
               </span>
@@ -2634,6 +2784,7 @@ function VendorDetailView({ vendorName, onBack }: { vendorName: string; onBack: 
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="font-norse font-bold text-3xl text-zinc-100 tracking-wide">{vendor.name}</h1>
+              <CopyTextButton text={vendor.name} />
               <BiomeBadge biome={vendor.biome} />
             </div>
             <p className="text-sm text-zinc-400 mt-2 leading-relaxed">{vendor.description}</p>

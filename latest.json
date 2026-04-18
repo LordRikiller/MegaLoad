@@ -1,11 +1,11 @@
 {
-  "version": "1.7.4",
-  "notes": "New creature filters on Valheim Data — Faction, Deals Damage, and Weak To. Filter all Mountain Monsters, all creatures that deal Poison, or all creatures weak to Fire. Click the Faction line on a creature detail to filter the list to that faction. Player Data portrait rebuilt — no more Barbie face; the Norse warrior look now uses weathered skin shading, war-paint stripes, strong brow + jaw, fur-lined leather shoulders, scar (male), braid/highlight detail in hair and beard. Duplicate portrait in the Equipment panel removed.",
-  "pub_date": "2026-04-18T07:30:00Z",
+  "version": "1.7.5",
+  "notes": "Creature detail filter links + badge consistency — Faction, Weak-to types, Immune/Resistant/Neutral types, Tameable and attack-damage types all now render as proper pills instead of plain text. Clickable ones jump straight to the matching sidebar filter. Empty filter accordions (Special, Station, Vendor, Factory) now hide when no matching rows exist. Copy-to-clipboard icons added to station / vendor / factory detail headers; Player Data knowledge table copy icon moved inline next to the item name for consistency with Valheim Data. Character portrait now also shows on the Dashboard above Biomes Walked.",
+  "pub_date": "2026-04-18T08:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOURmUmROQnJLcVp6bjkvc1l4RmhJbU02NVB4VE5pSkg2ZHRmS2hBSjhrQTdObUEwUnliRTdZMTZmSGhOYkdhdzRxeG45OVoxVXFadnFHWkZ1QXViYWdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDkwOTg2CWZpbGU6TWVnYUxvYWRfMS43LjRfeDY0LXNldHVwLm5zaXMuemlwCnlNejVZV2RLbGJPbzZTV0hnVVNoVTU1K3VFRXo4RjFYcldmenlwczZJeDZXUTVJL0taWkZoWk5IQ1dKNDdiMlpBL1VHc1lzenNVWktZRUN4RENyUUNnPT0K",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.4/MegaLoad_1.7.4_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU5qYm8rbXRGNHZWbTlMNlQyRjczUmVqUXFtSjVjdjdCVjVOQmNPV0dqUUlwUXlnMnMxT2cwZFExS1QxV2dEMzRiMStReEw5SGtQU1NGbFpPRHlOZHdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NDkxOTg0CWZpbGU6TWVnYUxvYWRfMS43LjVfeDY0LXNldHVwLm5zaXMuemlwCllYK3piS1VaK2ExM3FVNmFnaWE4bEFsSXllY3psWlBvZS9MbGpvYVZHRkdZdlJlSit3L2NoWEZzeml6c2RNV0JLTVYrN0c0Ukt6Nk5uczZ4T0EzUkR3PT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.5/MegaLoad_1.7.5_x64-setup.nsis.zip"
     }
   }
 }
