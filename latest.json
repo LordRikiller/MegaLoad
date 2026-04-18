@@ -1,11 +1,11 @@
 {
-  "version": "1.7.12",
-  "notes": "MegaDataExtractor 1.4.2 — widened portrait framing so the top of the head and the bottom of the longest beards are no longer clipped (camera pulled from 0.85m to 1.2m, FOV 32° → 42°, aimed at chin level).",
-  "pub_date": "2026-04-18T21:00:00Z",
+  "version": "1.7.13",
+  "notes": "Portrait lookup now matches the extractor's Unicode-aware sanitiser, so characters with accented names (e.g. Knútr) resolve correctly. Bundled snapshot of the first batch of captured portraits included in the build.",
+  "pub_date": "2026-04-18T21:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUdTU0ZiVkE3dzM2aG1VQWF6YWhNT2JacklXanY5V1l0WHJ3aC96c0pJRDJzOW81YnNwWUU0d0poc3YyT0hZT0dKMVJPb0wyQ2doSTQ4OVVPU05QdWdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTA5MTI3CWZpbGU6TWVnYUxvYWRfMS43LjEyX3g2NC1zZXR1cC5uc2lzLnppcAp6SVdQcDAxbm5LcDR0ZDk1aG9zZDQ5MmNQMHBVdElRTU9RUzIxYTY1c0F5YTNURFBka3h6UzBVeVZNeWt6TWc4anp5YXQxY2UxOGVGcGdkWml5Y3FBdz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.12/MegaLoad_1.7.12_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtsb2UrakFsRVdkVm01ZElHc0tLT1BxRHhYcTFNV2Y1VzZRWktnR1o2THZZU1lxMTRFc3FWdGhNbFB1cUhWZkdQWVpUWEtIYkUzUEUzY1czK2tKRFFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTExMTUxCWZpbGU6TWVnYUxvYWRfMS43LjEzX3g2NC1zZXR1cC5uc2lzLnppcApGd0tRWTJRdzhJRTJrcE9tSUZVeFI1YTMzbXZkQ0QwVy9YR3NsTU5XeTVkSHY1WXlrQWxvNWw5ZlNUWSt1NG5WclB2Nm16bmhKMzNGMFYrbWgxL1ZBdz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.13/MegaLoad_1.7.13_x64-setup.nsis.zip"
     }
   }
 }

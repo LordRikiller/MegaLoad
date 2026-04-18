@@ -569,9 +569,13 @@ pub fn get_character_portrait_png(name: String) -> Option<String> {
 }
 
 fn sanitise_portrait_name(s: &str) -> String {
+    // Match the .NET extractor's `char.IsLetterOrDigit` — accepts Unicode
+    // letters and digits (e.g. "Knútr" stays "Knútr"), replaces anything else
+    // with underscore. Stays in sync with SanitiseFileName in
+    // MegaDataExtractorPlugin.cs so the frontend's lookup matches on disk.
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
-        if c.is_ascii_alphanumeric() { out.push(c); } else { out.push('_'); }
+        if c.is_alphanumeric() { out.push(c); } else { out.push('_'); }
     }
     if out.is_empty() { "unknown".to_string() } else { out }
 }
