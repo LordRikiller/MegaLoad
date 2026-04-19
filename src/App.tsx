@@ -11,6 +11,8 @@ import { Trainer } from "./pages/Trainer";
 import { ValheimData } from "./pages/ValheimData";
 import { PlayerData } from "./pages/PlayerData";
 import { Cart } from "./pages/Cart";
+import { MegaList } from "./pages/MegaList";
+import { MegaListDetail } from "./pages/MegaListDetail";
 import { MegaBugs } from "./pages/MegaBugs";
 import { MegaChat } from "./pages/MegaChat";
 import { AdminPanel } from "./pages/AdminPanel";
@@ -27,6 +29,8 @@ function App() {
         <Route path="/valheim-data" element={<ValheimData />} />
         <Route path="/player-data" element={<PlayerData />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/megalist" element={<MegaList />} />
+        <Route path="/megalist/:id" element={<MegaListDetail />} />
         <Route path="/bugs" element={<MegaBugs />} />
         <Route path="/chat" element={<MegaChat />} />
         <Route path="/admin" element={<AdminPanel />} />

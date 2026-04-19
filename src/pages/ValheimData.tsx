@@ -64,7 +64,6 @@ import {
   getArmorSet,
   getVendorForItem,
   getVendorBuyPrice,
-  getCreatureIconId,
   getStationItems,
   getStationItemsByLevel,
   getStationMaterials,
@@ -87,50 +86,9 @@ import {
 } from "../stores/valheimDataStore";
 import { VALHEIM_ITEMS, type ValheimItem, type ItemType, itemMap, tokenMap } from "../data/valheim-items";
 import { usePlayerDataStore } from "../stores/playerDataStore";
-import { useToastStore } from "../stores/toastStore";
-
-/** Renders a game icon with Lucide fallback */
-function ItemIcon({ id, type, size = 36, className = "" }: { id: string; type?: ItemType; size?: number; className?: string }) {
-  const [failed, setFailed] = useState(false);
-  const [fallbackFailed, setFallbackFailed] = useState(false);
-  const Icon = TYPE_ICONS[type || "Misc"] || Package;
-
-  // For creatures, try trophy icon as fallback
-  if (type === "Creature" && failed && !fallbackFailed) {
-    const item = getItemById(id);
-    if (item) {
-      const trophyId = getCreatureIconId(item);
-      if (trophyId !== id) {
-        return (
-          <img
-            src={`/icons/${trophyId}.png`}
-            alt=""
-            width={size}
-            height={size}
-            className={cn("object-contain", className)}
-            onError={() => setFallbackFailed(true)}
-            loading="lazy"
-          />
-        );
-      }
-    }
-  }
-
-  if (failed) {
-    return <Icon className={cn("text-zinc-400", className)} style={{ width: size * 0.5, height: size * 0.5 }} />;
-  }
-  return (
-    <img
-      src={`/icons/${id}.png`}
-      alt=""
-      width={size}
-      height={size}
-      className={cn("object-contain", className)}
-      onError={() => setFailed(true)}
-      loading="lazy"
-    />
-  );
-}
+import { ItemIcon } from "../components/ui/ItemIcon";
+import { copyText } from "../lib/clipboard";
+import { ExportToListModal } from "../components/megalist/ExportToListModal";
 
 /** Renders a station icon */
 function StationIcon({ station, size = 36, className = "" }: { station: string; size?: number; className?: string }) {
@@ -326,28 +284,6 @@ function copyItemName(item: ValheimItem, e?: React.MouseEvent) {
   copyText(item.name, e);
 }
 
-/** Copies arbitrary text to clipboard with a toast. */
-function copyText(text: string, e?: React.MouseEvent) {
-  e?.stopPropagation();
-  e?.preventDefault();
-  navigator.clipboard.writeText(text).then(
-    () =>
-      useToastStore.getState().addToast({
-        type: "success",
-        title: "Copied",
-        message: text,
-        duration: 1500,
-      }),
-    () =>
-      useToastStore.getState().addToast({
-        type: "warning",
-        title: "Copy failed",
-        message: "Clipboard not available",
-        duration: 2500,
-      })
-  );
-}
-
 /**
  * Clickable pill for a damage type or faction/tameable value on a creature detail.
  * Matches the visual weight of BiomeBadge so cards feel consistent.
@@ -526,6 +462,7 @@ export function ValheimData() {
   const [searchInput, setSearchInput] = useState(query);
   const [sortOpen, setSortOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [megaListModalOpen, setMegaListModalOpen] = useState(false);
   const [discoveryFilter, setDiscoveryFilter] = useState<"all" | "discovered" | "undiscovered">("all");
   const pageCharacter = usePlayerDataStore((s) => s.character);
   const pageKnownPrefabs = useMemo(() => {
@@ -831,7 +768,7 @@ export function ValheimData() {
             <ChevronDown className={cn("w-3 h-3 transition-transform", exportOpen && "rotate-180")} />
           </button>
           {exportOpen && (
-            <div className="absolute right-0 top-full mt-1 z-50 min-w-[140px] glass rounded-lg border border-zinc-800 shadow-xl py-1">
+            <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] glass rounded-lg border border-zinc-800 shadow-xl py-1">
               {(["csv", "json", "txt"] as const).map((fmt) => (
                 <button
                   key={fmt}
@@ -841,6 +778,16 @@ export function ValheimData() {
                   {fmt.toUpperCase()}
                 </button>
               ))}
+              <div className="border-t border-zinc-800/70 my-1" />
+              <button
+                onClick={() => {
+                  setExportOpen(false);
+                  setMegaListModalOpen(true);
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-brand-400 hover:text-brand-300 hover:bg-brand-500/10 transition-colors"
+              >
+                Add to list…
+              </button>
             </div>
           )}
         </div>
@@ -1381,6 +1328,21 @@ export function ValheimData() {
           )}
         </div>
       </div>
+      <ExportToListModal
+        open={megaListModalOpen}
+        onClose={() => setMegaListModalOpen(false)}
+        itemIds={items.map((i) => i.id)}
+        filterSnapshot={{
+          query: query || undefined,
+          types: activeTypes.length ? activeTypes : undefined,
+          subcategories: activeSubcategories.length ? activeSubcategories : undefined,
+          biomes: activeBiomes.length ? activeBiomes : undefined,
+          stations: activeStations.length ? activeStations : undefined,
+          factories: activeFactories.length ? activeFactories : undefined,
+          vendors: activeVendors.length ? activeVendors : undefined,
+          onlyTameable: onlyTameable || undefined,
+        }}
+      />
     </div>
   );
 }

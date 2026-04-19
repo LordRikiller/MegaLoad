@@ -1,11 +1,11 @@
 {
-  "version": "1.7.17",
-  "notes": "Copy-to-clipboard everywhere — every item name in Valheim Data results, ingredient lists, station details, factory conversions, vendor sells/buys, and cart rows now has a click-to-copy icon so you can grab any name fast.",
-  "pub_date": "2026-04-19T10:30:00Z",
+  "version": "1.8.0",
+  "notes": "MegaList — new top-level section for building named checklists of Valheim items. Filter in Valheim Data then use Export → Add to list… to stamp the current results into a new or existing list. Each list has sort (A–Z / Z–A / biome), biome filter chips, per-item checkboxes that persist, check-all on visible rows, copy-unchecked-to-clipboard, add/remove items, rename/duplicate/delete lists. Everything syncs across devices via cloud sync so you can seed a list on desktop and tick items off on your phone while labelling chests.",
+  "pub_date": "2026-04-19T01:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlpT04vTzZkanhLR2lqZk1pUS93S3pkbjVaOTYyWlovSFIybWlPbHlpVWNndkh0RXIwdmtDak5NVUdTWkR4eHk4cTNhSzlTK3htWVJVQjA3Yjh1SWc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTU4MDE5CWZpbGU6TWVnYUxvYWRfMS43LjE3X3g2NC1zZXR1cC5uc2lzLnppcAoxWGNvaGo2d0t5eUMzbVJ6ZGhRdVFRTzlxTDJ6WUt5Sk9YajVUL1ZEcG1JMFVlVWxEaU9LKzdqWWJkTlFlQy9STzNaNU5rWmhtcHdEcE82eDdaUUVBUT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.7.17/MegaLoad_1.7.17_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUl6eUdFSjl4Qm4zVnNOU3BnVmNPTjN5UFpQYlJkclJuNDFPWWQxSHA3WUVJeTkwaWQyV2JLVVZ6VWloSzg4ZCtSMkhOQ2owcXRMU3RBeGo4bkhPdndJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTU5NjQyCWZpbGU6TWVnYUxvYWRfMS44LjBfeDY0LXNldHVwLm5zaXMuemlwCjNLVVJ4WXgrSmcyL2MwRlhBWFpUVWFEVFFBcEhDRU1sQWFVbStoZ0pCK3QyZTQrMTVQODRrNG1Bd3czL0h0TlBaeVExTWdaNVV2M1psY0hQQ0VBekNnPT0K",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.8.0/MegaLoad_1.8.0_x64-setup.nsis.zip"
     }
   }
 }

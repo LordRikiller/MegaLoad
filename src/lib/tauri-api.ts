@@ -958,3 +958,18 @@ export const syncReconcilePlayerData = () =>
 
 export const _syncPullPlayerDataLegacy = () =>
   invoke<CharacterData[]>("sync_pull_player_data");
+
+// ── MegaList sync ─────────────────────────────────────────────────────────
+// Blob-level LWW on `updated_at`. The backend returns and accepts the blob
+// as raw JSON text so the TS side owns the shape.
+
+export const syncPushMegaLists = (blobJson: string) =>
+  invoke<boolean>("sync_push_mega_lists", { blobJson });
+
+export const syncPullMegaLists = () =>
+  invoke<string>("sync_pull_mega_lists");
+
+/** Returns [winningBlobJson, remoteWasNewer]. If `remoteWasNewer` is false
+ *  the caller should push after replacing local state. */
+export const syncReconcileMegaLists = (localBlobJson: string) =>
+  invoke<[string, boolean]>("sync_reconcile_mega_lists", { localBlobJson });

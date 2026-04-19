@@ -16,29 +16,9 @@ import {
   getCartMaterials,
   BIOME_ORDER,
 } from "../stores/valheimDataStore";
-import { useToastStore } from "../stores/toastStore";
 import type { ValheimItem } from "../data/valheim-items";
-
-function copyText(text: string, e?: React.MouseEvent) {
-  e?.stopPropagation();
-  e?.preventDefault();
-  navigator.clipboard.writeText(text).then(
-    () =>
-      useToastStore.getState().addToast({
-        type: "success",
-        title: "Copied",
-        message: text,
-        duration: 1500,
-      }),
-    () =>
-      useToastStore.getState().addToast({
-        type: "warning",
-        title: "Copy failed",
-        message: "Clipboard not available",
-        duration: 2500,
-      })
-  );
-}
+import { ItemIcon } from "../components/ui/ItemIcon";
+import { copyText } from "../lib/clipboard";
 
 function CopyTextButton({ text, size = 12, className = "" }: { text: string; size?: number; className?: string }) {
   return (
@@ -97,21 +77,6 @@ function getMinBiome(item: ValheimItem): string | null {
     }
   }
   return minBiome;
-}
-
-function ItemIcon({ id, size = 36 }: { id: string; size?: number }) {
-  const iconPath = `/icons/${id}.png`;
-  return (
-    <img
-      src={iconPath}
-      alt={id}
-      className="object-contain"
-      style={{ width: size, height: size }}
-      onError={(e) => {
-        (e.target as HTMLImageElement).style.display = "none";
-      }}
-    />
-  );
 }
 
 // ── Cart Page ──

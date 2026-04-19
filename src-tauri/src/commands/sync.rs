@@ -973,3 +973,141 @@ fn sync_reconcile_player_data_impl() -> Result<PlayerReconcileSummary, String> {
     ));
     Ok(summary)
 }
+
+// ---------------------------------------------------------------------------
+// MegaList sync — single blob per user, LWW on updated_at.
+// ---------------------------------------------------------------------------
+
+const MEGA_LIST_VERSION: u32 = 1;
+
+fn sync_mega_list_path(user_id: &str) -> String {
+    format!("sync/{}/lists.json", user_id)
+}
+
+/// Push the local MegaList blob only if the local updated_at is strictly
+/// newer than what's on the server. Accepts the blob as a raw JSON string so
+/// the frontend owns the shape and we don't have to mirror every field here.
+#[command]
+pub async fn sync_push_mega_lists(blob_json: String) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || sync_push_mega_lists_impl(blob_json))
+        .await
+        .map_err(|e| format!("MegaList push task panicked: {}", e))?
+}
+
+fn sync_push_mega_lists_impl(blob_json: String) -> Result<bool, String> {
+    let settings = load_sync_settings();
+    if !settings.enabled {
+        return Err("Cloud sync is not enabled".to_string());
+    }
+
+    let identity = get_megaload_identity()?;
+    let user_id = &identity.user_id;
+
+    let local: serde_json::Value = serde_json::from_str(&blob_json)
+        .map_err(|e| format!("Invalid MegaList blob JSON: {}", e))?;
+    let local_updated = local.get("updated_at").and_then(|v| v.as_str()).unwrap_or("");
+
+    let remote_path = sync_mega_list_path(user_id);
+    let sha = match github_get_file(&remote_path) {
+        Ok((content, sha)) => {
+            if let Ok(remote) = serde_json::from_str::<serde_json::Value>(&content) {
+                let remote_updated = remote.get("updated_at").and_then(|v| v.as_str()).unwrap_or("");
+                if !remote_updated.is_empty() && remote_updated >= local_updated {
+                    app_log(&format!(
+                        "MegaList push: remote updated_at {} >= local {} — skip",
+                        remote_updated, local_updated
+                    ));
+                    return Ok(false);
+                }
+            }
+            Some(sha)
+        }
+        Err(_) => None,
+    };
+
+    github_put_file(
+        &remote_path,
+        blob_json.as_bytes(),
+        &format!("MegaList sync — {}", identity.display_name),
+        sha.as_deref(),
+    )?;
+    app_log(&format!("MegaList push: uploaded (updated_at {})", local_updated));
+    Ok(true)
+}
+
+/// Pull the remote MegaList blob. Returns the raw JSON string so the
+/// frontend can deserialize into its own TS types. Returns an empty-blob
+/// JSON when no remote file exists.
+#[command]
+pub async fn sync_pull_mega_lists() -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(sync_pull_mega_lists_impl)
+        .await
+        .map_err(|e| format!("MegaList pull task panicked: {}", e))?
+}
+
+fn sync_pull_mega_lists_impl() -> Result<String, String> {
+    let settings = load_sync_settings();
+    if !settings.enabled {
+        return Err("Cloud sync is not enabled".to_string());
+    }
+
+    let identity = get_megaload_identity()?;
+    let user_id = &identity.user_id;
+    let remote_path = sync_mega_list_path(user_id);
+
+    match github_get_file(&remote_path) {
+        Ok((content, _)) => {
+            app_log("MegaList pull: fetched remote blob");
+            Ok(content)
+        }
+        Err(e) if e.contains("404") => {
+            app_log("MegaList pull: no remote blob yet");
+            let empty = serde_json::json!({
+                "version": MEGA_LIST_VERSION,
+                "device_id": settings.machine_id,
+                "updated_at": "1970-01-01T00:00:00.000Z",
+                "lists": [],
+            });
+            Ok(empty.to_string())
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// Reconcile MegaList blob: caller supplies the local blob JSON, we decide
+/// whether the remote is newer and return whichever should win. Returned
+/// tuple: (winning_blob_json, remote_was_newer). The frontend writes the
+/// winning blob to its local store unconditionally, then pushes if it was
+/// already local-newer (so the remote gets updated).
+#[command]
+pub async fn sync_reconcile_mega_lists(local_blob_json: String) -> Result<(String, bool), String> {
+    tauri::async_runtime::spawn_blocking(move || sync_reconcile_mega_lists_impl(local_blob_json))
+        .await
+        .map_err(|e| format!("MegaList reconcile task panicked: {}", e))?
+}
+
+fn sync_reconcile_mega_lists_impl(local_blob_json: String) -> Result<(String, bool), String> {
+    let remote_json = sync_pull_mega_lists_impl()?;
+
+    let local: serde_json::Value = serde_json::from_str(&local_blob_json)
+        .map_err(|e| format!("Invalid local MegaList blob JSON: {}", e))?;
+    let remote: serde_json::Value = serde_json::from_str(&remote_json)
+        .map_err(|e| format!("Invalid remote MegaList blob JSON: {}", e))?;
+
+    let local_updated = local.get("updated_at").and_then(|v| v.as_str()).unwrap_or("");
+    let remote_updated = remote.get("updated_at").and_then(|v| v.as_str()).unwrap_or("");
+
+    if remote_updated > local_updated {
+        app_log(&format!(
+            "MegaList reconcile: remote {} > local {} — remote wins",
+            remote_updated, local_updated
+        ));
+        Ok((remote_json, true))
+    } else {
+        app_log(&format!(
+            "MegaList reconcile: local {} >= remote {} — local wins",
+            local_updated, remote_updated
+        ));
+        Ok((local_blob_json, false))
+    }
+}

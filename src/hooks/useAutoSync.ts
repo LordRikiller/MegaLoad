@@ -3,6 +3,7 @@ import { useSyncStore } from "../stores/syncStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useIdentityStore } from "../stores/identityStore";
 import { useToastStore } from "../stores/toastStore";
+import { useMegaListStore } from "../stores/megaListStore";
 
 const POLL_INTERVAL_MS = 30_000; // Check for remote changes every 30s
 const DEBOUNCE_MS = 3_000; // Push 3s after FIRST change (non-resetting)
@@ -61,6 +62,11 @@ export function useAutoSync() {
         } catch {
           // Silent fail on initial pull
         }
+        try {
+          await useMegaListStore.getState().reconcile();
+        } catch {
+          // Silent fail — toast would noise up startup
+        }
       })();
     }, INITIAL_PULL_DELAY_MS);
 
@@ -95,6 +101,11 @@ export function useAutoSync() {
             duration: 4000,
           });
         }
+      } catch {
+        // Silent fail on poll
+      }
+      try {
+        await useMegaListStore.getState().reconcile();
       } catch {
         // Silent fail on poll
       }
