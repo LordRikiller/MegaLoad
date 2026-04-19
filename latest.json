@@ -1,11 +1,11 @@
 {
-  "version": "1.10.2",
-  "notes": "Data: Rotten Meat source corrected to Ashlands Putrid Holes. The entry now lists Mound of Flesh destructibles as its primary pickable source (with Vile still covering the Plains creature drop). Swamp dropped from the biomes after the wiki confirmed it — no vanilla Swamp creature drops Rotten Meat.",
-  "pub_date": "2026-04-19T03:15:00Z",
+  "version": "1.10.3",
+  "notes": "Cart → MegaList. New 'Add to list…' button in the Cart header opens the same modal Valheim Data uses — pick a name for a new list or append to an existing one, and the cart's items land in MegaList for ticking off while you gather.",
+  "pub_date": "2026-04-19T03:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU52aHZPWkFUS1MwTjg1SHpvbExWdU1DSkJVSVVhSWVwbW5NdEhhODNqWk1XTENTTmRXdDRUZjB3azh5bUxiV0luNzRBOWJxYjg5Um1GMFEwMVNmMEFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTY3OTU0CWZpbGU6TWVnYUxvYWRfMS4xMC4yX3g2NC1zZXR1cC5uc2lzLnppcApmSkkwSGYweDE0eXBzMndJeWl1a3RrRE1pR2diK3BjcmREZEgyYlJreE5HZ0J3RDhMZXd4a3dyK1RBNUVYSGVXSVp4dzZPaDdTcUkwVFM4K0l6a1FEdz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.2/MegaLoad_1.10.2_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUpuZHFENkR0Szd1OGtSWmVENVRobDRSWHZBc1FqLzFhUW9tbjIzMXV0MlNQUllmV1g4V0RMdDZSSnVpTzRlRThRdS8wZFZtY0UxSURveVlqZUMramdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTcwMjI4CWZpbGU6TWVnYUxvYWRfMS4xMC4zX3g2NC1zZXR1cC5uc2lzLnppcApYUEZDT29vZHIvbG43N2J6MXUyU3lhd1orYXFwUVlIT3A1N3dlQXJKb2haSDRRTEtrN2JLZGxHN3lua2FVdXJZcTNzcGNCY1NKRnZOdURIRk5ya2hEZz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.3/MegaLoad_1.10.3_x64-setup.nsis.zip"
     }
   }
 }

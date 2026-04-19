@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart,
@@ -8,6 +8,7 @@ import {
   X,
   Trash2,
   Copy,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import {
@@ -19,6 +20,7 @@ import {
 import type { ValheimItem } from "../data/valheim-items";
 import { ItemIcon } from "../components/ui/ItemIcon";
 import { copyText } from "../lib/clipboard";
+import { ExportToListModal } from "../components/megalist/ExportToListModal";
 
 function CopyTextButton({ text, size = 12, className = "" }: { text: string; size?: number; className?: string }) {
   return (
@@ -91,6 +93,8 @@ export function Cart() {
     setSelectedItem,
   } = useValheimDataStore();
 
+  const [showListModal, setShowListModal] = useState(false);
+
   const materials = useMemo(() => getCartMaterials(cartItems), [cartItems]);
 
   // Get the highest biome tier across all cart items for the summary
@@ -151,13 +155,22 @@ export function Cart() {
           )}
         </div>
         {cartItems.length > 0 && (
-          <button
-            onClick={clearCart}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-red-500/20 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Clear All
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowListModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-brand-500/30 text-xs font-medium text-brand-400 hover:bg-brand-500/10 transition-colors"
+            >
+              <ListChecks className="w-3.5 h-3.5" />
+              Add to list…
+            </button>
+            <button
+              onClick={clearCart}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-red-500/20 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear All
+            </button>
+          </div>
         )}
       </div>
 
@@ -297,6 +310,13 @@ export function Cart() {
           </div>
         </div>
       )}
+
+      <ExportToListModal
+        open={showListModal}
+        onClose={() => setShowListModal(false)}
+        itemIds={cartItems.map((c) => c.id)}
+        filterSnapshot={{}}
+      />
     </div>
   );
 }
