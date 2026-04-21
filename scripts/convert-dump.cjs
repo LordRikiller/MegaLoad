@@ -1700,7 +1700,11 @@ for (const item of items) {
     station: COOKING_STATION_ITEMS.has(item.prefab) ? "Cooking Station"
            : IRON_COOKING_STATION_ITEMS.has(item.prefab) ? "Iron Cooking Station"
            : STONE_OVEN_ITEMS.has(item.prefab) ? "Stone Oven"
-           : (recipe ? mapStation(recipe.craftingStation) : ""),
+           : (recipe
+               ? (resolvedType === "Potion" && mapStation(recipe.craftingStation) === "Mead Ketill"
+                   ? "Fermenter"
+                   : mapStation(recipe.craftingStation))
+               : ""),
     stationLevel: recipe ? recipe.minStationLevel : 0,
     maxQuality: isClothing ? 1 : item.maxQuality,
     stack: feastMat ? feastMat.stack : item.maxStackSize,

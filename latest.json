@@ -1,11 +1,11 @@
 {
-  "version": "1.10.8",
-  "notes": "MegaList — once every item is ticked, the list title turns green in both card and table views so completed lists pop at a glance.",
-  "pub_date": "2026-04-21T12:14:27Z",
+  "version": "1.10.9",
+  "notes": "Valheim Data — Fermenter now shows as its own crafting station. Mead Ketill brews Mead Bases; fermented potions live under the Fermenter where they belong.",
+  "pub_date": "2026-04-21T21:55:49Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtta2Q4RDF5WVREVE9PWHpqaTRsSzdycllTSWFyVHNYcWFCYlZoS1hSR0tHajlYbnFlZUloalU3eTJ1QnpjZ3RmVUpzNUdCYlozalV5Y3NRYUFIZEFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NzczODg1CWZpbGU6TWVnYUxvYWRfMS4xMC44X3g2NC1zZXR1cC5uc2lzLnppcAo0a1I4R2MvdWN0TE9QQm1qb0NwWittOGNIVFpTMnBndVVGaFJ0cVJmRTRLNXhVemRGbStjWjRUQmJydWkra2t2NDlUWWE0Smk4MnhGQmdwZlRVR01CUT09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.8/MegaLoad_1.10.8_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtjbTdzMXhDeEs4cDc4NUh1cGRIZzhlQlNwQWRYNEZwZnBSRmFORFNXdkxkRDVMZGlvZ0h6SjBGYTB5NXJWNGt0cngwV1R3UEdLaUpBTzVHOXAxeUFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2ODA4ODc4CWZpbGU6TWVnYUxvYWRfMS4xMC45X3g2NC1zZXR1cC5uc2lzLnppcAo0bnY2R1FHTm5yWlJkelpOZG9kUTV2WmNEYXJ3aHl4WGpQcE03d0F3OE9PR3huSHJLa0Z2TVRLWXZxc0J0NThtKzhUU3pweXBPVjZNZlZ4WEFMQ1BBZz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.9/MegaLoad_1.10.9_x64-setup.nsis.zip"
     }
   }
 }
