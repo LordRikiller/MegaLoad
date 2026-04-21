@@ -1,11 +1,11 @@
 {
-  "version": "1.10.5",
-  "notes": "MegaList — Copy button on an item now pads the name to fit a 50-character Valheim sign. One word lands right-aligned, two words hug the edges, and three+ words split into two balanced halves with a big gap between.",
+  "version": "1.10.6",
+  "notes": "MegaList — ticking an item's checkbox now also copies the sign-padded name to clipboard (same formatter as the Copy button), so you can label the chest in one motion.",
   "pub_date": "2026-04-21T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJrb3BUMUcxdHhDOXFIcjU2dFpub09iVXpsYlZyQUdVWHJKRXdTejJCVkFYV1VLRDNQaC9QR3NxN3hTT3dsb2ljTVpNQ21iWG5NZnk5OWczOXRWQndzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NzY0MTg4CWZpbGU6TWVnYUxvYWRfMS4xMC41X3g2NC1zZXR1cC5uc2lzLnppcApaZUttMW1MeUlCV3R0c3BhNEZSKyt6Y0VNRUNldktTVXYxSmpiQWFMVHZkbjhOK09UR0E2Ly9XeWNUeEsrdWpUVVZvRTNxQityUWp0SUE2TVkrU0RBZz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.5/MegaLoad_1.10.5_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOURYWlFnOCtjNWVLYlU5K2czSHYxOURzQTdBZFpCU0E1ZjJMZkhMSVpnZk56c0kvdWdhb24yNzBIc1ZWeUtFdlNRMktXRzhBbllRQk8vTFpTSmg3RWdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NzY0OTY1CWZpbGU6TWVnYUxvYWRfMS4xMC42X3g2NC1zZXR1cC5uc2lzLnppcApHNlVhWFQ5TEFEdnh0bFRscEp2YytBQVRmZ0pYOFUzRUhhR25HdStxa2FlMXJKOWRDeUMrVkJOZk11L29wVFdxcDlrZXhhZVFZTmZhUUdCWUVWMzFBdz09Cg==",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.6/MegaLoad_1.10.6_x64-setup.nsis.zip"
     }
   }
 }

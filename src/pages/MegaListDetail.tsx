@@ -320,7 +320,10 @@ export function MegaListDetail() {
                   )}
                 >
                   <button
-                    onClick={() => toggleItem(list.id, r.itemId)}
+                    onClick={() => {
+                      toggleItem(list.id, r.itemId);
+                      if (!r.checked && !missing) copyText(formatForValheimSign(name));
+                    }}
                     className={cn(
                       "w-5 h-5 rounded border shrink-0 flex items-center justify-center transition-colors",
                       r.checked
