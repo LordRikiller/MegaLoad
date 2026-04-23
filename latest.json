@@ -1,11 +1,11 @@
 {
-  "version": "1.10.12",
-  "notes": "Valheim Data — siege engine materials (Catapult, Battering Ram) now roll up under Workbench Craft Materials instead of Build Materials, matching the Siege Ammo payloads.",
+  "version": "1.10.13",
+  "notes": "Station detail pages now show a Build Materials card — all raw mats needed for walls, floors, roofs, furniture etc. at that station, rolled up so you can plan the whole build without clicking each piece.",
   "pub_date": "2026-04-23T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBCWStOWVZ0MU0yOWdVS2U4Y1VMQTRQYk0xemNTZGtkUHZUeW9yeUw5MENTTlVwNVFnSGpkWGJVK1VzT2NvOWh3WDc2eGx1bHRhRGpDcVVuMzhrYVFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2OTM5MDM3CWZpbGU6TWVnYUxvYWRfMS4xMC4xMl94NjQtc2V0dXAubnNpcy56aXAKZGZnZTdHNHUraEhiZVdIU1FkVzVLWFY4OXcyK0hRKzBXbS92NjNLNlVzTVZ2RmxDUlJIbEFwMUh4aHQ5U1luTTJGd0JyVmx6aG1meERyK2d5cmVpQUE9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.12/MegaLoad_1.10.12_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBheUdMdjAzdExPWFBGa2VHc0hTaU9sRE5PZThkeHFPV3dyWk9TQmRSMDJ5Tmh1elBGZ3JoQlJqUGwwTzVtRHF0WW9DdTFnN3RSNlIxUytvTDFwZUFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2OTQwMjEwCWZpbGU6TWVnYUxvYWRfMS4xMC4xM194NjQtc2V0dXAubnNpcy56aXAKZHpFNVg5cHJJS0VWVGsrVVB4bC9hL1BsMWt6bElCL3hiQ1BZK3FXKzllbDcrL0lJbVlUOGp4d3pFYlkrd1BZUjNlVVNiRWtmWUF6dzVFVmtJc2xXRFE9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.13/MegaLoad_1.10.13_x64-setup.nsis.zip"
     }
   }
 }

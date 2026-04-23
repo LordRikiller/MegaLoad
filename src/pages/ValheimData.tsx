@@ -2533,6 +2533,8 @@ function StationDetailView({ station, onBack }: { station: string; onBack: () =>
   const upgrades = getStationUpgrades(station);
   const levels = [...itemsByLevel.keys()].sort((a, b) => a - b);
   const maxLevel = upgrades.length > 0 ? upgrades.length + 1 : levels.length;
+  const buildMaterials = getStationMaterials([station], "build");
+  const buildPieceCount = allItems.filter((i) => i.type === "BuildPiece" && i.subcategory !== "Siege").length;
 
   // Find the station's own build piece item (for its recipe)
   const stationPrefab = STATION_ICONS[station];
@@ -2656,6 +2658,43 @@ function StationDetailView({ station, onBack }: { station: string; onBack: () =>
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Build Materials — aggregate mats for BuildPieces at this station
+            (walls, floors, roofs, furniture). Siege engines are excluded
+            — their mats roll up under Craft Mats instead. */}
+        {buildMaterials.length > 0 && buildPieceCount > 0 && (
+          <div className="glass rounded-xl p-5 border border-zinc-800/50">
+            <h2 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+              Build Materials
+              <span className="text-zinc-500 font-normal text-xs">
+                {buildPieceCount} piece{buildPieceCount !== 1 ? "s" : ""} · {buildMaterials.length} unique mat{buildMaterials.length !== 1 ? "s" : ""}
+              </span>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+              {buildMaterials.map((mat) => (
+                <div
+                  key={mat.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleNavigate(mat.id)}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavigate(mat.id)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left cursor-pointer group"
+                >
+                  <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                    <ItemIcon id={mat.id} size={24} />
+                  </div>
+                  <span className="text-xs text-brand-400 hover:underline truncate flex-1">{mat.name}</span>
+                  <CopyTextButton
+                    text={mat.name}
+                    size={12}
+                    title={`Copy "${mat.name}"`}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
