@@ -1,11 +1,11 @@
 {
-  "version": "1.10.9",
-  "notes": "Valheim Data — Fermenter now shows as its own crafting station. Mead Ketill brews Mead Bases; fermented potions live under the Fermenter where they belong.",
-  "pub_date": "2026-04-21T21:55:49Z",
+  "version": "1.10.10",
+  "notes": "Valheim Data — Minor Healing Mead and Minor Stamina Mead now correctly listed under the Fermenter (were missing a station entirely). Full audit of all 20 Fermenter recipes against the wiki.",
+  "pub_date": "2026-04-23T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtjbTdzMXhDeEs4cDc4NUh1cGRIZzhlQlNwQWRYNEZwZnBSRmFORFNXdkxkRDVMZGlvZ0h6SjBGYTB5NXJWNGt0cngwV1R3UEdLaUpBTzVHOXAxeUFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2ODA4ODc4CWZpbGU6TWVnYUxvYWRfMS4xMC45X3g2NC1zZXR1cC5uc2lzLnppcAo0bnY2R1FHTm5yWlJkelpOZG9kUTV2WmNEYXJ3aHl4WGpQcE03d0F3OE9PR3huSHJLa0Z2TVRLWXZxc0J0NThtKzhUU3pweXBPVjZNZlZ4WEFMQ1BBZz09Cg==",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.9/MegaLoad_1.10.9_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNjS3hkeVZUSllYWUp4S2xvQUhjaUpybS9TRFBUaEx4YWdCRklDRWRMTVBNcDZJeks4UUM2Vi9kV3Q3RkNhd2dLQ2luUi9WaUEvUmg2L2RlcjZ6TkEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2OTM1MjU5CWZpbGU6TWVnYUxvYWRfMS4xMC4xMF94NjQtc2V0dXAubnNpcy56aXAKbXlWTkphZTAvZmJydnR2Qkx4MFpXUiszUFFHUmMybTFLMjlRakpjRXlMYmh3NWtIOXJqand2K1VYb3pGM0ZoQjNONGV1VVlMUXcvby9uUUEybkFWQ1E9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.10/MegaLoad_1.10.10_x64-setup.nsis.zip"
     }
   }
 }
