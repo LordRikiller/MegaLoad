@@ -1,11 +1,11 @@
 {
-  "version": "1.10.23",
-  "notes": "Sync hardening — final wave on the data-loss ticket. Profile bundles now merge per-config: two devices editing different .cfg files in the same profile concurrently both keep their edits (previously last-writer-wins on the whole bundle). Each config carries its own updated_at watermark sourced from file mtime; 409-retry refetches AND remerges so conflicts don't lose either side. Pull respects per-file watermarks, so a fresh local edit isn't clobbered by a stale remote. Backwards compatible with v1 string-keyed bundles. Plus a new Delete-from-cloud button on the Player Data page for manual character cloud removal — auto-propagation from local-disk deletions was deliberately left out (too risky without a UI affirming intent).",
-  "pub_date": "2026-04-25T07:35:00Z",
+  "version": "1.10.24",
+  "notes": "MegaBugs polish + Browse Mods icons. MegaBugs main page defaults to New (was All) — and 'Open' status displays as 'New' across the page. New search box filters tickets by title, ID, or author. Detail header gets a Norse-font title, a coloured bug/feature badge, and the Status dropdown now shows the current status with its colour instead of a generic 'Status' label. Mods chip no longer towers over the others — count badge is height-bounded so all four header chips line up. Browse Mods 'Our Mods' featured section now shows the same per-mod Lucide icons as the Mods page (Shovel for MegaHoe, Crosshair for MegaShot, etc.) instead of identical Crowns.",
+  "pub_date": "2026-04-25T17:50:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBaZWpZSnNQWFdxbTZvWkhqeWllQmxKazM3Q2ZiNUdSNDgvaURZK3p0YnJmWi9RNzVuS0toL2pQcW90alpnWExBR3VFemRNVWVhanJ0amZTZjZtQVFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTAyMzM2CWZpbGU6TWVnYUxvYWRfMS4xMC4yM194NjQtc2V0dXAubnNpcy56aXAKSlJWcTNNR2ZFUG1lOXpDUzE4MkhuNEFzTXY3OFRESnVVN0JSSldKQTZkUnVVZ1ZQdjNvL2F0bDBVRk9WbGVsUC83QkJPaU5WbldiV3ZaU3VaSzdWRFE9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.23/MegaLoad_1.10.23_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVB1b3ZGYy9lR0gwaVlyTVMvOU5rTXBtczY2QlhJMFFDQXVHSU9Ec1dpdWxlYzRBRXRlNnJDeGgycTFkQi9sNFpLT3N0TitBb3c3WFpPOXZUVjczWHdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTAzMTg4CWZpbGU6TWVnYUxvYWRfMS4xMC4yNF94NjQtc2V0dXAubnNpcy56aXAKV1Z0WTh0Q3dSeW5KaEFJVUJkVFJaTnN1RllBT01WU25oWHdoTmwxT3VXcmU3L2lHSGhLcEtnd0ZEcVkzZmlxclF5VVBXTjF5WEc3aTkyVnJZWkFZQ2c9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.24/MegaLoad_1.10.24_x64-setup.nsis.zip"
     }
   }
 }

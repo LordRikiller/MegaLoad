@@ -10,44 +10,12 @@ import {
   Upload,
   AlertCircle,
   AlertTriangle,
-  Shovel,
-  Anchor,
-  Utensils,
-  Crosshair,
-  Sparkles,
-  Boxes,
-  Fish,
-  Factory,
-  Gamepad2,
-  Hammer,
-  Bone,
-  type LucideIcon,
 } from "lucide-react";
 import { cn, formatModName } from "../lib/utils";
 import { open } from "@tauri-apps/plugin-dialog";
 import { installMod, validateBepinex, findBepinexSources, installBepinexCore, downloadBepinex, detectValheimPath, type BepInExStatus } from "../lib/tauri-api";
 import { SyncingOverlay } from "../components/SyncingOverlay";
-
-// Per-mod icon mapping. Match by folder/file-name stem (case-insensitive).
-// Falls back to the generic Package icon for unknown mods (community installs etc).
-const MOD_ICONS: Record<string, LucideIcon> = {
-  megahoe: Shovel,
-  megamegingjord: Anchor,
-  megafood: Utensils,
-  megashot: Crosshair,
-  megaqol: Sparkles,
-  megastuff: Boxes,
-  megafishing: Fish,
-  megafactory: Factory,
-  megatrainer: Gamepad2,
-  megabuilder: Hammer,
-  megaskeletons: Bone,
-};
-
-function iconForMod(folder: string | null | undefined, fileName: string): LucideIcon {
-  const stem = (folder || fileName.replace(/\.dll$/i, "")).toLowerCase();
-  return MOD_ICONS[stem] ?? Package;
-}
+import { iconForMod } from "../lib/modIcons";
 
 export function Mods() {
   const { activeProfile } = useProfileStore();

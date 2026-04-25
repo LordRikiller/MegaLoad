@@ -31,11 +31,29 @@ import {
   Smile,
   ArrowDown,
   ClipboardCopy,
+  Search,
 } from "lucide-react";
 
 type View = "list" | "new" | "detail";
 type TicketType = "bug" | "feature";
 type FilterStatus = "all" | "open" | "in-progress" | "closed";
+
+// Display label per status. Tickets stay `open` in storage (the API contract);
+// "New" is just what we call freshly-opened tickets in the UI.
+const STATUS_LABELS: Record<string, string> = {
+  open: "New",
+  "in-progress": "In progress",
+  closed: "Closed",
+};
+
+function statusLabel(status: string): string {
+  return STATUS_LABELS[status] ?? (status.charAt(0).toUpperCase() + status.slice(1));
+}
+
+const ticketTypeStyles: Record<TicketType, string> = {
+  bug: "text-red-400 bg-red-500/10 border-red-500/30",
+  feature: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+};
 
 const priorityStyles: Record<TicketPriority, { label: string; classes: string; Icon: typeof AlertCircle }> = {
   urgent: {
@@ -193,9 +211,11 @@ export function MegaBugs() {
 
   const location = useLocation();
   const [view, setView] = useState<View>("list");
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  // Default to "New" (status=open) — that's what owners want to see on entry.
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("open");
   const [filterMod, setFilterMod] = useState<"all" | "untagged" | ModTag>("all");
   const [filterPriority, setFilterPriority] = useState<"all" | TicketPriority>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Reset to list view when navigating to this page
@@ -425,14 +445,25 @@ export function MegaBugs() {
     loadTickets();
   }
 
-  // Filter tickets by status, then priority, then mod/app tag.
+  // Filter tickets by status, then priority, then mod/app tag, then search query.
+  // Search matches title, ticket id, and author name (case-insensitive).
+  const trimmedQuery = searchQuery.trim().toLowerCase();
   const filteredTickets = tickets.filter((t) => {
     if (filterStatus !== "all" && t.status !== filterStatus) return false;
     if (filterPriority !== "all" && effectivePriority(t.priority) !== filterPriority) return false;
-    if (filterMod === "all") return true;
-    const tags = getModTags(t.labels);
-    if (filterMod === "untagged") return tags.length === 0;
-    return tags.includes(filterMod);
+    if (filterMod !== "all") {
+      const tags = getModTags(t.labels);
+      if (filterMod === "untagged") {
+        if (tags.length !== 0) return false;
+      } else if (!tags.includes(filterMod)) {
+        return false;
+      }
+    }
+    if (trimmedQuery) {
+      const haystack = `${t.title} ${t.id} ${t.author_name}`.toLowerCase();
+      if (!haystack.includes(trimmedQuery)) return false;
+    }
+    return true;
   });
 
   // Still checking access
@@ -494,9 +525,14 @@ export function MegaBugs() {
                 )}
               >
                 <StatusIcon className="w-3 h-3" />
-                {activeTicket.status}
+                {statusLabel(activeTicket.status)}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-800/50 text-zinc-400 border border-zinc-700/50">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border",
+                  ticketTypeStyles[activeTicket.type as TicketType] ?? "bg-zinc-800/50 text-zinc-400 border-zinc-700/50",
+                )}
+              >
                 {activeTicket.type === "bug" ? (
                   <Bug className="w-3 h-3" />
                 ) : (
@@ -506,7 +542,7 @@ export function MegaBugs() {
               </span>
               <PriorityBadge priority={activeTicket.priority} />
             </div>
-            <h2 className="text-lg font-semibold text-zinc-200 truncate mt-1">
+            <h2 className="font-norse text-xl font-bold text-zinc-100 tracking-wide truncate mt-1">
               {activeTicket.title}
             </h2>
             <p className="text-xs text-zinc-500 flex items-center gap-2">
@@ -970,6 +1006,7 @@ export function MegaBugs() {
         {(["all", "open", "in-progress", "closed"] as FilterStatus[]).map((status) => (
           <button
             key={status}
+            type="button"
             className={cn(
               "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
               filterStatus === status
@@ -978,14 +1015,36 @@ export function MegaBugs() {
             )}
             onClick={() => setFilterStatus(status)}
           >
-            {status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1)}
+            {status === "all" ? "All" : statusLabel(status)}
           </button>
         ))}
         <PriorityFilterDropdown value={filterPriority} onChange={setFilterPriority} />
         <ModFilterDropdown value={filterMod} onChange={setFilterMod} />
-        <span className="ml-auto text-xs text-zinc-500">
-          {filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""}
-        </span>
+        <div className="ml-auto flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search title, ID, author"
+              className="w-56 pl-8 pr-7 py-1.5 rounded-full text-xs bg-zinc-800/30 border border-zinc-700/30 text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand-500/40 focus:bg-zinc-900/60 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-200"
+                aria-label="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          <span className="text-xs text-zinc-500">
+            {filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""}
+          </span>
+        </div>
       </div>
 
       {/* Ticket list */}
@@ -1076,7 +1135,7 @@ function TicketRow({
             )}
           >
             <StatusIcon className="w-2.5 h-2.5" />
-            {ticket.status}
+            {statusLabel(ticket.status)}
           </span>
           <PriorityBadge priority={ticket.priority} compact />
         </div>
@@ -1381,35 +1440,51 @@ function AdminStatusDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const statuses = allowClose ? ["open", "in-progress", "closed"] : ["open", "in-progress"];
+  const CurrentIcon = statusIcons[currentStatus] ?? AlertCircle;
+  const currentClass = statusColors[currentStatus] ?? statusColors.open;
   return (
     <div className="relative">
       <button
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 text-xs text-zinc-400 hover:text-zinc-200 transition-colors border border-zinc-700/30"
+        type="button"
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+          currentClass,
+        )}
         onClick={() => setOpen(!open)}
+        title="Change status"
       >
-        <Tag className="w-3.5 h-3.5" />
-        Status
+        <CurrentIcon className="w-3.5 h-3.5" />
+        {statusLabel(currentStatus)}
         <ChevronDown className={cn("w-3 h-3 transition-transform", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-36 bg-zinc-900 border border-zinc-700/50 rounded-lg shadow-xl z-20 py-1">
-          {statuses.map((s) => (
-            <button
-              key={s}
-              className={cn(
-                "w-full text-left px-3 py-2 text-xs hover:bg-zinc-800/50 transition-colors",
-                s === currentStatus ? "text-brand-400" : "text-zinc-400",
-              )}
-              onClick={() => {
-                onUpdate(s, labels);
-                setOpen(false);
-              }}
-            >
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-              {s === currentStatus && " ✓"}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 w-40 bg-zinc-900 border border-zinc-700/50 rounded-lg shadow-xl z-20 py-1">
+            {statuses.map((s) => {
+              const Icon = statusIcons[s] ?? AlertCircle;
+              const selected = s === currentStatus;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  className={cn(
+                    "w-full flex items-center gap-2 text-left px-3 py-2 text-xs hover:bg-zinc-800/50 transition-colors",
+                    selected ? "text-brand-400" : "text-zinc-400",
+                  )}
+                  onClick={() => {
+                    onUpdate(s, labels);
+                    setOpen(false);
+                  }}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span>{statusLabel(s)}</span>
+                  {selected && <span className="ml-auto">✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
@@ -1437,13 +1512,14 @@ function ModTagPicker({
   return (
     <div className="relative">
       <button
+        type="button"
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-700/50 text-xs text-zinc-400 hover:text-zinc-200 transition-colors border border-zinc-700/30"
         onClick={() => setOpen(!open)}
       >
         <Tag className="w-3.5 h-3.5" />
         Mods
         {selected.size > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-brand-500/20 text-brand-400">
+          <span className="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] leading-none font-semibold bg-brand-500/20 text-brand-400">
             {selected.size}
           </span>
         )}

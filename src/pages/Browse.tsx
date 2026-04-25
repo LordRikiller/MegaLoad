@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { cn, formatModName } from "../lib/utils";
 import { SyncingOverlay } from "../components/SyncingOverlay";
+import { iconForModName } from "../lib/modIcons";
 
 export function Browse() {
   const { activeProfile } = useProfileStore();
@@ -360,6 +361,7 @@ export function Browse() {
               {ourMods.map((mod) => {
                 const installed = isOurModInstalled(mod.name);
                 const isInstalling = installingOurMod === mod.name;
+                const ModIcon = iconForModName(mod.name);
                 return (
                   <div
                     key={mod.name}
@@ -371,7 +373,7 @@ export function Browse() {
                     )}
                   >
                     <div className="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center shrink-0">
-                      <Crown className="w-5 h-5 text-brand-400" />
+                      <ModIcon className="w-5 h-5 text-brand-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
