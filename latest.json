@@ -1,11 +1,11 @@
 {
-  "version": "1.10.20",
-  "notes": "Sync hardening: polling pauses while Valheim is running and a single push fires on game exit; the noop reconcile spam in the Sync Log is gone. Log Viewer: action buttons reflowed below the tab strip, Export/Copy added for Update History and Sync Log, and ticket message text in MegaBugs is now selectable.",
-  "pub_date": "2026-04-25T05:50:00Z",
+  "version": "1.10.21",
+  "notes": "Crash recovery: a render error on any page (Valheim Data, MegaBugs, etc.) now shows an in-app error card with the stack trace instead of white-screening the whole shell — the rest of the app stays usable and the stack lands in megaload.log. Also hardens character-data reads on Valheim Data so a missing known_materials/known_recipes field can't take the page down.",
+  "pub_date": "2026-04-25T07:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZZYTh0UmhEZXZqM0ZkQ0IycERnYkVaNUFNcnJKemorZjFOQXpRL3B6Q0NzK0hXaDg0cjB6RkVML3NZaDRzbUNObzB1bFFBbWJjNlNjL2NWbGRPMVFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MDkzODM2CWZpbGU6TWVnYUxvYWRfMS4xMC4yMF94NjQtc2V0dXAubnNpcy56aXAKRkkzNUtkMG9QbzFlcmhVNmxjQkNYbHJ5TDJzaUk5bTNibmJrdlhPS3BIdnhtVEd0bEdwWGNNUW9sOFo2aFVVY2gwSDloR2ZKcFNDcUVSdkVjZ3lNQ3c9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.20/MegaLoad_1.10.20_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFuVnhWd1F3aXlzbzB3UlhhdmFSeU4ySzhvKzJwZS9oS3RsS2kxK0I4OHVkMlBWNjY3c3RCOC95ZUpGbm1NU3N6UExkeWVldnlQd1FVQXB5T1NncHdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTAwMTA1CWZpbGU6TWVnYUxvYWRfMS4xMC4yMV94NjQtc2V0dXAubnNpcy56aXAKd0EyMno4MTJFVWQ0RnJpb3B4bTdSeEY2R3NmallJckNYaWEwTkxRZEZXM1RJQ2dRNEd1aGJjNWZZMkdQZVUwM0cwclN0a2V4cGpiUDM0eDBwY2RMQVE9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.21/MegaLoad_1.10.21_x64-setup.nsis.zip"
     }
   }
 }

@@ -468,7 +468,9 @@ export function ValheimData() {
   const pageKnownPrefabs = useMemo(() => {
     if (!pageCharacter) return new Set<string>();
     const set = new Set<string>();
-    for (const token of [...pageCharacter.known_materials, ...pageCharacter.known_recipes]) {
+    const mats = pageCharacter.known_materials ?? [];
+    const recipes = pageCharacter.known_recipes ?? [];
+    for (const token of [...mats, ...recipes]) {
       if (itemMap.has(token)) {
         set.add(token);
       } else {
@@ -1519,7 +1521,9 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
   const knownPrefabs = useMemo(() => {
     if (!character) return new Set<string>();
     const set = new Set<string>();
-    for (const token of [...character.known_materials, ...character.known_recipes]) {
+    const mats = character.known_materials ?? [];
+    const recipes = character.known_recipes ?? [];
+    for (const token of [...mats, ...recipes]) {
       if (itemMap.has(token)) {
         set.add(token);
       } else {

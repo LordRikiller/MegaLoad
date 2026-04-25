@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Titlebar } from "./Titlebar";
 import { Sidebar } from "./Sidebar";
 import { IdentityGate } from "./IdentityGate";
 import { ToastContainer } from "../ToastContainer";
+import { ErrorBoundary } from "../ErrorBoundary";
 import { useLiveUpdateChecks } from "../../hooks/useLiveUpdateChecks";
 import { useAutoSync } from "../../hooks/useAutoSync";
 import { useAutoPlayerSync } from "../../hooks/useAutoPlayerSync";
@@ -13,6 +14,7 @@ export function AppShell() {
   useLiveUpdateChecks();
   useAutoSync();
   useAutoPlayerSync();
+  const location = useLocation();
 
   // Hydrate MegaList blob from localStorage on app start.
   useEffect(() => {
@@ -26,7 +28,11 @@ export function AppShell() {
         <div className="flex flex-1 min-h-0">
           <Sidebar />
           <main className="flex-1 overflow-y-auto p-6">
-            <Outlet />
+            {/* key={pathname} resets the boundary on route change so a crash
+                on one page doesn't poison the next one. */}
+            <ErrorBoundary key={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
           </main>
         </div>
       </IdentityGate>
