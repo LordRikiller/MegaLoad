@@ -137,6 +137,7 @@ pub fn run() {
             submit_ticket,
             reply_to_ticket,
             update_ticket_status,
+            update_ticket_priority,
             delete_ticket,
             fetch_attachment,
             download_ticket_log,

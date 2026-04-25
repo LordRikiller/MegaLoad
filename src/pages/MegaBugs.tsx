@@ -178,6 +178,7 @@ export function MegaBugs() {
     submit,
     reply,
     setStatus,
+    setPriority: setTicketPriority,
     deleteTicket,
     markTicketRead,
     clearActiveTicket,
@@ -203,13 +204,15 @@ export function MegaBugs() {
     clearActiveTicket();
   }, [location.key, clearActiveTicket]);
 
-  // New ticket form
+  // New ticket form — order matches Milord's flow:
+  // 1. Bug/Feature → 2. Mods/Apps → 3. Priority (default Normal) → 4. Title → 5. Description/images
   const [ticketType, setTicketType] = useState<TicketType>("bug");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageData[]>([]);
   const [formShake, setFormShake] = useState(false);
   const [priority, setPriority] = useState<TicketPriority>("normal");
+  const [selectedModTags, setSelectedModTags] = useState<ModTag[]>([]);
 
   // Reply
   const [replyText, setReplyText] = useState("");
@@ -378,13 +381,22 @@ export function MegaBugs() {
       setTimeout(() => setFormShake(false), 500);
       return;
     }
-    await submit(ticketType, title, description, images, profile.bepinex_path, priority);
+    await submit(
+      ticketType,
+      title,
+      description,
+      images,
+      profile.bepinex_path,
+      priority,
+      selectedModTags,
+    );
     if (!useBugStore.getState().error) {
       addToast({ type: "success", title: "Ticket submitted!" });
       setTitle("");
       setDescription("");
       setImages([]);
       setPriority("normal");
+      setSelectedModTags([]);
       setView("list");
     }
   }
@@ -503,13 +515,19 @@ export function MegaBugs() {
               <TicketIdBadge ticketId={activeTicket.id} />
             </p>
           </div>
-          {/* Manage controls — owner + collaborator can change status; only owner can delete or close */}
+          {/* Manage controls — owner + collaborator can change status; only owner can change priority, delete, or close */}
           {canManage && (
             <div className="flex items-center gap-2">
               <ModTagPicker
                 labels={activeTicket.labels}
                 onUpdate={(labels) => setStatus(activeTicket.id, activeTicket.status, labels)}
               />
+              {isOwner && (
+                <PriorityDropdown
+                  current={effectivePriority(activeTicket.priority)}
+                  onChange={(p) => setTicketPriority(activeTicket.id, p)}
+                />
+              )}
               <AdminStatusDropdown
                 currentStatus={activeTicket.status}
                 labels={activeTicket.labels}
@@ -736,6 +754,41 @@ export function MegaBugs() {
               <Lightbulb className="w-4 h-4" />
               Feature Request
             </button>
+          </div>
+
+          {/* Mods/Apps picker — chip toggles, multi-select. Optional but encouraged
+              so the Mods filter on the list view can find this ticket. */}
+          <div>
+            <label className="block text-[11px] uppercase tracking-wide text-zinc-500 mb-2">
+              Mods / Apps
+              {selectedModTags.length > 0 && (
+                <span className="ml-2 text-zinc-600">{selectedModTags.length} selected</span>
+              )}
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {MOD_TAGS.map((tag) => {
+                const active = selectedModTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setSelectedModTags((prev) =>
+                        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+                      )
+                    }
+                    className={cn(
+                      "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+                      active
+                        ? "bg-sky-500/15 text-sky-300 border-sky-500/40"
+                        : "bg-zinc-800/30 text-zinc-400 border-zinc-700/30 hover:border-zinc-600/50",
+                    )}
+                  >
+                    {MOD_TAG_LABELS[tag]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Priority picker — Normal default for everyone, owner can pick any */}
@@ -1416,6 +1469,65 @@ function ModTagPicker({
                 >
                   <span>{MOD_TAG_LABELS[tag]}</span>
                   {on && <CheckCircle2 className="w-3.5 h-3.5" />}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PriorityDropdown({
+  current,
+  onChange,
+}: {
+  current: TicketPriority;
+  onChange: (next: TicketPriority) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const style = priorityStyles[current];
+  const Icon = style.Icon;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+          style.classes,
+        )}
+        onClick={() => setOpen(!open)}
+        title="Change priority (owner only)"
+      >
+        <Icon className="w-3.5 h-3.5" />
+        {style.label}
+        <ChevronDown className={cn("w-3 h-3 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 w-44 bg-zinc-900 border border-zinc-700/50 rounded-lg shadow-xl z-20 py-1">
+            {(["urgent", "normal", "low"] as TicketPriority[]).map((p) => {
+              const selected = p === current;
+              const optStyle = priorityStyles[p];
+              const OptIcon = optStyle.Icon;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  className={cn(
+                    "w-full flex items-center gap-2 text-left px-3 py-2 text-xs hover:bg-zinc-800/50 transition-colors",
+                    selected ? "text-brand-400" : "text-zinc-400",
+                  )}
+                  onClick={() => {
+                    onChange(p);
+                    setOpen(false);
+                  }}
+                >
+                  <OptIcon className="w-3 h-3" />
+                  <span>{optStyle.label}</span>
+                  {selected && <span className="ml-auto">✓</span>}
                 </button>
               );
             })}

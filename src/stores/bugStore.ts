@@ -8,6 +8,7 @@ import {
   submitTicket,
   replyToTicket,
   updateTicketStatus,
+  updateTicketPriority,
   deleteTicket as apiDeleteTicket,
   adminListUsers,
   getMegabugsRole,
@@ -95,9 +96,11 @@ interface BugState {
     images: ImageData[],
     bepinexPath: string,
     priority?: TicketPriority,
+    modTags?: string[],
   ) => Promise<void>;
   reply: (ticketId: string, text: string, images: ImageData[]) => Promise<void>;
   setStatus: (ticketId: string, status: string, labels: string[]) => Promise<void>;
+  setPriority: (ticketId: string, priority: TicketPriority) => Promise<void>;
   deleteTicket: (ticketId: string) => Promise<void>;
   markTicketRead: (ticketId: string) => void;
   clearActiveTicket: () => void;
@@ -240,6 +243,7 @@ export const useBugStore = create<BugState>((set, get) => ({
     images: ImageData[],
     bepinexPath: string,
     priority: TicketPriority = "normal",
+    modTags: string[] = [],
   ) => {
     const { identity, cooldownRemaining } = get();
     if (!identity) return;
@@ -258,6 +262,7 @@ export const useBugStore = create<BugState>((set, get) => ({
         identity.user_id,
         identity.display_name,
         priority,
+        modTags,
       );
       set((s) => ({
         tickets: [summary, ...s.tickets],
@@ -390,6 +395,53 @@ export const useBugStore = create<BugState>((set, get) => ({
       const offline = isOfflineError(e);
       set({ error: offline ? "Unable to reach MegaBugs — check your internet connection." : String(e), offline });
       get().loadTickets();
+    }
+  },
+
+  setPriority: async (ticketId: string, priority: TicketPriority) => {
+    const { identity, role } = get();
+    if (!identity) return;
+    if (role !== "owner") {
+      set({ error: "Only Rik changes ticket priority." });
+      return;
+    }
+    set({ error: null });
+    // Optimistic: flip the priority in both the active ticket and the list
+    // immediately. Backend reconciles via fire-and-forget below.
+    const { tickets, activeTicket } = get();
+    const optimisticActive =
+      activeTicket && activeTicket.id === ticketId
+        ? { ...activeTicket, priority, updated_at: new Date().toISOString() }
+        : activeTicket;
+    const optimisticTickets = tickets.map((t) =>
+      t.id === ticketId ? { ...t, priority } : t,
+    );
+    set({ tickets: optimisticTickets, activeTicket: optimisticActive });
+    try {
+      await updateTicketPriority(ticketId, priority, identity.user_id);
+      // Reconcile in background — keeps list/detail in sync with the canonical updated_at.
+      fetchTicketDetail(ticketId)
+        .then((ticket) => {
+          const { tickets: cur } = get();
+          const synced = cur.map((t) =>
+            t.id === ticketId
+              ? { ...t, priority: ticket.priority, updated_at: ticket.updated_at }
+              : t,
+          );
+          set({ activeTicket: ticket, tickets: synced, offline: false });
+        })
+        .catch((e) => console.warn("[MegaLoad]", e));
+    } catch (e) {
+      // Revert on failure.
+      const reverted = tickets;
+      set({
+        tickets: reverted,
+        activeTicket,
+        error: isOfflineError(e)
+          ? "Unable to reach MegaBugs — check your internet connection."
+          : String(e),
+        offline: isOfflineError(e),
+      });
     }
   },
 

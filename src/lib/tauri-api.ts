@@ -640,7 +640,14 @@ export const submitTicket = (
   userId: string,
   userName: string,
   priority: TicketPriority = "normal",
-) => invoke<TicketSummary>("submit_ticket", { ticketType, title, description, images, bepinexPath, userId, userName, priority });
+  modTags: string[] = [],
+) => invoke<TicketSummary>("submit_ticket", { ticketType, title, description, images, bepinexPath, userId, userName, priority, modTags });
+
+export const updateTicketPriority = (
+  ticketId: string,
+  priority: TicketPriority,
+  callerUserId: string,
+) => invoke<void>("update_ticket_priority", { ticketId, priority, callerUserId });
 
 export const replyToTicket = (
   ticketId: string,

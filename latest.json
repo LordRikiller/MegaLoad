@@ -1,11 +1,11 @@
 {
-  "version": "1.10.17",
-  "notes": "MegaBugs UI: ticket priorities applied to all in-progress tickets, new Priority filter dropdown alongside Status and Mods, mod/app tags now render on their own line below the ticket title for better scannability.",
-  "pub_date": "2026-04-25T04:55:00Z",
+  "version": "1.10.18",
+  "notes": "MegaBugs ticket form: Mods/Apps multi-select picker (between Bug/Feature and Priority) so tickets get tagged at submit time. Owner-only Priority dropdown in the ticket detail header — change a ticket's priority after the fact. Form flow now Bug/Feature → Mods/Apps → Priority (Normal default) → Title → Description.",
+  "pub_date": "2026-04-25T05:15:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFxYk5MVEZZclVEbDBMYm8zVHNlWGFqUkFhQmh4S3hrMG5BcDNEMWFaenhHNWtNZFMyeDJhSEZhMHVBYjJmTDhTaXp0Ymp4TkdkZHlPMWFSOVV6WEFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MDkxMjY2CWZpbGU6TWVnYUxvYWRfMS4xMC4xN194NjQtc2V0dXAubnNpcy56aXAKNzZCekFiS2Q4UEt4NXFyb0x1bytvckFyZW92OUFJSUE5Y2pmNmMxYTZhRmFhS2o1ZzE3WGdIcjZnQ3ZvdTZ6YnI4TkE1YUxtK2lJRkx5Nk9pamRJQXc9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.17/MegaLoad_1.10.17_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtjbXBpUmEzeVZpUGZ0S1FoYkRjUjdTR1R5eWdmcHUyNjN5cDFhelZxR05KTGlZVC9abFhrVWt5RC9vOWoySWJlQmhMWHJvdVArU0QySmI4cDg0TEFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MDkyNjczCWZpbGU6TWVnYUxvYWRfMS4xMC4xOF94NjQtc2V0dXAubnNpcy56aXAKU2tpVHRWdk9OQXpENjFWWTRYQ3lETnhGQjlaUkdWaG9mY21taTVHbGhKYTF1SUE1c2E0aCs1cFBwZDJNSUtjTTFvaGl4bE1NZnF5S3R2MXYxK0xnQnc9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.18/MegaLoad_1.10.18_x64-setup.nsis.zip"
     }
   }
 }

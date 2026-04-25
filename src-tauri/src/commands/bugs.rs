@@ -395,6 +395,7 @@ pub async fn submit_ticket(
     user_id: String,
     user_name: String,
     priority: Option<String>,
+    mod_tags: Option<Vec<String>>,
 ) -> Result<TicketSummary, String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<TicketSummary, String> {
     // Validate type
@@ -407,6 +408,24 @@ pub async fn submit_ticket(
         Some(p) if matches!(p, "urgent" | "normal" | "low") => p.to_string(),
         Some(other) => return Err(format!("Priority must be 'urgent', 'normal', or 'low' (got '{}')", other)),
     };
+    // Sanitise user-supplied mod tags. Empty/unknown values are dropped silently
+    // so the form can pass an unfiltered list. The frontend's allowlist is the
+    // canonical one — but we re-check here so an attacker with the Tauri channel
+    // can't smuggle arbitrary labels.
+    let allowed_mod_tags: &[&str] = &[
+        "megaload", "megaapp", "megahoe", "megamegingjord", "megafood", "megashot",
+        "megaqol", "megastuff", "megafishing", "megafactory", "megatrainer",
+        "megabuilder", "megaskeletons", "megadataextractor", "megabugs", "workflow",
+    ];
+    let mut sanitised_tags: Vec<String> = Vec::new();
+    if let Some(tags) = mod_tags {
+        for raw in tags {
+            let t = raw.trim().to_lowercase();
+            if !t.is_empty() && allowed_mod_tags.contains(&t.as_str()) && !sanitised_tags.contains(&t) {
+                sanitised_tags.push(t);
+            }
+        }
+    }
     let title = title.trim().to_string();
     if title.is_empty() || title.len() > 120 {
         return Err("Title must be 1-120 characters".to_string());
@@ -496,12 +515,22 @@ pub async fn submit_ticket(
         is_admin: false,
     };
 
+    // Labels: ticket type + sanitised user-selected mod tags. Order matters for
+    // index display (type first), and we de-dupe in case the frontend sent the
+    // type as part of the tag list.
+    let mut labels: Vec<String> = vec![ticket_type.clone()];
+    for tag in &sanitised_tags {
+        if !labels.contains(tag) {
+            labels.push(tag.clone());
+        }
+    }
+
     let ticket = Ticket {
         id: ticket_id.clone(),
         ticket_type: ticket_type.clone(),
         title: title.clone(),
         status: "open".to_string(),
-        labels: vec![ticket_type.clone()],
+        labels: labels.clone(),
         author_id: user_id.clone(),
         author_name: user_name.clone(),
         created_at: now.clone(),
@@ -533,7 +562,7 @@ pub async fn submit_ticket(
         created_at: now.clone(),
         updated_at: now,
         message_count: 1,
-        labels: ticket.labels.clone(),
+        labels,
         priority: Some(priority),
     };
 
@@ -711,6 +740,62 @@ pub async fn update_ticket_status(
     })
     .await
     .map_err(|e| format!("update_ticket_status task panicked: {}", e))?
+}
+
+/// Update ticket priority. Owner-only — collaborators cannot reprioritise tickets.
+/// Validates priority value, updates both the ticket file and the index.json entry.
+#[command]
+pub async fn update_ticket_priority(
+    ticket_id: String,
+    priority: String,
+    caller_user_id: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
+        if !["urgent", "normal", "low"].contains(&priority.as_str()) {
+            return Err("Priority must be 'urgent', 'normal', or 'low'".to_string());
+        }
+        if !ticket_id
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-')
+        {
+            return Err("Invalid ticket ID".to_string());
+        }
+        // Caller user_id is accepted for symmetry with update_ticket_status but the
+        // local owner key is the only thing that grants access here.
+        let _ = caller_user_id;
+        if !is_local_owner() {
+            return Err("Only the Lord changes ticket priority, mate".to_string());
+        }
+
+        let now = iso_now();
+        let ticket_path = format!("tickets/{}.json", ticket_id);
+        let (content, sha) = github_get_file(&ticket_path)?;
+        let mut ticket: Ticket =
+            serde_json::from_str(&content).map_err(|e| format!("Ticket parse error: {}", e))?;
+
+        ticket.priority = Some(priority.clone());
+        ticket.updated_at = now.clone();
+
+        let ticket_json = serde_json::to_string_pretty(&ticket).map_err(|e| e.to_string())?;
+        github_put_file(
+            &ticket_path,
+            ticket_json.as_bytes(),
+            &format!("Set ticket {} priority: {}", ticket_id, priority),
+            Some(&sha),
+        )?;
+
+        let priority_for_closure = priority.clone();
+        let now_for_closure = now.clone();
+        update_index_entry(&ticket_id, move |entry| {
+            entry.priority = Some(priority_for_closure.clone());
+            entry.updated_at = now_for_closure.clone();
+        })?;
+
+        app_log(&format!("MegaBugs: ticket {} priority -> {}", ticket_id, priority));
+        Ok(())
+    })
+    .await
+    .map_err(|e| format!("update_ticket_priority task panicked: {}", e))?
 }
 
 /// Delete a ticket and all its attachments. Owner-only — collaborators
