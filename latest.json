@@ -1,11 +1,11 @@
 {
-  "version": "1.10.19",
-  "notes": "MegaBugs: Normal priority now renders a proper teal smiley badge alongside Urgent and Low — visual consistency across all three priorities.",
-  "pub_date": "2026-04-25T05:25:00Z",
+  "version": "1.10.20",
+  "notes": "Sync hardening: polling pauses while Valheim is running and a single push fires on game exit; the noop reconcile spam in the Sync Log is gone. Log Viewer: action buttons reflowed below the tab strip, Export/Copy added for Update History and Sync Log, and ticket message text in MegaBugs is now selectable.",
+  "pub_date": "2026-04-25T05:50:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUdPV085UVFtWlNMQ09OZHNFa3hOclJ3NDVnSFhldStCQUxzV2xyRGt2eEYxbmUrSGtXbDRPa2EvazhZVEgvTlI1U0NCMlM5L2JsUmQwWDRoYkdBVkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MDkzMTE1CWZpbGU6TWVnYUxvYWRfMS4xMC4xOV94NjQtc2V0dXAubnNpcy56aXAKd2szckdkWlFkWnc5aFpocTY0d1F4QVlaZWlMZ2FxYWFkQmE1ak42Rk9HcEpMdkR2cTdCeDlhaTQvZVBUQWgrUHZ4aVJoUWFCN0tWWTFENnFMaUw2RHc9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.19/MegaLoad_1.10.19_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZZYTh0UmhEZXZqM0ZkQ0IycERnYkVaNUFNcnJKemorZjFOQXpRL3B6Q0NzK0hXaDg0cjB6RkVML3NZaDRzbUNObzB1bFFBbWJjNlNjL2NWbGRPMVFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MDkzODM2CWZpbGU6TWVnYUxvYWRfMS4xMC4yMF94NjQtc2V0dXAubnNpcy56aXAKRkkzNUtkMG9QbzFlcmhVNmxjQkNYbHJ5TDJzaUk5bTNibmJrdlhPS3BIdnhtVEd0bEdwWGNNUW9sOFo2aFVVY2gwSDloR2ZKcFNDcUVSdkVjZ3lNQ3c9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.20/MegaLoad_1.10.20_x64-setup.nsis.zip"
     }
   }
 }

@@ -34,6 +34,7 @@ import { useToastStore } from "../../stores/toastStore";
 import { usePlayerDataStore } from "../../stores/playerDataStore";
 import { useIdentityStore } from "../../stores/identityStore";
 import { useSyncStore } from "../../stores/syncStore";
+import { useGameStatusStore } from "../../stores/gameStatusStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useBugStore } from "../../stores/bugStore";
@@ -164,14 +165,25 @@ export function Sidebar() {
     }
   }, [launchError]);
 
-  // Poll game/Steam status every 3 seconds
+  // Poll game/Steam status every 3 seconds. Mirror into useGameStatusStore so
+  // useAutoSync (and anyone else) can react to game-running transitions
+  // without re-polling.
   useEffect(() => {
     if (!valheimPath) return;
+    const setStoreStatus = useGameStatusStore.getState().setStatus;
     const poll = () =>
-      checkGameStatus(valheimPath).then(setGameStatus).catch((e) => console.warn("[MegaLoad]", e));
+      checkGameStatus(valheimPath)
+        .then((s) => {
+          setGameStatus(s);
+          setStoreStatus(s);
+        })
+        .catch((e) => console.warn("[MegaLoad]", e));
     poll();
     const id = setInterval(poll, 3000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      setStoreStatus(null);
+    };
   }, [valheimPath]);
 
   const handleLaunch = async () => {

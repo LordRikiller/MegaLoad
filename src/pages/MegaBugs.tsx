@@ -612,7 +612,7 @@ export function MegaBugs() {
                     {formatTimestamp(msg.timestamp)}
                   </span>
                 </div>
-                <p className="text-sm text-zinc-300 whitespace-pre-wrap">{msg.text}</p>
+                <p className="text-sm text-zinc-300 whitespace-pre-wrap select-text cursor-text">{msg.text}</p>
                 {msg.images.length > 0 && (
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {msg.images.map((path, i) => (

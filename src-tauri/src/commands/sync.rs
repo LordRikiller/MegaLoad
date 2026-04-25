@@ -655,17 +655,19 @@ pub fn sync_pull_bundle(profile_id: String, bepinex_path: String) -> Result<Sync
     let nothing_changed = result.configs_updated == 0
         && result.toggled_mods.is_empty()
         && result.missing_mods.is_empty();
-    sync_log::emit(
-        "PullBundle",
-        if nothing_changed { "noop" } else { "success" },
-        format!(
-            "{}: {} configs, {} toggled, {} missing",
-            result.profile_name,
-            result.configs_updated,
-            result.toggled_mods.len(),
-            result.missing_mods.len()
-        ),
-    );
+    if !nothing_changed {
+        sync_log::emit(
+            "PullBundle",
+            "success",
+            format!(
+                "{}: {} configs, {} toggled, {} missing",
+                result.profile_name,
+                result.configs_updated,
+                result.toggled_mods.len(),
+                result.missing_mods.len()
+            ),
+        );
+    }
 
     Ok(result)
 }
@@ -1127,12 +1129,14 @@ fn sync_pull_player_data_impl() -> Result<(PlayerReconcileSummary, Vec<Character
         "Sync pull player data: {} pulled, {} skipped",
         summary.pulled, summary.skipped
     ));
-    let result = if summary.pulled == 0 { "noop" } else { "success" };
-    sync_log::emit(
-        "PullPlayerData",
-        result,
-        format!("{} pulled, {} skipped", summary.pulled, summary.skipped),
-    );
+    if summary.pulled > 0 || summary.skipped > 0 {
+        let result = if summary.pulled == 0 { "noop" } else { "success" };
+        sync_log::emit(
+            "PullPlayerData",
+            result,
+            format!("{} pulled, {} skipped", summary.pulled, summary.skipped),
+        );
+    }
     Ok((summary, previews))
 }
 
@@ -1155,15 +1159,21 @@ fn sync_reconcile_player_data_impl() -> Result<PlayerReconcileSummary, String> {
         "Sync reconcile: {} pulled, {} pushed, {} skipped",
         summary.pulled, summary.pushed, summary.skipped
     ));
-    let result = if summary.pulled == 0 && summary.pushed == 0 { "noop" } else { "success" };
-    sync_log::emit(
-        "ReconcilePlayerData",
-        result,
-        format!(
-            "{} pulled, {} pushed, {} skipped",
-            summary.pulled, summary.pushed, summary.skipped
-        ),
-    );
+    // Only emit reconcile rows when something actually moved or got skipped —
+    // the 30s poll otherwise paints the user-visible Sync Log with "0 pulled,
+    // 0 pushed, 0 skipped" rows that carry no diagnostic value. Diagnostics
+    // still go to app_log above.
+    if summary.pulled > 0 || summary.pushed > 0 || summary.skipped > 0 {
+        let result = if summary.pulled == 0 && summary.pushed == 0 { "noop" } else { "success" };
+        sync_log::emit(
+            "ReconcilePlayerData",
+            result,
+            format!(
+                "{} pulled, {} pushed, {} skipped",
+                summary.pulled, summary.pushed, summary.skipped
+            ),
+        );
+    }
     Ok(summary)
 }
 
@@ -1429,12 +1439,9 @@ fn merge_and_push_mega_lists(local_blob_json: &str) -> Result<String, String> {
                 "MegaList sync: merged content matches remote ({} lists) — no push",
                 list_count
             ));
-            sync_log::emit(
-                "ReconcileMegaLists",
-                "noop",
-                format!("{} lists, no changes", list_count),
-            );
-            // Return remote untouched so caller doesn't bump its local updated_at unnecessarily.
+            // Deliberately NOT emitting a sync_log event for noop reconciles —
+            // the 30s poll cadence floods the user-visible Sync Log with
+            // "no changes" rows. Diagnostics still go to app_log above.
             return Ok(remote_json);
         }
 

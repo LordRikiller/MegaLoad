@@ -40,12 +40,14 @@ type LogTab = "bepinex" | "updates" | "sync";
 // Format: LogOutput_YYYY-MM-DD_HH-MM-SS_{player_id}.log
 // Timestamp and player_id make each export uniquely identifiable per-user,
 // so support can distinguish "latest log for player X" from "latest overall".
-function buildLogFilename(playerId: string | undefined): string {
-  const d = new Date();
+function stampFor(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+}
+
+function buildLogFilename(playerId: string | undefined): string {
   const idSegment = playerId ? `_${playerId}` : "";
-  return `LogOutput_${stamp}${idSegment}.log`;
+  return `LogOutput_${stampFor(new Date())}${idSegment}.log`;
 }
 
 export function LogViewer() {
@@ -111,6 +113,65 @@ export function LogViewer() {
   const handleClearSyncEvents = async () => {
     await clearSyncEvents();
     setSyncEvents([]);
+  };
+
+  const formatSyncEventsText = useCallback(() => {
+    return syncEvents
+      .map((evt) => {
+        const ts = formatTimestampWithSeconds(evt.timestamp);
+        const label = ACTION_LABELS[evt.action] ?? evt.action;
+        return `[${ts}] ${label.padEnd(24)} ${evt.result.toUpperCase().padEnd(8)} ${evt.detail}`;
+      })
+      .join("\n");
+  }, [syncEvents]);
+
+  const handleExportSync = async () => {
+    if (syncEvents.length === 0) return;
+    const filename = `SyncLog_${stampFor(new Date())}${identity?.user_id ? `_${identity.user_id}` : ""}.log`;
+    const dir = await getDiagnosticLogsPath().catch(() => null);
+    const defaultPath = dir ? `${dir}${dir.includes("\\") ? "\\" : "/"}${filename}` : filename;
+    const dest = await save({
+      defaultPath,
+      filters: [{ name: "Log Files", extensions: ["log", "txt"] }],
+    });
+    if (!dest) return;
+    await saveTextFile(dest, formatSyncEventsText());
+  };
+
+  const handleCopySync = async () => {
+    if (syncEvents.length === 0) return;
+    await navigator.clipboard.writeText(formatSyncEventsText());
+  };
+
+  const formatUpdatesText = useCallback(() => {
+    return updateEntries
+      .map((entry) => {
+        const ts = formatTimestampWithSeconds(entry.timestamp);
+        const kind = entry.update_type === "app" ? "APP" : "MOD";
+        const versions = entry.from_version
+          ? `v${entry.from_version.replace(/^v/, "")} -> v${entry.to_version.replace(/^v/, "")}`
+          : `installed v${entry.to_version.replace(/^v/, "")}`;
+        return `[${ts}] [${kind}] ${entry.name}: ${versions}`;
+      })
+      .join("\n");
+  }, [updateEntries]);
+
+  const handleExportUpdates = async () => {
+    if (updateEntries.length === 0) return;
+    const filename = `UpdateHistory_${stampFor(new Date())}${identity?.user_id ? `_${identity.user_id}` : ""}.log`;
+    const dir = await getDiagnosticLogsPath().catch(() => null);
+    const defaultPath = dir ? `${dir}${dir.includes("\\") ? "\\" : "/"}${filename}` : filename;
+    const dest = await save({
+      defaultPath,
+      filters: [{ name: "Log Files", extensions: ["log", "txt"] }],
+    });
+    if (!dest) return;
+    await saveTextFile(dest, formatUpdatesText());
+  };
+
+  const handleCopyUpdates = async () => {
+    if (updateEntries.length === 0) return;
+    await navigator.clipboard.writeText(formatUpdatesText());
   };
 
   // Auto-refresh
@@ -196,84 +257,71 @@ export function LogViewer() {
     );
   }
 
+  const actionBtn = "flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-30";
+  const dangerBtn = "flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30";
+
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">Log Viewer</h1>
-          {/* Tabs */}
-          <div className="flex items-center gap-1 mt-2">
-            <button
-              onClick={() => setActiveTab("bepinex")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                activeTab === "bepinex"
-                  ? "bg-brand-500/15 text-brand-400"
-                  : "text-zinc-500 hover:text-zinc-300"
-              )}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              BepInEx Log
-            </button>
-            <button
-              onClick={() => setActiveTab("updates")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                activeTab === "updates"
-                  ? "bg-brand-500/15 text-brand-400"
-                  : "text-zinc-500 hover:text-zinc-300"
-              )}
-            >
-              <History className="w-3.5 h-3.5" />
-              Update History
-              {updateEntries.length > 0 && (
-                <span className="text-[10px] tabular-nums text-zinc-500">{updateEntries.length}</span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("sync")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                activeTab === "sync"
-                  ? "bg-brand-500/15 text-brand-400"
-                  : "text-zinc-500 hover:text-zinc-300"
-              )}
-            >
-              <Cloud className="w-3.5 h-3.5" />
-              Sync Log
-              {syncEvents.length > 0 && (
-                <span className="text-[10px] tabular-nums text-zinc-500">{syncEvents.length}</span>
-              )}
-            </button>
-          </div>
-        </div>
-        {activeTab === "sync" && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchSyncEvents}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors"
-            >
-              <RefreshCw className={cn("w-3.5 h-3.5", syncLoading && "animate-spin")} />
-              Refresh
-            </button>
-            <button
-              onClick={handleClearSyncEvents}
-              disabled={syncEvents.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Clear
-            </button>
-          </div>
-        )}
+      {/* Title */}
+      <div className="mb-3">
+        <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">Log Viewer</h1>
+      </div>
+
+      {/* Tabs row — separated from action buttons so the layout doesn't shift
+          when switching tabs and the action set can grow per tab without
+          wrapping the menu. */}
+      <div className="flex items-center gap-1 mb-3 flex-wrap">
+        <button
+          onClick={() => setActiveTab("bepinex")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            activeTab === "bepinex"
+              ? "bg-brand-500/15 text-brand-400"
+              : "text-zinc-500 hover:text-zinc-300"
+          )}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          BepInEx Log
+        </button>
+        <button
+          onClick={() => setActiveTab("updates")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            activeTab === "updates"
+              ? "bg-brand-500/15 text-brand-400"
+              : "text-zinc-500 hover:text-zinc-300"
+          )}
+        >
+          <History className="w-3.5 h-3.5" />
+          Update History
+          {updateEntries.length > 0 && (
+            <span className="text-[10px] tabular-nums text-zinc-500">{updateEntries.length}</span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("sync")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            activeTab === "sync"
+              ? "bg-brand-500/15 text-brand-400"
+              : "text-zinc-500 hover:text-zinc-300"
+          )}
+        >
+          <Cloud className="w-3.5 h-3.5" />
+          Sync Log
+          {syncEvents.length > 0 && (
+            <span className="text-[10px] tabular-nums text-zinc-500">{syncEvents.length}</span>
+          )}
+        </button>
+      </div>
+
+      {/* Action buttons row — sits below the tabs so the chrome reads
+          top-to-bottom: title, tabs, actions, content. */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
         {activeTab === "bepinex" && (
-          <div className="flex items-center gap-2">
-            {/* Auto-refresh toggle */}
+          <>
             <button
-              onClick={() =>
-                setRefreshInterval((prev) => (prev ? null : 3000))
-              }
+              onClick={() => setRefreshInterval((prev) => (prev ? null : 3000))}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors",
                 refreshInterval
@@ -282,60 +330,64 @@ export function LogViewer() {
               )}
             >
               <RefreshCw
-                className={cn(
-                  "w-3.5 h-3.5",
-                  refreshInterval && "animate-spin"
-                )}
-                style={{
-                  animationDuration: refreshInterval ? "3s" : undefined,
-                }}
+                className={cn("w-3.5 h-3.5", refreshInterval && "animate-spin")}
+                style={{ animationDuration: refreshInterval ? "3s" : undefined }}
               />
               {refreshInterval ? "Live" : "Paused"}
             </button>
-
-            <button
-              onClick={fetchLog}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors"
-            >
+            <button onClick={fetchLog} className={actionBtn}>
               <RefreshCw className="w-3.5 h-3.5" />
               Refresh
             </button>
-
-            <button
-              onClick={handleExport}
-              disabled={filteredLines.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-30"
-            >
+            <button onClick={handleExport} disabled={filteredLines.length === 0} className={actionBtn}>
               <Download className="w-3.5 h-3.5" />
               Export
             </button>
-
-            <button
-              onClick={handleCopy}
-              disabled={filteredLines.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-30"
-            >
+            <button onClick={handleCopy} disabled={filteredLines.length === 0} className={actionBtn}>
               <Copy className="w-3.5 h-3.5" />
               Copy
             </button>
-
-            <button
-              onClick={handleDownload}
-              disabled={logSize === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-30"
-            >
+            <button onClick={handleDownload} disabled={logSize === 0} className={actionBtn}>
               <FileText className="w-3.5 h-3.5" />
               Download Full Log
             </button>
-
-            <button
-              onClick={handleClear}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg glass border border-zinc-800 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
-            >
+            <button onClick={handleClear} className={dangerBtn}>
               <Trash2 className="w-3.5 h-3.5" />
               Clear
             </button>
-          </div>
+          </>
+        )}
+        {activeTab === "updates" && (
+          <>
+            <button onClick={handleExportUpdates} disabled={updateEntries.length === 0} className={actionBtn}>
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </button>
+            <button onClick={handleCopyUpdates} disabled={updateEntries.length === 0} className={actionBtn}>
+              <Copy className="w-3.5 h-3.5" />
+              Copy
+            </button>
+          </>
+        )}
+        {activeTab === "sync" && (
+          <>
+            <button onClick={fetchSyncEvents} className={actionBtn}>
+              <RefreshCw className={cn("w-3.5 h-3.5", syncLoading && "animate-spin")} />
+              Refresh
+            </button>
+            <button onClick={handleExportSync} disabled={syncEvents.length === 0} className={actionBtn}>
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </button>
+            <button onClick={handleCopySync} disabled={syncEvents.length === 0} className={actionBtn}>
+              <Copy className="w-3.5 h-3.5" />
+              Copy
+            </button>
+            <button onClick={handleClearSyncEvents} disabled={syncEvents.length === 0} className={dangerBtn}>
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear
+            </button>
+          </>
         )}
       </div>
 
