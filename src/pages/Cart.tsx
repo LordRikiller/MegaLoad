@@ -91,6 +91,7 @@ export function Cart() {
     updateCartLevel,
     clearCart,
     setSelectedItem,
+    clearNavHistory,
   } = useValheimDataStore();
 
   const [showListModal, setShowListModal] = useState(false);
@@ -118,6 +119,7 @@ export function Cart() {
   const navigateToItem = (id: string) => {
     const item = getItemById(id);
     if (item) {
+      clearNavHistory();
       setSelectedItem(item);
       navigate("/valheim-data");
     }

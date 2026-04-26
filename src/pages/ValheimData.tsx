@@ -515,10 +515,13 @@ export function ValheimData() {
   }, [sortOpen, exportOpen]);
 
   // Save scroll position before navigating to detail, restore on back
+  const clearNavHistory = useValheimDataStore((s) => s.clearNavHistory);
   const selectItem = (item: ValheimItem) => {
     if (scrollContainerRef.current) {
       savedScrollPos.current = scrollContainerRef.current.scrollTop;
     }
+    // List → detail starts a fresh navigation chain.
+    clearNavHistory();
     setSelectedItem(item);
   };
 
@@ -637,12 +640,17 @@ export function ValheimData() {
 
   const activeFilterCount = activeTypes.length + activeSubcategories.length + activeBiomes.length + activeStations.length + activeFactories.length + activeVendors.length + (onlyTameable ? 1 : 0) + activeFactions.length + activeDealsDamage.length + activeWeakTo.length;
 
-  // Browser-style back — if user landed here from another page (e.g. PlayerData
-  // clicking an inventory item), honour the stored returnPath. Otherwise just
-  // clear the selected detail to drop back to the list.
+  // Browser-style back — first try to pop the in-page nav history (so chained
+  // detail clicks unwind one step at a time). If history is empty: honour the
+  // stored returnPath from a cross-page link (e.g. PlayerData → item detail),
+  // otherwise just clear the selected detail to drop back to the list.
   const returnPath = useValheimDataStore((s) => s.returnPath);
   const setReturnPath = useValheimDataStore((s) => s.setReturnPath);
+  const popSelection = useValheimDataStore((s) => s.popSelection);
   const backFromDetail = (clearer: () => void) => () => {
+    if (popSelection()) {
+      return;
+    }
     if (returnPath) {
       const path = returnPath;
       setReturnPath(null);
@@ -1105,7 +1113,7 @@ export function ValheimData() {
                     </FilterCheckbox>
                     <button
                       title={`View ${station} page`}
-                      onClick={() => setSelectedStation(station)}
+                      onClick={() => { clearNavHistory(); setSelectedStation(station); }}
                       className="p-1 text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
                     >
                       <ExternalLink className="w-3 h-3" />
@@ -1135,7 +1143,7 @@ export function ValheimData() {
                     </FilterCheckbox>
                     <button
                       title={`View ${vendor} page`}
-                      onClick={() => setSelectedVendor(vendor)}
+                      onClick={() => { clearNavHistory(); setSelectedVendor(vendor); }}
                       className="p-1 text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
                     >
                       <ExternalLink className="w-3 h-3" />
@@ -1166,7 +1174,7 @@ export function ValheimData() {
                     </FilterCheckbox>
                     <button
                       title={`View ${factory} page`}
-                      onClick={() => setSelectedFactory(factory)}
+                      onClick={() => { clearNavHistory(); setSelectedFactory(factory); }}
                       className="p-1 text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
                     >
                       <ExternalLink className="w-3 h-3" />
@@ -1578,7 +1586,7 @@ function ItemTable({
 // ── Detail View ────────────────────────────────────────────
 
 function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void }) {
-  const { setSelectedItem, setActiveType, setActiveSubcategory, setActiveBiome, setSelectedStation, setSelectedFactory, setSelectedVendor, cartItems, addToCart, removeFromCart, setOnlyTameable } = useValheimDataStore();
+  const { setSelectedItem, setActiveType, setActiveSubcategory, setActiveBiome, cartItems, addToCart, removeFromCart, setOnlyTameable, pushSelection, clearNavHistory } = useValheimDataStore();
   const character = usePlayerDataStore((s) => s.character);
   const [statsLevel, setStatsLevel] = useState(1);
   const [cartLevel, setCartLevel] = useState(item.maxQuality || 1);
@@ -1612,26 +1620,28 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
     const target = getItemById(id);
     if (target) {
       setStatsLevel(1);
-      setSelectedItem(target);
+      pushSelection({ item: target, station: null, factory: null, vendor: null });
     }
   };
 
   const navigateToType = (type: string) => {
+    clearNavHistory();
     setActiveType(type as ItemType);
     setSelectedItem(null);
   };
   const navigateToSubcategory = (type: string, subcategory: string) => {
+    clearNavHistory();
     setActiveType(type as ItemType);
     setActiveSubcategory(subcategory);
     setSelectedItem(null);
   };
   const navigateToBiome = (biome: string) => {
+    clearNavHistory();
     setActiveBiome(biome);
     setSelectedItem(null);
   };
   const navigateToStation = (station: string) => {
-    setSelectedItem(null);
-    setSelectedStation(station);
+    pushSelection({ item: null, station, factory: null, vendor: null });
   };
 
   // Filter out "Set" and "Max Quality" from the stat grid — shown elsewhere
@@ -1674,6 +1684,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                   type="button"
                   title="Filter to all tameable creatures"
                   onClick={() => {
+                    clearNavHistory();
                     setSelectedItem(null);
                     setOnlyTameable(true);
                     setActiveType("Creature");
@@ -1803,7 +1814,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                     <div>
                       <div className="flex items-center justify-between">
                         <button
-                          onClick={() => { setSelectedItem(null); setSelectedVendor(vendorSell.vendor.name); }}
+                          onClick={() => pushSelection({ item: null, station: null, factory: null, vendor: vendorSell.vendor.name })}
                           className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
                         >
                           <VendorIcon name={vendorSell.vendor.name} size={32} />
@@ -1862,6 +1873,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                         tone="purple"
                         title={`Filter to all ${item.faction} creatures`}
                         onClick={() => {
+                          clearNavHistory();
                           setSelectedItem(null);
                           useValheimDataStore.setState({ activeFactions: [item.faction!], activeTypes: ["Creature"] });
                         }}
@@ -1881,7 +1893,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                         label="Yes"
                         tone="emerald"
                         title="Filter to all tameable creatures"
-                        onClick={() => { setSelectedItem(null); setOnlyTameable(true); setActiveType("Creature"); }}
+                        onClick={() => { clearNavHistory(); setSelectedItem(null); setOnlyTameable(true); setActiveType("Creature"); }}
                       />
                     ) : (
                       <DetailChip label="No" tone="zinc" />
@@ -1949,6 +1961,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                                   tone="red"
                                   title={`Filter to creatures that deal ${dmgName}`}
                                   onClick={() => {
+                                    clearNavHistory();
                                     setSelectedItem(null);
                                     useValheimDataStore.setState({
                                       activeDealsDamage: [dmgName],
@@ -1979,6 +1992,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
             {item.type === "Creature" && (item.immuneTo?.length || item.resistantTo?.length || item.weakTo?.length || item.neutralTo?.length || item.staggerLimit) && (() => {
               // Applies the Weak-To filter to a given damage type and returns to the list.
               const filterWeakTo = (dmg: string) => {
+                clearNavHistory();
                 setSelectedItem(null);
                 useValheimDataStore.setState({
                   activeWeakTo: [dmg],
@@ -2261,7 +2275,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                     Processed In
                   </h2>
                   <button
-                    onClick={() => { setSelectedItem(null); setSelectedFactory(ps.station.name); }}
+                    onClick={() => pushSelection({ item: null, station: null, factory: ps.station.name, vendor: null })}
                     className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
                   >
                     <div className="w-8 h-8 rounded bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
@@ -2697,7 +2711,7 @@ function BuildPieceMaterialsView({ materials, subcategories, onItemClick }: {
 // ── Station Detail View ────────────────────────────────────
 
 function StationDetailView({ station, onBack }: { station: string; onBack: () => void }) {
-  const { setSelectedItem, setSelectedStation } = useValheimDataStore();
+  const { pushSelection } = useValheimDataStore();
   const itemsByLevel = getStationItemsByLevel(station);
   const allItems = getStationItems(station);
   const upgrades = getStationUpgrades(station);
@@ -2715,8 +2729,7 @@ function StationDetailView({ station, onBack }: { station: string; onBack: () =>
   const handleNavigate = (id: string) => {
     const target = getItemById(id);
     if (target) {
-      setSelectedStation(null);
-      setSelectedItem(target);
+      pushSelection({ item: target, station: null, factory: null, vendor: null });
     }
   };
 
@@ -2941,7 +2954,7 @@ function StationDetailView({ station, onBack }: { station: string; onBack: () =>
 // ── Processing Station (Factory) Detail View ────────────────
 
 function ProcessingStationDetailView({ stationName, onBack }: { stationName: string; onBack: () => void }) {
-  const { setSelectedItem, setSelectedFactory } = useValheimDataStore();
+  const { pushSelection } = useValheimDataStore();
   const station = PROCESSING_STATIONS[stationName];
   if (!station) return null;
 
@@ -2951,8 +2964,7 @@ function ProcessingStationDetailView({ stationName, onBack }: { stationName: str
   const handleNavigate = (id: string) => {
     const target = getItemById(id);
     if (target) {
-      setSelectedFactory(null);
-      setSelectedItem(target);
+      pushSelection({ item: target, station: null, factory: null, vendor: null });
     }
   };
 
@@ -3131,14 +3143,13 @@ function ProcessingStationDetailView({ stationName, onBack }: { stationName: str
 // ── Vendor Detail View ─────────────────────────────────────
 
 function VendorDetailView({ vendorName, onBack }: { vendorName: string; onBack: () => void }) {
-  const { setSelectedItem, setSelectedVendor } = useValheimDataStore();
+  const { pushSelection } = useValheimDataStore();
   const vendor = VENDORS[vendorName];
 
   const handleNavigate = (id: string) => {
     const target = getItemById(id);
     if (target) {
-      setSelectedVendor(null);
-      setSelectedItem(target);
+      pushSelection({ item: target, station: null, factory: null, vendor: null });
     }
   };
 

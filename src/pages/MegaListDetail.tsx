@@ -58,6 +58,7 @@ export function MegaListDetail() {
   const setChecked = useMegaListStore((s) => s.setChecked);
   const setSelectedItem = useValheimDataStore((s) => s.setSelectedItem);
   const setReturnPath = useValheimDataStore((s) => s.setReturnPath);
+  const clearNavHistory = useValheimDataStore((s) => s.clearNavHistory);
 
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
@@ -128,6 +129,7 @@ export function MegaListDetail() {
     const target = getItemById(itemId);
     if (!target || !list) return;
     setReturnPath(`/megalist/${list.id}`);
+    clearNavHistory();
     setSelectedItem(target);
     navigate("/valheim-data");
   };

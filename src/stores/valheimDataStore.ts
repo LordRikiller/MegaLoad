@@ -926,6 +926,13 @@ interface ValheimDataState {
   setSelectedStation: (station: string | null) => void;
   setSelectedFactory: (factory: string | null) => void;
   setSelectedVendor: (vendor: string | null) => void;
+  // Browser-style nav history for detail-view chains. Each entry is the
+  // selection snapshot you'd return to when pressing Back. `pushSelection`
+  // captures the current snapshot before applying the new one.
+  navHistory: NavSnapshot[];
+  pushSelection: (next: NavSnapshot) => void;
+  popSelection: () => NavSnapshot | null;
+  clearNavHistory: () => void;
   setViewMode: (mode: ViewMode) => void;
   setTableSort: (key: TableSortKey) => void;
   // Station materials mode: false = show items, "craft" = craft materials, "build" = build materials
@@ -954,9 +961,16 @@ export interface CartEntry {
   targetLevel: number;
 }
 
+export interface NavSnapshot {
+  item: ValheimItem | null;
+  station: string | null;
+  factory: string | null;
+  vendor: string | null;
+}
+
 const savedViewMode = (typeof localStorage !== "undefined" ? localStorage.getItem("valheim-view-mode") : null) as ViewMode | null;
 
-export const useValheimDataStore = create<ValheimDataState>((set) => ({
+export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   query: "",
   activeTypes: [],
   activeSubcategories: [],
@@ -1037,6 +1051,37 @@ export const useValheimDataStore = create<ValheimDataState>((set) => ({
   setSelectedStation: (selectedStation) => set({ selectedStation }),
   setSelectedFactory: (selectedFactory) => set({ selectedFactory }),
   setSelectedVendor: (selectedVendor) => set({ selectedVendor }),
+  navHistory: [],
+  pushSelection: (next) =>
+    set((s) => ({
+      navHistory: [
+        ...s.navHistory,
+        {
+          item: s.selectedItem,
+          station: s.selectedStation,
+          factory: s.selectedFactory,
+          vendor: s.selectedVendor,
+        },
+      ],
+      selectedItem: next.item,
+      selectedStation: next.station,
+      selectedFactory: next.factory,
+      selectedVendor: next.vendor,
+    })),
+  popSelection: (): NavSnapshot | null => {
+    const s = get();
+    if (s.navHistory.length === 0) return null;
+    const prev = s.navHistory[s.navHistory.length - 1];
+    set({
+      navHistory: s.navHistory.slice(0, -1),
+      selectedItem: prev.item,
+      selectedStation: prev.station,
+      selectedFactory: prev.factory,
+      selectedVendor: prev.vendor,
+    });
+    return prev;
+  },
+  clearNavHistory: () => set({ navHistory: [] }),
   setViewMode: (viewMode) => {
     localStorage.setItem("valheim-view-mode", viewMode);
     set({ viewMode });

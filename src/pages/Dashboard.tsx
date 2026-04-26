@@ -76,11 +76,13 @@ export function Dashboard() {
   const setActiveBiome = useValheimDataStore((s) => s.setActiveBiome);
   const setSelectedItem = useValheimDataStore((s) => s.setSelectedItem);
   const setReturnPath = useValheimDataStore((s) => s.setReturnPath);
+  const clearNavHistory = useValheimDataStore((s) => s.clearNavHistory);
   const navigate = useNavigate();
   const profile = activeProfile();
 
   const openBiome = (biome: string) => {
     setReturnPath("/");
+    clearNavHistory();
     setSelectedItem(null);
     setActiveBiome(biome);
     navigate("/valheim-data");

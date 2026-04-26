@@ -1,11 +1,11 @@
 {
-  "version": "1.10.33",
-  "notes": "Minor Healing Mead and Minor Stamina Mead now appear in the Fermenter list — vestigial pre-Hearth-and-Home recipes had been shadowing the Mead Base → Fermenter chain, leaving both meads with no station and dropping them out of the Meads view (18 meads vs 20 mead bases). Fixed in convert-dump.cjs.",
-  "pub_date": "2026-04-26T11:00:00Z",
+  "version": "1.10.34",
+  "notes": "Browser-style back navigation in Valheim Data — clicking through item → craftable → ingredient now unwinds one step at a time on Back, rather than jumping straight to the list. Owner Download on MegaBugs ticket logs >1 MB now succeeds (Contents API truncated big blobs to empty; falls back to the Git Data API blob endpoint).",
+  "pub_date": "2026-04-26T20:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlKK1k1K2NJSkRZYjZXSHJKd3ZFeVBSSGtQYVdjalpFZjI2b09VOGhETmszZzhqTksyM0lzNmovVG1ZTkZSWWszRERYeWUvZnE5QkkvRGdWVXRGTUF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTk5ODAwCWZpbGU6TWVnYUxvYWRfMS4xMC4zM194NjQtc2V0dXAubnNpcy56aXAKbGZaYldjTG9YZ2QrdGpUaWZrQ3NzNDhGd1ppU1BTVVhLK1V2aHV4aXNZazZmRzdYbWRPS1RWVE45TTg3N29BYVdwdk1Ob285RmtQbU1LR1VlVkdVQkE9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.33/MegaLoad_1.10.33_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBHMUtZQXowNDlQY0NMMk4xbHNzbGp3YnBQOUVwcVFUN2xSMU83czZoQldxMXpYdmFRQkpOeUFxa21nRHc3NUs5WCt3ekNSUjEvK3dPQzBSdHBXUFE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MjAxMjc5CWZpbGU6TWVnYUxvYWRfMS4xMC4zNF94NjQtc2V0dXAubnNpcy56aXAKbmlCZ2NHbG5kSjZBNjNFQno5VlpkTkxrKys3UnZQdHFZYmowd2ErVjcyWEF0SFc1WUlQNitodHRLWGpPNU4yOStBc2NiRzNPL0IyL0JDWHl3RkZNRFE9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.34/MegaLoad_1.10.34_x64-setup.nsis.zip"
     }
   }
 }

@@ -50,6 +50,41 @@ pub fn github_token() -> Result<String, String> {
 struct GitHubContent {
     sha: String,
     content: Option<String>,
+    #[serde(default)]
+    encoding: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct GitHubBlob {
+    content: String,
+    encoding: String,
+}
+
+/// Fetch a blob's base64 content via the Git Data API. Used as a fallback for
+/// blobs >1 MB where the Contents API returns `content: ""` and `encoding: "none"`.
+fn github_get_blob_base64(sha: &str) -> Result<String, String> {
+    let token = github_token()?;
+    let url = format!("https://api.github.com/repos/{}/git/blobs/{}", REPO, sha);
+    let resp = crate::commands::http::agent()
+        .get(&url)
+        .set("Authorization", &format!("token {}", token))
+        .set("User-Agent", USER_AGENT)
+        .set("Accept", "application/vnd.github+json")
+        .call()
+        .map_err(|e| format!("GitHub blob GET failed for {}: {}", sha, e))?;
+
+    let body = resp
+        .into_string()
+        .map_err(|e| format!("Read error: {}", e))?;
+    let blob: GitHubBlob = serde_json::from_str(&body)
+        .map_err(|e| format!("Parse error for blob {}: {}", sha, e))?;
+    if blob.encoding != "base64" {
+        return Err(format!(
+            "Unexpected blob encoding '{}' for sha {}",
+            blob.encoding, sha
+        ));
+    }
+    Ok(blob.content.replace('\n', "").replace('\r', ""))
 }
 
 /// Read a file from the repo. Returns (content_string, sha).
@@ -72,9 +107,24 @@ pub fn github_get_file(path: &str) -> Result<(String, String), String> {
 
     let raw = gc
         .content
+        .clone()
         .unwrap_or_default()
         .replace('\n', "")
         .replace('\r', "");
+
+    // Contents API truncates blobs >1 MB: content is empty and encoding is "none".
+    // Fall back to the Git Data API blob endpoint to fetch the full base64 payload.
+    let encoding_is_base64 = gc
+        .encoding
+        .as_deref()
+        .map(|e| e.eq_ignore_ascii_case("base64"))
+        .unwrap_or(false);
+    let raw = if raw.is_empty() || !encoding_is_base64 {
+        github_get_blob_base64(&gc.sha)?
+    } else {
+        raw
+    };
+
     let decoded = B64
         .decode(&raw)
         .map_err(|e| format!("Base64 decode failed: {}", e))?;
@@ -231,8 +281,21 @@ pub fn github_get_raw_base64(path: &str) -> Result<String, String> {
 
     let raw = gc
         .content
+        .clone()
         .unwrap_or_default()
         .replace('\n', "")
         .replace('\r', "");
+
+    // Contents API truncates blobs >1 MB: content is empty and encoding is "none".
+    // Fall back to the Git Data API blob endpoint, which returns base64 regardless of size.
+    let encoding_is_base64 = gc
+        .encoding
+        .as_deref()
+        .map(|e| e.eq_ignore_ascii_case("base64"))
+        .unwrap_or(false);
+    if raw.is_empty() || !encoding_is_base64 {
+        return github_get_blob_base64(&gc.sha);
+    }
+
     Ok(raw)
 }

@@ -155,6 +155,7 @@ export function PlayerData() {
   const setSelectedItem = useValheimDataStore((s) => s.setSelectedItem);
   const setActiveBiome = useValheimDataStore((s) => s.setActiveBiome);
   const setReturnPath = useValheimDataStore((s) => s.setReturnPath);
+  const clearNavHistory = useValheimDataStore((s) => s.clearNavHistory);
   const addToast = useToastStore((s) => s.addToast);
   const {
     characters,
@@ -171,6 +172,7 @@ export function PlayerData() {
     const item = itemMap.get(prefabId);
     if (item) {
       setReturnPath("/player-data");
+      clearNavHistory();
       setSelectedItem(item);
       navigate("/valheim-data");
     }
@@ -178,6 +180,7 @@ export function PlayerData() {
 
   const openBiome = (biome: string) => {
     setReturnPath("/player-data");
+    clearNavHistory();
     setSelectedItem(null);
     setActiveBiome(biome);
     navigate("/valheim-data");
