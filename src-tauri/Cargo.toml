@@ -1,6 +1,6 @@
 [package]
 name = "megaload"
-version = "1.10.27"
+version = "1.10.28"
 description = "MegaLoad - Valheim Mod Manager"
 authors = ["Rik"]
 edition = "2021"

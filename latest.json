@@ -1,11 +1,11 @@
 {
-  "version": "1.10.27",
-  "notes": "Valheim Data — armor set bonus name and tooltip now appear on every item in a set, sourced from Valheim's localization. Covers Ask's Endurance, Berserk, Vilebone Wrath, Fenris blessing, Harvester, Improved archery, and Sneaky.",
-  "pub_date": "2026-04-26T08:55:00Z",
+  "version": "1.10.28",
+  "notes": "Valheim Data — Armor Set card now lists the actual mechanical bonuses each set gives, sourced live from the game via MegaDataExtractor v1.5.0. Examples: Sneaky = +15 Sneak skill; Ask's Endurance = Run stamina drain -10%, Jump stamina cost -10%, Attack stamina cost -20%; Berserk = Health regen +30%, Stamina regen +15%.",
+  "pub_date": "2026-04-26T12:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU1yMzVBSmlrYlVqU0ZISGxnUHRjK2F6eGRHaWtvcnJVeG9VYm4vWTBEaktqVTc1VzF5bnNLaGVrcUN2NlM1VTVmL1k0cmxRenN5UHZ6TXoxN0s3TXdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTU2Nzg4CWZpbGU6TWVnYUxvYWRfMS4xMC4yN194NjQtc2V0dXAubnNpcy56aXAKU1ZzaVdoQ0hiTWI1YkcvV2ZWVWpTdWxHSXlJTzNuTU03Q2U1OElaYkRQazVBa1crYUZLblA0bi90d29PaFpyckpaamRTVGl1Q0R4Tm8vaFFpVHg1QkE9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.27/MegaLoad_1.10.27_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUNZYTRFb1ZDLytxeWpVT3pJTTVTZDRzVEZFUHJ4Q0szZTdiN2FLY3NtR1I2MGFwMndSdEs5UW9YZ2xTZlJjNUNOcDZ6c0txRHd3UGVPTFloc21hdkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTcwNDk3CWZpbGU6TWVnYUxvYWRfMS4xMC4yOF94NjQtc2V0dXAubnNpcy56aXAKajg0Q1ZLYVA5OWNBazFhNkN2Q1h1SWNTcWtEK05wQWlTeTNuN3o1UGtUVEZkbjRrZHhpMzBoSDNvSkNLS2pUQURKT3NvUkhuT284VGpoTUdHQUJrQWc9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.28/MegaLoad_1.10.28_x64-setup.nsis.zip"
     }
   }
 }

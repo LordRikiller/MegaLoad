@@ -2416,6 +2416,17 @@ export interface WorldSource {
   biomes: string[];  // Biomes where this source is found
 }
 
+// Set status effect carried on the chest piece's m_setStatusEffect.
+// Modifiers are the non-zero/non-default SE_Stats fields dumped by
+// MegaDataExtractor v1.5.0+; resistance pairs (fire-resist / physical-weakness)
+// come through via the \`mods\` sub-object when present.
+export interface SetEffect {
+  name: string;        // Internal name (e.g. "SetEffect_FenringArmor")
+  displayName: string; // Localisation token (e.g. "$se_fenringseteffect_name")
+  tooltip: string;     // Localisation token for the in-game tooltip
+  modifiers: Record<string, string | number | boolean | Record<string, string>>;
+}
+
 export type ItemType =
   | "Material"
   | "Weapon"
@@ -2461,6 +2472,7 @@ export interface ValheimItem {
   neutralTo?: string[];  // Creatures only — normal-damage types
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
+  setEffect?: SetEffect | null; // Armor only — set bonus mechanics on the chest piece
 }
 
 export const VALHEIM_ITEMS: ValheimItem[] = [\n`;

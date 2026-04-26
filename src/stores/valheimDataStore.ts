@@ -230,6 +230,24 @@ export function getArmorSet(item: ValheimItem): ArmorSet | null {
 // (skillLevel/skillType, modifyAttackSkill/modifyAttackSkillAmount) are handled
 // separately in `formatSetEffectModifiers`. Anything not in this map but with
 // a non-zero numeric value falls back to a humanised key + raw value.
+// Modifier fields whose default value is 1.0 (multipliers). Skip them when they
+// equal 1.0 so the bullet list isn't padded with "Eitr regen +0%" lines.
+const MULTIPLIER_FIELDS = new Set([
+  "healthRegenMultiplier",
+  "staminaRegenMultiplier",
+  "eitrRegenMultiplier",
+  "damageModifier",
+  "pheromoneLevelUpMultiplier",
+]);
+
+// Always-skip noise from the dump: Unity defaults, internal flags, or fields
+// whose user-facing meaning is opaque without game context.
+const ALWAYS_SKIP_FIELDS = new Set([
+  "hitType",
+  "isNew",
+  "pheromoneLevelUpMultiplier",
+]);
+
 const MODIFIER_LABELS: Record<string, { label: string; format: "percent-cost" | "percent-bonus" | "percent-multiplier" | "additive" | "raw" }> = {
   runStaminaUseModifier:    { label: "Run stamina cost",    format: "percent-cost" },
   runStaminaDrainModifier:  { label: "Run stamina drain",   format: "percent-cost" },
@@ -245,7 +263,7 @@ const MODIFIER_LABELS: Record<string, { label: string; format: "percent-cost" | 
   stealthModifier:          { label: "Stealth",             format: "percent-bonus" },
   fallDamageModifier:       { label: "Fall damage",         format: "percent-bonus" },
   meleeDamageModifier:      { label: "Melee damage",        format: "percent-bonus" },
-  damageModifier:           { label: "Damage dealt",        format: "percent-bonus" },
+  damageModifier:           { label: "Damage dealt",        format: "percent-multiplier" },
   eitrRegenMultiplier:      { label: "Eitr regen",          format: "percent-multiplier" },
   healthRegenMultiplier:    { label: "Health regen",        format: "percent-multiplier" },
   staminaRegenMultiplier:   { label: "Stamina regen",       format: "percent-multiplier" },
@@ -281,22 +299,26 @@ export function formatSetEffectModifiers(
 ): string[] {
   const lines: string[] = [];
 
-  // Skill bonus pair: m_skillLevel + m_skillType → "+25 Sneak skill"
-  const skillLevel = modifiers.skillLevel;
-  const skillType = modifiers.skillType;
-  if (typeof skillLevel === "number" && skillLevel !== 0 && typeof skillType === "string") {
-    const sign = skillLevel > 0 ? "+" : "";
-    lines.push(`${sign}${skillLevel} ${humaniseSkillName(skillType)} skill`);
-  }
-  // Alternative skill bonus pair (used by some sets)
-  const modAttackSkill = modifiers.modifyAttackSkill;
-  const modAttackSkillAmount = modifiers.modifyAttackSkillAmount;
-  if (typeof modAttackSkillAmount === "number" && modAttackSkillAmount !== 0 && typeof modAttackSkill === "string") {
-    const sign = modAttackSkillAmount > 0 ? "+" : "";
-    lines.push(`${sign}${modAttackSkillAmount} ${humaniseSkillName(modAttackSkill)} skill`);
+  // Skill bonus pair as dumped by Valheim's SE_Stats:
+  //   skillLevel = SkillType enum (string, e.g. "Sneak")
+  //   skillLevelModifier = float amount (e.g. 15)
+  // Renders as "+15 Sneak skill".
+  const skillType = modifiers.skillLevel;
+  const skillAmount = modifiers.skillLevelModifier;
+  if (typeof skillType === "string" && typeof skillAmount === "number" && skillAmount !== 0) {
+    const sign = skillAmount > 0 ? "+" : "";
+    lines.push(`${sign}${skillAmount} ${humaniseSkillName(skillType)} skill`);
   }
 
-  // Per-type damage resistances (DamageModifiers struct, dumped as a sub-object)
+  // Standalone "attacks scale with this skill" effect — Fenris ("Bows" makes
+  // unarmed punches scale with your bow skill) and Root use this.
+  const modAttackSkill = modifiers.modifyAttackSkill;
+  if (typeof modAttackSkill === "string" && modAttackSkill !== "None") {
+    lines.push(`Attack damage scales with ${humaniseSkillName(modAttackSkill)} skill`);
+  }
+
+  // Per-type damage resistances (DamageModifiers struct, dumped as a sub-object).
+  // Not present in any current vanilla set effect, but supported for forward-compat.
   const mods = modifiers.mods;
   if (mods && typeof mods === "object" && !Array.isArray(mods)) {
     for (const [dmgType, level] of Object.entries(mods as Record<string, string>)) {
@@ -307,11 +329,15 @@ export function formatSetEffectModifiers(
 
   // Walk the rest using the label map
   const handledKeys = new Set([
-    "skillLevel", "skillType", "modifyAttackSkill", "modifyAttackSkillAmount", "mods",
+    "skillLevel", "skillLevelModifier", "modifyAttackSkill", "mods",
   ]);
   for (const [key, raw] of Object.entries(modifiers)) {
     if (handledKeys.has(key)) continue;
+    if (ALWAYS_SKIP_FIELDS.has(key)) continue;
     if (typeof raw !== "number" || raw === 0) continue;
+    // Skip default-1.0 multipliers (no actual effect)
+    if (MULTIPLIER_FIELDS.has(key) && Math.abs(raw - 1) < 0.0001) continue;
+
     const meta = MODIFIER_LABELS[key];
     if (!meta) {
       // Fallback: humanise camelCase key, render as raw signed value
