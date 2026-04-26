@@ -1171,6 +1171,10 @@ const WORLD_DROPS = {
     {source: "Bone Pile", biome: "Plains", type: "Destructible"},
     {source: "Bone Pile", biome: "Ashlands", type: "Destructible"},
   ],
+  // Dvergr Lantern — pickable from Dvergr settlements/towers/outposts/tunnels in Mistlands.
+  "Lantern": [
+    {source: "Dvergr Structure", biome: "Mistlands", type: "Pickup"},
+  ],
 };
 
 // ── Chest Loot Tables ──

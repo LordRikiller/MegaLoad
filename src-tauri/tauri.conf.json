@@ -1,6 +1,6 @@
 {
   "productName": "MegaLoad",
-  "version": "1.10.31",
+  "version": "1.10.32",
   "identifier": "com.rik.megaload",
   "build": {
     "beforeDevCommand": "npm run dev",

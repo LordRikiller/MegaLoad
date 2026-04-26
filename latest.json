@@ -1,11 +1,11 @@
 {
-  "version": "1.10.31",
-  "notes": "MegaBugs ticket draft retention — your in-progress new ticket is now auto-saved to localStorage so navigating around MegaLoad while writing it no longer loses your work. A NotebookPen icon appears next to the cart in the titlebar whenever you have an unsubmitted draft; click it to jump straight back into the form with everything restored. Also strips the 6 placeholder Ashlands ruin pot pieces (Red and Cracked variants aren't placeable in-game) and lets the build-mats rollup recognise Destructible-source materials like Pot Shards and Charcoal Resin.",
-  "pub_date": "2026-04-26T16:30:00Z",
+  "version": "1.10.32",
+  "notes": "Dvergr Lantern now appears in Build Pieces > Furniture > Materials (it's used 1x each by the Wall Lantern and Pole Lantern), and is correctly tagged as pickable from Dvergr structures in the Mistlands. Was being silently dropped by the build-mats rollup because the game classifies it as a Tool (Torch type), and the existing weapon-upgrade-chain filter was over-eager.",
+  "pub_date": "2026-04-26T18:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtPbDYxNC9lQm9uM1Q1cjVlbDZYY05BNFl4eG5VU3JZQysrYjVVR3AwZTZBNDNteXBDdTNpdFkwYXBmY3lpM1JRMXZ4NGNyako4dk9taHE1c2svT2dJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTgyNDE1CWZpbGU6TWVnYUxvYWRfMS4xMC4zMV94NjQtc2V0dXAubnNpcy56aXAKV3N1cEJ3YU1BTkUxWFhNeFhTR0pnalV5ZG9RRzExTjJPSUdoUmdpakoxeVNveTBXVGpzbHFOUkdCbDl2cENiTG5qVk9aQkx3dXJKeGN4c0N5M0pqQ3c9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.31/MegaLoad_1.10.31_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUdBdjdmZW1GeTJ2c3RnTU1GOE9qdXNwTE1tV2ZkaDQvTm1aTHVUVlFlUDdYc05PYmdwKzYrVm5xc2hnMGpKckFyRTJVaVlBUm5tZE9oZmZZNzhnSndFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTkwNjQ3CWZpbGU6TWVnYUxvYWRfMS4xMC4zMl94NjQtc2V0dXAubnNpcy56aXAKNmVBdzg4RmU2ZmcrT1JJaG1sSk4zOHo2ZThRemxtTzFvNHI1c2NDMXJ5MEhMSVh0ZmEyVnVVenQxZEZuVXpla0gvQkhJVDVtWUJkUEc3bHpER0JJQ3c9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.32/MegaLoad_1.10.32_x64-setup.nsis.zip"
     }
   }
 }

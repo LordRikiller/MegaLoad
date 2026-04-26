@@ -735,11 +735,13 @@ export function getStationMaterials(stationNames: string[], mode: "craft" | "bui
     }
   }
   // Filter out ingredients that are themselves craftable weapons/armor/tools
-  // (e.g. Berserkir Axes used to craft Bleeding Berserkir Axes — that's an upgrade path, not a raw material)
+  // (e.g. Berserkir Axes used to craft Bleeding Berserkir Axes — that's an upgrade path, not a raw material).
+  // Exception: Torch-subcategory items (Dvergr Lantern) are genuine BuildPiece
+  // ingredients (piece_dvergr_lantern + piece_dvergr_lantern_pole), not upgrade chains — keep them.
   const itemMap = new Map(VALHEIM_ITEMS.map(i => [i.id, i]));
   for (const [id] of totals) {
     const ingItem = itemMap.get(id);
-    if (ingItem && ITEM_INGREDIENT_TYPES.has(ingItem.type)) {
+    if (ingItem && ITEM_INGREDIENT_TYPES.has(ingItem.type) && ingItem.subcategory !== "Torch") {
       totals.delete(id);
     }
   }
@@ -822,9 +824,11 @@ export function getBuildPieceMaterials(subcategories: string[]): CartMaterial[] 
   }
   // Drop ingredients that are themselves crafted weapons/armor/tools/ammo so
   // the list stays raw materials only (matches getStationMaterials).
+  // Exception: Torch-subcategory tools (Dvergr Lantern) are real building
+  // ingredients for piece_dvergr_lantern + piece_dvergr_lantern_pole — keep them.
   for (const [id] of totals) {
     const ingItem = _bpItemMap.get(id);
-    if (ingItem && NON_RAW_MAT_TYPES.has(ingItem.type)) {
+    if (ingItem && NON_RAW_MAT_TYPES.has(ingItem.type) && ingItem.subcategory !== "Torch") {
       totals.delete(id);
     }
   }
