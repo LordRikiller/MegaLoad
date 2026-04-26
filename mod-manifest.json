@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-26T18:18:00Z",
+  "updated_at": "2026-04-26T18:32:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -52,8 +52,8 @@
     },
     {
       "name": "MegaFarming",
-      "version": "1.0.1",
-      "download_url": "https://github.com/ccmrik/MegaFarming/releases/download/v1.0.1/MegaFarming.dll",
+      "version": "1.0.2",
+      "download_url": "https://github.com/ccmrik/MegaFarming/releases/download/v1.0.2/MegaFarming.dll",
       "dll_name": "MegaFarming.dll",
       "plugin_folder": "MegaFarming",
       "description": "Mass farming — hold-key mass harvest pickables/beehives, grid plant any cultivator plant, plus custom plantables (bushes, mushrooms, thistle, fiddleheads) added to the Cultivator"
