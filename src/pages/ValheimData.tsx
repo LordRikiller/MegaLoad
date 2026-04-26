@@ -2003,6 +2003,16 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                   <div className="mb-3">
                     <p className="text-xs text-amber-400 font-semibold">{armorSet.bonus.name}</p>
                     <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{armorSet.bonus.tooltip}</p>
+                    {armorSet.bonusLines.length > 0 && (
+                      <ul className="mt-2 space-y-0.5">
+                        {armorSet.bonusLines.map((line) => (
+                          <li key={line} className="text-xs text-zinc-300 flex items-start gap-1.5">
+                            <span className="text-amber-400/60 mt-[2px]">•</span>
+                            <span>{line}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
                 <div className="space-y-1">

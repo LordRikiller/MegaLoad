@@ -1718,6 +1718,10 @@ for (const item of items) {
     stats: stats,
     wikiUrl: WIKI_MAP[item.prefab] ? WIKI_MAP[item.prefab][0] : "",
     wikiGroup: WIKI_MAP[item.prefab] && WIKI_MAP[item.prefab][1] ? WIKI_MAP[item.prefab][1] : "",
+    // Set effect mechanics — only present on the chest piece of each set,
+    // populated by MegaDataExtractor v1.5.0+. `null` for non-chest pieces and
+    // for non-armor items. Frontend looks it up by walking the set on demand.
+    setEffect: item.setEffect || null,
   };
   
   converted.push(entry);

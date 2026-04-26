@@ -154,6 +154,12 @@ export interface ArmorSet {
   pieces: ValheimItem[];
   setSize: number;
   bonus?: ArmorSetBonus;
+  /**
+   * Human-readable mechanical breakdown of the set's status effect.
+   * One line per modifier, e.g. "+25 Sneak skill" or "Run stamina cost -5%".
+   * Empty when MegaDataExtractor hasn't dumped a `setEffect` yet for this set.
+   */
+  bonusLines: string[];
 }
 
 // Set bonus name + tooltip strings, sourced from Valheim's localization
@@ -208,7 +214,142 @@ export function getArmorSet(item: ValheimItem): ArmorSet | null {
   const pieces = VALHEIM_ITEMS.filter((i) =>
     i.stats.some((s) => s.label === "Set" && s.value.startsWith(setId))
   );
-  return { setId, setName: formatSetName(setId), pieces, setSize, bonus: SET_BONUSES[setId] };
+  // Set effect mechanics live on the chest piece; find whichever piece carries it.
+  const setEffect = pieces.find((p) => p.setEffect)?.setEffect ?? null;
+  return {
+    setId,
+    setName: formatSetName(setId),
+    pieces,
+    setSize,
+    bonus: SET_BONUSES[setId],
+    bonusLines: setEffect ? formatSetEffectModifiers(setEffect.modifiers) : [],
+  };
+}
+
+// Human label + suffix for known SE_Stats modifier fields. Pair-bound fields
+// (skillLevel/skillType, modifyAttackSkill/modifyAttackSkillAmount) are handled
+// separately in `formatSetEffectModifiers`. Anything not in this map but with
+// a non-zero numeric value falls back to a humanised key + raw value.
+const MODIFIER_LABELS: Record<string, { label: string; format: "percent-cost" | "percent-bonus" | "percent-multiplier" | "additive" | "raw" }> = {
+  runStaminaUseModifier:    { label: "Run stamina cost",    format: "percent-cost" },
+  runStaminaDrainModifier:  { label: "Run stamina drain",   format: "percent-cost" },
+  jumpStaminaUseModifier:   { label: "Jump stamina cost",   format: "percent-cost" },
+  swimStaminaUseModifier:   { label: "Swim stamina cost",   format: "percent-cost" },
+  attackStaminaUseModifier: { label: "Attack stamina cost", format: "percent-cost" },
+  blockStaminaUseModifier:  { label: "Block stamina cost",  format: "percent-cost" },
+  dodgeStaminaUseModifier:  { label: "Dodge stamina cost",  format: "percent-cost" },
+  sneakStaminaUseModifier:  { label: "Sneak stamina cost",  format: "percent-cost" },
+  speedModifier:            { label: "Run speed",           format: "percent-bonus" },
+  jumpModifier:             { label: "Jump height",         format: "percent-bonus" },
+  noiseModifier:            { label: "Noise",               format: "percent-bonus" },
+  stealthModifier:          { label: "Stealth",             format: "percent-bonus" },
+  fallDamageModifier:       { label: "Fall damage",         format: "percent-bonus" },
+  meleeDamageModifier:      { label: "Melee damage",        format: "percent-bonus" },
+  damageModifier:           { label: "Damage dealt",        format: "percent-bonus" },
+  eitrRegenMultiplier:      { label: "Eitr regen",          format: "percent-multiplier" },
+  healthRegenMultiplier:    { label: "Health regen",        format: "percent-multiplier" },
+  staminaRegenMultiplier:   { label: "Stamina regen",       format: "percent-multiplier" },
+  addMaxCarryWeight:        { label: "Max carry weight",    format: "additive" },
+  pierceArmor:              { label: "Pierce armour",       format: "additive" },
+  armorModifier:            { label: "Armour",              format: "percent-bonus" },
+};
+
+const SKILL_NAME_OVERRIDES: Record<string, string> = {
+  Bows: "Bow",
+  BloodMagic: "Blood Magic",
+  ElementalMagic: "Elemental Magic",
+  Crossbows: "Crossbow",
+};
+
+function humaniseSkillName(skill: string): string {
+  return SKILL_NAME_OVERRIDES[skill] ?? skill;
+}
+
+function formatSignedPercent(value: number): string {
+  const pct = Math.round(value * 100);
+  if (pct === 0) return "0%";
+  return pct > 0 ? `+${pct}%` : `${pct}%`;
+}
+
+/**
+ * Convert a raw SE_Stats modifier object (as dumped by MegaDataExtractor) into
+ * a list of human-readable bullet strings for the UI. Order is stable but not
+ * meaningful — sets are tiny so a flat alphabetical-ish render is fine.
+ */
+export function formatSetEffectModifiers(
+  modifiers: Record<string, string | number | boolean | Record<string, string>>
+): string[] {
+  const lines: string[] = [];
+
+  // Skill bonus pair: m_skillLevel + m_skillType → "+25 Sneak skill"
+  const skillLevel = modifiers.skillLevel;
+  const skillType = modifiers.skillType;
+  if (typeof skillLevel === "number" && skillLevel !== 0 && typeof skillType === "string") {
+    const sign = skillLevel > 0 ? "+" : "";
+    lines.push(`${sign}${skillLevel} ${humaniseSkillName(skillType)} skill`);
+  }
+  // Alternative skill bonus pair (used by some sets)
+  const modAttackSkill = modifiers.modifyAttackSkill;
+  const modAttackSkillAmount = modifiers.modifyAttackSkillAmount;
+  if (typeof modAttackSkillAmount === "number" && modAttackSkillAmount !== 0 && typeof modAttackSkill === "string") {
+    const sign = modAttackSkillAmount > 0 ? "+" : "";
+    lines.push(`${sign}${modAttackSkillAmount} ${humaniseSkillName(modAttackSkill)} skill`);
+  }
+
+  // Per-type damage resistances (DamageModifiers struct, dumped as a sub-object)
+  const mods = modifiers.mods;
+  if (mods && typeof mods === "object" && !Array.isArray(mods)) {
+    for (const [dmgType, level] of Object.entries(mods as Record<string, string>)) {
+      const human = dmgType.charAt(0).toUpperCase() + dmgType.slice(1);
+      lines.push(`${human}: ${level}`);
+    }
+  }
+
+  // Walk the rest using the label map
+  const handledKeys = new Set([
+    "skillLevel", "skillType", "modifyAttackSkill", "modifyAttackSkillAmount", "mods",
+  ]);
+  for (const [key, raw] of Object.entries(modifiers)) {
+    if (handledKeys.has(key)) continue;
+    if (typeof raw !== "number" || raw === 0) continue;
+    const meta = MODIFIER_LABELS[key];
+    if (!meta) {
+      // Fallback: humanise camelCase key, render as raw signed value
+      const human = key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
+      const sign = raw > 0 ? "+" : "";
+      lines.push(`${human} ${sign}${raw}`);
+      continue;
+    }
+    switch (meta.format) {
+      case "percent-cost": {
+        // Negative = reduction, render as `-N%`. Positive = penalty, render `+N%`.
+        const pct = Math.round(raw * 100);
+        const display = pct > 0 ? `+${pct}%` : `${pct}%`;
+        lines.push(`${meta.label} ${display}`);
+        break;
+      }
+      case "percent-bonus": {
+        lines.push(`${meta.label} ${formatSignedPercent(raw)}`);
+        break;
+      }
+      case "percent-multiplier": {
+        // Multiplier of 1.05 = +5%. Multiplier of 0.95 = -5%.
+        lines.push(`${meta.label} ${formatSignedPercent(raw - 1)}`);
+        break;
+      }
+      case "additive": {
+        const sign = raw > 0 ? "+" : "";
+        lines.push(`${meta.label} ${sign}${raw}`);
+        break;
+      }
+      case "raw": {
+        lines.push(`${meta.label}: ${raw}`);
+        break;
+      }
+    }
+  }
+
+  return lines;
 }
 
 // Lightweight helper for list views — just returns the display name, no piece lookup.
