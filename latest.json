@@ -1,11 +1,11 @@
 {
-  "version": "1.10.32",
-  "notes": "Dvergr Lantern now appears in Build Pieces > Furniture > Materials (it's used 1x each by the Wall Lantern and Pole Lantern), and is correctly tagged as pickable from Dvergr structures in the Mistlands. Was being silently dropped by the build-mats rollup because the game classifies it as a Tool (Torch type), and the existing weapon-upgrade-chain filter was over-eager.",
-  "pub_date": "2026-04-26T18:30:00Z",
+  "version": "1.10.33",
+  "notes": "Minor Healing Mead and Minor Stamina Mead now appear in the Fermenter list — vestigial pre-Hearth-and-Home recipes had been shadowing the Mead Base → Fermenter chain, leaving both meads with no station and dropping them out of the Meads view (18 meads vs 20 mead bases). Fixed in convert-dump.cjs.",
+  "pub_date": "2026-04-26T11:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUdBdjdmZW1GeTJ2c3RnTU1GOE9qdXNwTE1tV2ZkaDQvTm1aTHVUVlFlUDdYc05PYmdwKzYrVm5xc2hnMGpKckFyRTJVaVlBUm5tZE9oZmZZNzhnSndFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTkwNjQ3CWZpbGU6TWVnYUxvYWRfMS4xMC4zMl94NjQtc2V0dXAubnNpcy56aXAKNmVBdzg4RmU2ZmcrT1JJaG1sSk4zOHo2ZThRemxtTzFvNHI1c2NDMXJ5MEhMSVh0ZmEyVnVVenQxZEZuVXpla0gvQkhJVDVtWUJkUEc3bHpER0JJQ3c9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.32/MegaLoad_1.10.32_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlKK1k1K2NJSkRZYjZXSHJKd3ZFeVBSSGtQYVdjalpFZjI2b09VOGhETmszZzhqTksyM0lzNmovVG1ZTkZSWWszRERYeWUvZnE5QkkvRGdWVXRGTUF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTk5ODAwCWZpbGU6TWVnYUxvYWRfMS4xMC4zM194NjQtc2V0dXAubnNpcy56aXAKbGZaYldjTG9YZ2QrdGpUaWZrQ3NzNDhGd1ppU1BTVVhLK1V2aHV4aXNZazZmRzdYbWRPS1RWVE45TTg3N29BYVdwdk1Ob285RmtQbU1LR1VlVkdVQkE9PQo=",
+      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.33/MegaLoad_1.10.33_x64-setup.nsis.zip"
     }
   }
 }

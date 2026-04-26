@@ -214,7 +214,12 @@ for (const r of recipes) {
   }
 }
 for (const [finalId, baseRecipe] of Object.entries(MEAD_BASE_MAP)) {
-  if (!recipeMap[finalId]) {
+  // Vestigial Recipe_PotionHealthMinor / Recipe_PotionStaminaMinor entries
+  // exist on the final meads but have no craftingStation — they shadow the
+  // Mead Base → Fermenter chain and leave those meads with station="".
+  // Overwrite when the existing recipe is missing a station.
+  const existing = recipeMap[finalId];
+  if (!existing || !existing.craftingStation) {
     recipeMap[finalId] = baseRecipe;
   }
 }
