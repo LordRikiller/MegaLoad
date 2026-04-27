@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-27T01:00:00Z",
+  "updated_at": "2026-04-27T02:00:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -36,19 +36,19 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.11.2",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.11.2/MegaQoL.dll",
+      "version": "1.11.3",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.11.3/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, ballista, map teleport, plant anywhere, instant mining"
+      "description": "Quality of life — auto repair, refueller, ballista, map teleport, plant anywhere, instant mining (auto-prunes orphan config sections on launch)"
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.2",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.2/MegaStuff.dll",
+      "version": "1.4.3",
+      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.3/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
-      "description": "Storage — quick deposit (now respects AzuEPI extra storage rows), chest auto-pickup, configurable chest sizes (up to 8 rows), craft from containers, pet feeder, ALT+click ignore-from-deposit, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8"
+      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup, configurable chest sizes (up to 8 rows), craft from containers, pet feeder, ALT+click ignore-from-deposit, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch"
     },
     {
       "name": "MegaFarming",
@@ -84,11 +84,11 @@
     },
     {
       "name": "MegaBuilder",
-      "version": "1.4.0",
-      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.4.0/MegaBuilder.dll",
+      "version": "1.4.1",
+      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.4.1/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
-      "description": "Grid alignment for building placement — snap pieces to configurable grid sizes (0.5, 1, 2, 4)"
+      "description": "Grid alignment for building placement — snap pieces to configurable grid sizes (0.5, 1, 2, 4) (auto-prunes orphan config sections on launch)"
     },
     {
       "name": "MegaSkeletons",
