@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-26T18:32:00Z",
+  "updated_at": "2026-04-27T00:30:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -44,11 +44,11 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.3.0",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.3.0/MegaStuff.dll",
+      "version": "1.4.0",
+      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.0/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
-      "description": "Storage — quick deposit, chest auto-pickup, configurable chest sizes, craft from containers, pet feeder"
+      "description": "Storage — quick deposit, chest auto-pickup, configurable chest sizes (now up to 8 rows), craft from containers, pet feeder, ALT+click ignore-from-deposit, SHIFT+drag chest windows"
     },
     {
       "name": "MegaFarming",
