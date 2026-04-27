@@ -52,8 +52,8 @@
     },
     {
       "name": "MegaFarming",
-      "version": "1.1.0",
-      "download_url": "https://github.com/ccmrik/MegaFarming/releases/download/v1.1.0/MegaFarming.dll",
+      "version": "1.1.1",
+      "download_url": "https://github.com/ccmrik/MegaFarming/releases/download/v1.1.1/MegaFarming.dll",
       "dll_name": "MegaFarming.dll",
       "plugin_folder": "MegaFarming",
       "description": "Mass farming — hold-key mass harvest pickables/beehives, grid plant any cultivator plant, plant anywhere (any biome), plus custom plantables (bushes, mushrooms, thistle, fiddleheads) added to the Cultivator"
