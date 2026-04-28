@@ -79,22 +79,27 @@ function effectivePriority(p: TicketPriority | undefined): TicketPriority {
 }
 
 // Canonical lowercase mod/category tags. Stored inside the ticket's `labels` array
-// alongside the existing auto-added `[ticket_type]`. Kept in display order for the picker.
+// alongside the existing auto-added `[ticket_type]`. Display order: Apps first
+// (MegaLoad, MegaApp), then Mods A-Z, then meta tags (MegaBugs, Workflow) last.
 const MOD_TAGS = [
+  // Apps
   "megaload",
   "megaapp",
+  // Mods A-Z
+  "megabuilder",
+  "megadataextractor",
+  "megafactory",
+  "megafarming",
+  "megafishing",
+  "megafood",
   "megahoe",
   "megamegingjord",
-  "megafood",
-  "megashot",
   "megaqol",
-  "megastuff",
-  "megafishing",
-  "megafactory",
-  "megatrainer",
-  "megabuilder",
+  "megashot",
   "megaskeletons",
-  "megadataextractor",
+  "megastuff",
+  "megatrainer",
+  // Meta
   "megabugs",
   "workflow",
 ] as const;
@@ -104,18 +109,19 @@ const MOD_TAG_SET = new Set<string>(MOD_TAGS);
 const MOD_TAG_LABELS: Record<ModTag, string> = {
   megaload: "MegaLoad",
   megaapp: "MegaApp",
+  megabuilder: "MegaBuilder",
+  megadataextractor: "MegaDataExtractor",
+  megafactory: "MegaFactory",
+  megafarming: "MegaFarming",
+  megafishing: "MegaFishing",
+  megafood: "MegaFood",
   megahoe: "MegaHoe",
   megamegingjord: "MegaMegingjord",
-  megafood: "MegaFood",
-  megashot: "MegaShot",
   megaqol: "MegaQoL",
-  megastuff: "MegaStuff",
-  megafishing: "MegaFishing",
-  megafactory: "MegaFactory",
-  megatrainer: "MegaTrainer",
-  megabuilder: "MegaBuilder",
+  megashot: "MegaShot",
   megaskeletons: "MegaSkeletons",
-  megadataextractor: "MegaDataExtractor",
+  megastuff: "MegaStuff",
+  megatrainer: "MegaTrainer",
   megabugs: "MegaBugs",
   workflow: "Workflow",
 };

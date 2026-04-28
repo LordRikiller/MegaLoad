@@ -11,6 +11,7 @@ import {
   Gamepad2,
   Hammer,
   Bone,
+  Sprout,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ export const MOD_ICONS: Record<string, LucideIcon> = {
   megatrainer: Gamepad2,
   megabuilder: Hammer,
   megaskeletons: Bone,
+  megafarming: Sprout,
 };
 
 export function iconForMod(folder: string | null | undefined, fileName: string): LucideIcon {
