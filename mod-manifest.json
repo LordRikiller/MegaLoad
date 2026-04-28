@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-28T02:00:00Z",
+  "updated_at": "2026-04-28T11:40:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -84,8 +84,8 @@
     },
     {
       "name": "MegaBuilder",
-      "version": "1.5.0",
-      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.5.0/MegaBuilder.dll",
+      "version": "1.5.1",
+      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.5.1/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
       "description": "Grid alignment for building placement (snap to 0.5/1/2/4), build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m); auto-prunes orphan config sections on launch"
