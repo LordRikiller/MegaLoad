@@ -68,8 +68,8 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.4.1",
-      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.4.1/MegaFactory.dll",
+      "version": "1.4.2",
+      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.4.2/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
       "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with work order system — runs in background regardless of player distance, leaves 1 of each item type total per container (not per stack)"
