@@ -44,8 +44,8 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.11",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.11/MegaStuff.dll",
+      "version": "1.4.12",
+      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.12/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
       "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup, configurable chest sizes (up to 8 rows), craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch"
