@@ -28,8 +28,8 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.6.46",
-      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.6.46/MegaShot.dll",
+      "version": "2.6.47",
+      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.6.47/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system, Armageddon beam mode"
