@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-01T00:00:00Z",
+  "updated_at": "2026-05-04T10:00:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -97,6 +97,14 @@
       "dll_name": "MegaSkeletons.dll",
       "plugin_folder": "MegaSkeletons",
       "description": "Summoned skeleton buffs (health, speed, HoT, line-of-sight) + portal/dungeon persistence + remote skeleton detonator (AOE explosion + housefire damaging hostiles, trees, rocks and world structures — player builds & pickables spared)"
+    },
+    {
+      "name": "MegaPlanner",
+      "version": "1.0.0",
+      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.0.0/MegaPlanner.dll",
+      "dll_name": "MegaPlanner.dll",
+      "plugin_folder": "MegaPlanner",
+      "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Ghost preview with mousewheel rotation, paced placement (default 4/sec), pulls materials from inventory + nearby chests, and pauses with a top-left HUD message naming the missing item when materials run short."
     }
   ]
 }
