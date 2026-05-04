@@ -36,11 +36,11 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.14.0",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.14.0/MegaQoL.dll",
+      "version": "1.15.0",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.15.0/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining (Build Dust Removal & Rune Build moved to MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch)"
+      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles (Build Dust Removal & Rune Build moved to MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch)"
     },
     {
       "name": "MegaStuff",
