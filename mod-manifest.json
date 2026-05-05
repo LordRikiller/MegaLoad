@@ -84,11 +84,11 @@
     },
     {
       "name": "MegaBuilder",
-      "version": "1.6.1",
-      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.6.1/MegaBuilder.dll",
+      "version": "1.6.2",
+      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.6.2/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
-      "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), 0.5/1/2/4m grid sizes for structural pieces, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m); auto-prunes orphan config sections on launch"
+      "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m); auto-prunes orphan config sections on launch"
     },
     {
       "name": "MegaSkeletons",
