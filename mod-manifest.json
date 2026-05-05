@@ -36,16 +36,16 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.15.0",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.15.0/MegaQoL.dll",
+      "version": "1.16.0",
+      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.16.0/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles (Build Dust Removal & Rune Build moved to MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch)"
+      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.12",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.12/MegaStuff.dll",
+      "version": "1.4.14",
+      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.14/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
       "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup, configurable chest sizes (up to 8 rows), craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch"
