@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-06T10:34:14Z",
+  "updated_at": "2026-05-06T10:50:11Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -100,8 +100,8 @@
     },
     {
       "name": "MegaPlanner",
-      "version": "1.5.2",
-      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.5.2/MegaPlanner.dll",
+      "version": "1.5.3",
+      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.5.3/MegaPlanner.dll",
       "dll_name": "MegaPlanner.dll",
       "plugin_folder": "MegaPlanner",
       "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Replay HUD shows the full running material budget with proper localised names (have/need per material). Free Build option (config + auto-engages with MegaTrainer's no_placement_cost cheat) skips materials entirely. Ghost is independent of the player \u2014 walk freely with WASD/mouse, manipulate the ghost with arrow keys: Left/Right rotate, Up/Down raise/lower (Shift = fast), Alt+arrows nudge XZ in your view direction. Mousewheel-zoom placement camera (close third-person <-> godview), R resets zoom, Home resets ghost offsets. Terrain-aware foundation extension (perimeter-only, snap-point-based stacking, strict whitelist of Building-category walls/floors/foundations/beams). Live 3D preview in the menu, paced placement, pulls materials from inventory + nearby chests.",
