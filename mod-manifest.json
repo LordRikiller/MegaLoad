@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-05T13:03:45Z",
+  "updated_at": "2026-05-06T08:01:48Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -100,11 +100,11 @@
     },
     {
       "name": "MegaPlanner",
-      "version": "1.3.2",
-      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.3.2/MegaPlanner.dll",
+      "version": "1.4.0",
+      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.4.0/MegaPlanner.dll",
       "dll_name": "MegaPlanner.dll",
       "plugin_folder": "MegaPlanner",
-      "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Godview placement camera kicks in while the ghost is up (hijacks Valheim's main camera via Camera.onPreCull) \u2014 frames the whole build from above and behind so a 50m base no longer engulfs you. Live 3D preview in the menu \u2014 drag to orbit, mousewheel to zoom \u2014 plus a static thumbnail captured at save-time. Ghost preview with mousewheel rotation + arrow-key vertical nudge (Shift = fast, Home = reset), paced placement (default 4/sec), pulls materials from inventory + nearby chests, and pauses with a top-left HUD message naming the missing item when materials run short.",
+      "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Mousewheel-zoom placement camera (close third-person <-> full godview) and terrain-aware foundation extension that stacks the bottom-most piece of each column down to the actual ground. Q/E rotate the ghost, arrow-keys raise/lower (Shift = fast, Home = reset), R resets camera. Live 3D preview in the menu, paced placement (default 4/sec), pulls materials from inventory + nearby chests, and pauses with a HUD message naming the missing item when materials run short.",
       "hidden": false
     }
   ]
