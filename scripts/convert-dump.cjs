@@ -723,6 +723,18 @@ const BIOME_OVERRIDE = {
   "HelmetFishingHat": ["Meadows"],
   "DeerStew": ["Black Forest"],       // CookedDeerMeat=Meadows, Blueberries=BF(1), Carrot=BF(1)
 
+  // ─── Wooden weapons (loot-only, scattered across biomes — see LOCATION_LOOT) ───
+  // SwordWood is the only craftable wooden weapon (Workbench, Black Forest tier — keeps default).
+  // The other 8 are world-loot only; recipes exist for repair but biomes come from POI placement per wiki.
+  "AxeWood":       ["Meadows"],
+  "KnifeWood":     ["Meadows"],
+  "MaceWood":      ["Meadows"],
+  "SpearWood":     ["Black Forest", "Swamp"],
+  "SledgeWood":    ["Swamp"],
+  "BattleaxeWood": ["Mountain"],
+  "AtgeirWood":    ["Plains"],
+  "THSwordWood":   ["Mistlands"],
+
   // ─── Multi-biome loot (found in chests/dungeons across many biomes) ───
   "Amber": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
   "AmberPearl": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
@@ -1238,6 +1250,32 @@ for (const [chestName, data] of Object.entries(CHEST_LOOT)) {
   for (const itemPrefab of data.items) {
     if (!WORLD_DROPS[itemPrefab]) WORLD_DROPS[itemPrefab] = [];
     WORLD_DROPS[itemPrefab].push({source: chestName, biome: data.biome, type: "Chest"});
+  }
+}
+
+// ── Location Loot ──
+// Items found inside chests at specific Points-of-Interest (POIs).
+// Differs from CHEST_LOOT: the source is the POI/location name, not a generic chest type.
+// Used for one-off placed items (e.g. wooden weapons in Combat Ruins, Viking Graveyards).
+// Sourced from valheim.fandom.com per-location pages.
+const LOCATION_LOOT = {
+  "Viking Graveyard":      { biome: "Meadows",      items: ["AxeWood", "KnifeWood"],   wikiUrl: "https://valheim.fandom.com/wiki/Viking_Graveyard" },
+  "Combat Ruin":           { biome: "Meadows",      items: ["MaceWood"],               wikiUrl: "https://valheim.fandom.com/wiki/Combat_Ruin" },
+  "Draugr Village":        { biome: "Meadows",      items: ["MaceWood"],               wikiUrl: "https://valheim.fandom.com/wiki/Draugr_Village" },
+  "Abandoned Outpost":     { biome: "Black Forest", items: ["SpearWood"],              wikiUrl: "https://valheim.fandom.com/wiki/Abandoned_Outpost" },
+  "Abandoned Hut":         { biome: "Swamp",        items: ["SpearWood"],              wikiUrl: "https://valheim.fandom.com/wiki/Abandoned_Hut" },
+  "Swamp Runestone Tower": { biome: "Swamp",        items: ["SledgeWood"],             wikiUrl: "https://valheim.fandom.com/wiki/Swamp_Runestone_Tower" },
+  "Swamp Grave":           { biome: "Swamp",        items: ["SledgeWood"],             wikiUrl: "https://valheim.fandom.com/wiki/Swamp_Grave" },
+  "Mountain Chest":              { biome: "Mountain",  items: ["BattleaxeWood"], wikiUrl: "https://valheim.fandom.com/wiki/Loot_chest#Mountain_Chest" },
+  "Plains Chest":                { biome: "Plains",    items: ["AtgeirWood"],    wikiUrl: "https://valheim.fandom.com/wiki/Loot_chest#Plains_Chest" },
+  "Infested Mine Treasure Chest":{ biome: "Mistlands", items: ["THSwordWood"],   wikiUrl: "https://valheim.fandom.com/wiki/Loot_chest#Infested_Mine_Treasure_Chest" },
+};
+
+// Auto-generate WORLD_DROPS entries from LOCATION_LOOT
+for (const [locationName, data] of Object.entries(LOCATION_LOOT)) {
+  for (const itemPrefab of data.items) {
+    if (!WORLD_DROPS[itemPrefab]) WORLD_DROPS[itemPrefab] = [];
+    WORLD_DROPS[itemPrefab].push({source: locationName, biome: data.biome, type: "Chest"});
   }
 }
 
