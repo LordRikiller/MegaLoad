@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-06T08:01:48Z",
+  "updated_at": "2026-05-06T08:44:52Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -100,11 +100,11 @@
     },
     {
       "name": "MegaPlanner",
-      "version": "1.4.0",
-      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.4.0/MegaPlanner.dll",
+      "version": "1.4.1",
+      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.4.1/MegaPlanner.dll",
       "dll_name": "MegaPlanner.dll",
       "plugin_folder": "MegaPlanner",
-      "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Mousewheel-zoom placement camera (close third-person <-> full godview) and terrain-aware foundation extension that stacks the bottom-most piece of each column down to the actual ground. Q/E rotate the ghost, arrow-keys raise/lower (Shift = fast, Home = reset), R resets camera. Live 3D preview in the menu, paced placement (default 4/sec), pulls materials from inventory + nearby chests, and pauses with a HUD message naming the missing item when materials run short.",
+      "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Ghost is independent of the player \u2014 walk freely with WASD/mouse, manipulate the ghost with arrow keys: Left/Right rotate, Up/Down raise/lower (Shift = fast), Alt+arrows nudge XZ in your view direction. Mousewheel-zoom placement camera (close third-person <-> godview), R resets zoom, Home resets ghost offsets. Terrain-aware foundation extension stacks the bottom-most piece of each column down to the actual ground. Live 3D preview in the menu, paced placement (default 4/sec), pulls materials from inventory + nearby chests, pauses with HUD bottleneck message when materials run short.",
       "hidden": false
     }
   ]
