@@ -1,6 +1,6 @@
 {
   "productName": "MegaLoad",
-  "version": "1.10.36",
+  "version": "1.10.37",
   "identifier": "com.rik.megaload",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -62,7 +62,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY0NDkyQjc0QzcwRTkwOUQKUldTZGtBN0hkQ3RKOUhUV1dWMkgxTW81eXBiQVRLN1ZDaVJXTFBGMlBUeEF5R1pPVWRMN2VYU3MK",
       "endpoints": [
-        "https://github.com/ccmrik/MegaLoad/releases/latest/download/latest.json"
+        "https://github.com/LordRikiller/MegaLoad/releases/latest/download/latest.json"
       ]
     }
   }

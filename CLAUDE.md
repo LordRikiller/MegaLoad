@@ -18,7 +18,7 @@ Toggle: Settings → Logging Enabled (persists as `logging_enabled` in `%APPDATA
 ## MegaBugs ownership responsibilities
 
 - **Owner** detected by `~/.megaload/megabugs-admin.key` — that's Milord's machine.
-- **Collaborators** live in `collaborators.json` on the `ccmrik/MegaBugs` repo, managed from `AdminPanel.tsx` (per-user Make/Revoke Collaborator button).
+- **Collaborators** live in `collaborators.json` on the `LordRikiller/MegaBugs` repo, managed from `AdminPanel.tsx` (per-user Make/Revoke Collaborator button).
 - Only the owner can `delete_ticket` or set status to `"closed"`. Both backend commands check `is_local_owner()` and reject otherwise. Do not weaken these checks.
 
 ## Log-export convention

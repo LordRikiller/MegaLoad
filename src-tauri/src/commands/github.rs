@@ -9,7 +9,7 @@ use std::path::Path;
 // ---------------------------------------------------------------------------
 const OBFUSCATION_KEY: u8 = 0xAB;
 
-pub const REPO: &str = "ccmrik/MegaBugs";
+pub const REPO: &str = "LordRikiller/MegaBugs";
 pub const USER_AGENT: &str = concat!("MegaLoad/", env!("CARGO_PKG_VERSION"));
 
 fn get_github_token() -> Option<String> {

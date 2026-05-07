@@ -5,7 +5,7 @@
     {
       "name": "MegaHoe",
       "version": "4.10.2",
-      "download_url": "https://github.com/ccmrik/MegaHoe/releases/download/v4.10.2/MegaHoe.dll",
+      "download_url": "https://github.com/LordRikiller/MegaHoe/releases/download/v4.10.2/MegaHoe.dll",
       "dll_name": "MegaHoe.dll",
       "plugin_folder": "MegaHoe",
       "description": "Hoe tool overhaul with biome painter, extended terrain editing, and configurable radius"
@@ -13,7 +13,7 @@
     {
       "name": "MegaMegingjord",
       "version": "1.8.1",
-      "download_url": "https://github.com/ccmrik/MegaMegingjord/releases/download/v1.8.1/MegaMegingjord.dll",
+      "download_url": "https://github.com/LordRikiller/MegaMegingjord/releases/download/v1.8.1/MegaMegingjord.dll",
       "dll_name": "MegaMegingjord.dll",
       "plugin_folder": "MegaMegingjord",
       "description": "Megingjord belt powers \u2014 carry weight, headlamp, swamp key, sealbreaker, wishbone, seafloor walk"
@@ -21,7 +21,7 @@
     {
       "name": "MegaFood",
       "version": "1.4.2",
-      "download_url": "https://github.com/ccmrik/MegaFood/releases/download/v1.4.2/MegaFood.dll",
+      "download_url": "https://github.com/LordRikiller/MegaFood/releases/download/v1.4.2/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
       "description": "MegaFood + MegaMead \u2014 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration"
@@ -29,7 +29,7 @@
     {
       "name": "MegaShot",
       "version": "2.6.50",
-      "download_url": "https://github.com/ccmrik/MegaShot/releases/download/v2.6.50/MegaShot.dll",
+      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.50/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul \u2014 scope/zoom, AOE, DoT, fire rate, magazine/reload system, Armageddon beam mode"
@@ -37,7 +37,7 @@
     {
       "name": "MegaQoL",
       "version": "1.16.0",
-      "download_url": "https://github.com/ccmrik/MegaQoL/releases/download/v1.16.0/MegaQoL.dll",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.0/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life \u2014 auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
@@ -45,7 +45,7 @@
     {
       "name": "MegaStuff",
       "version": "1.4.14",
-      "download_url": "https://github.com/ccmrik/MegaStuff/releases/download/v1.4.14/MegaStuff.dll",
+      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.14/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
       "description": "Storage \u2014 quick deposit (respects AzuEPI extra rows), chest auto-pickup, configurable chest sizes (up to 8 rows), craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5\u21928, auto-prunes orphan config sections on launch"
@@ -53,7 +53,7 @@
     {
       "name": "MegaFarming",
       "version": "1.3.5",
-      "download_url": "https://github.com/ccmrik/MegaFarming/releases/download/v1.3.5/MegaFarming.dll",
+      "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.3.5/MegaFarming.dll",
       "dll_name": "MegaFarming.dll",
       "plugin_folder": "MegaFarming",
       "description": "Mass farming \u2014 hold-key mass harvest pickables/beehives, grid plant any cultivator plant, plant anywhere (any biome), plus custom plantables (bushes, mushrooms, thistle, fiddleheads) added to the Cultivator. Plantable delete on cultivate, growth + respawn timer hover (saplings AND picked berry bushes / mushrooms etc.), stump markers on picked renewables."
@@ -61,7 +61,7 @@
     {
       "name": "MegaFishing",
       "version": "1.1.9",
-      "download_url": "https://github.com/ccmrik/MegaFishing/releases/download/v1.1.9/MegaFishing.dll",
+      "download_url": "https://github.com/LordRikiller/MegaFishing/releases/download/v1.1.9/MegaFishing.dll",
       "dll_name": "MegaFishing.dll",
       "plugin_folder": "MegaFishing",
       "description": "Fish auto-pull into containers/inventory with quality upgrade and configurable radius"
@@ -69,7 +69,7 @@
     {
       "name": "MegaFactory",
       "version": "1.4.4",
-      "download_url": "https://github.com/ccmrik/MegaFactory/releases/download/v1.4.4/MegaFactory.dll",
+      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.4.4/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
       "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with work order system \u2014 runs in background regardless of player distance, leaves 1 of each item type total per container (not per stack)"
@@ -77,7 +77,7 @@
     {
       "name": "MegaTrainer",
       "version": "1.6.2",
-      "download_url": "https://github.com/ccmrik/MegaTrainer/releases/download/v1.6.2/MegaTrainer.dll",
+      "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.2/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
       "description": "In-game cheat trainer \u2014 god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
@@ -85,7 +85,7 @@
     {
       "name": "MegaBuilder",
       "version": "1.6.2",
-      "download_url": "https://github.com/ccmrik/MegaBuilder/releases/download/v1.6.2/MegaBuilder.dll",
+      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.6.2/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
       "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m); auto-prunes orphan config sections on launch"
@@ -93,7 +93,7 @@
     {
       "name": "MegaSkeletons",
       "version": "1.4.0",
-      "download_url": "https://github.com/ccmrik/MegaSkeletons/releases/download/v1.4.0/MegaSkeletons.dll",
+      "download_url": "https://github.com/LordRikiller/MegaSkeletons/releases/download/v1.4.0/MegaSkeletons.dll",
       "dll_name": "MegaSkeletons.dll",
       "plugin_folder": "MegaSkeletons",
       "description": "Summoned skeleton buffs (health, speed, HoT, line-of-sight) + portal/dungeon persistence + remote skeleton detonator (AOE explosion + housefire damaging hostiles, trees, rocks and world structures \u2014 player builds & pickables spared)"
@@ -101,7 +101,7 @@
     {
       "name": "MegaPlanner",
       "version": "1.5.3",
-      "download_url": "https://github.com/ccmrik/MegaPlanner/releases/download/v1.5.3/MegaPlanner.dll",
+      "download_url": "https://github.com/LordRikiller/MegaPlanner/releases/download/v1.5.3/MegaPlanner.dll",
       "dll_name": "MegaPlanner.dll",
       "plugin_folder": "MegaPlanner",
       "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Replay HUD shows the full running material budget with proper localised names (have/need per material). Free Build option (config + auto-engages with MegaTrainer's no_placement_cost cheat) skips materials entirely. Ghost is independent of the player \u2014 walk freely with WASD/mouse, manipulate the ghost with arrow keys: Left/Right rotate, Up/Down raise/lower (Shift = fast), Alt+arrows nudge XZ in your view direction. Mousewheel-zoom placement camera (close third-person <-> godview), R resets zoom, Home resets ghost offsets. Terrain-aware foundation extension (perimeter-only, snap-point-based stacking, strict whitelist of Building-category walls/floors/foundations/beams). Live 3D preview in the menu, paced placement, pulls materials from inventory + nearby chests.",

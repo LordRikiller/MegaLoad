@@ -12,7 +12,7 @@ use tauri::{AppHandle, Manager};
 /// URL to the single manifest file — ONE request to check ALL mods.
 /// Hosted as a release asset on the MegaLoad repo.
 const MANIFEST_URL: &str =
-    "https://github.com/ccmrik/MegaLoad/releases/latest/download/mod-manifest.json";
+    "https://github.com/LordRikiller/MegaLoad/releases/latest/download/mod-manifest.json";
 
 /// Minimum seconds between update checks (5 minutes).
 const CHECK_COOLDOWN_SECS: u64 = 300;
@@ -153,9 +153,12 @@ fn save_cache(bepinex_path: &str, mods: &[ModUpdateInfo]) {
 
 /// Fetch the mod manifest — a single HTTP request for all mod info.
 fn fetch_manifest() -> Result<ModManifest, String> {
-    let resp = crate::commands::http::agent().get(MANIFEST_URL)
-        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")))
-        .call()
+    let mut req = crate::commands::http::agent().get(MANIFEST_URL)
+        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")));
+    if let Ok(token) = crate::commands::github::github_token() {
+        req = req.set("Authorization", &format!("Bearer {}", token));
+    }
+    let resp = req.call()
         .map_err(|e| {
             let msg = format!("{}", e);
             if msg.contains("403") || msg.contains("429") {
@@ -405,9 +408,12 @@ pub fn install_mod_update(
     let dll_path = mod_dir.join(&dll_name);
 
     // Download the DLL (this is a direct file download, not an API call — no rate limit)
-    let resp = crate::commands::http::agent().get(&download_url)
-        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")))
-        .call()
+    let mut req = crate::commands::http::agent().get(&download_url)
+        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")));
+    if let Ok(token) = crate::commands::github::github_token() {
+        req = req.set("Authorization", &format!("Bearer {}", token));
+    }
+    let resp = req.call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 
     let mut bytes: Vec<u8> = Vec::new();

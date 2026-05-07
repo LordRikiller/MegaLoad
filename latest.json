@@ -5,7 +5,7 @@
   "platforms": {
     "windows-x86_64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU5mdFlaRk9SZXZkZk5KZ0g2SlJTUzQ1UEhXNVAySzQzUzRLRldWWDZrNDA3aFJ2TFJwRnEySytjYUVyclZYdjhlSnlvMFR0T2cxWUZpRk5DZjEybXc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MDU0MzA1CWZpbGU6TWVnYUxvYWRfMS4xMC4zNl94NjQtc2V0dXAubnNpcy56aXAKcE5PR080SlQwbnZMdkhpdDNnT29EVC9EbXJoaDhwT2FhTjd1SlphcFRFb2gyZmRlbkZUK2NiZms0Z2lzYUVCSDUwQWNvZ2tvUTVkQ2ZiajFGQ3ZWQmc9PQo=",
-      "url": "https://github.com/ccmrik/MegaLoad/releases/download/v1.10.36/MegaLoad_1.10.36_x64-setup.nsis.zip"
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.36/MegaLoad_1.10.36_x64-setup.nsis.zip"
     }
   }
 }

@@ -382,7 +382,7 @@ pub fn clean_orphan_configs(bepinex_path: String) -> Result<Vec<String>, String>
             continue;
         }
 
-        // Split GUID segments (e.g. "ccmrik.megaqol") and check if any segment
+        // Split GUID segments (e.g. "com.rik.megaqol") and check if any segment
         // matches an installed mod name
         let segments: Vec<&str> = stem.split('.').collect();
         let has_match = segments.iter().any(|seg| mod_names.contains(*seg));
@@ -452,7 +452,7 @@ pub struct MegaDebugResult {
 
 fn is_mega_config_name(file_name: &str) -> bool {
     // Match any cfg whose name contains "Mega" (covers "MegaHoe.cfg",
-    // "ccmrik.MegaHoe.cfg", "com.author.MegaX.cfg"). Case-sensitive on purpose —
+    // "com.rik.MegaHoe.cfg", "com.author.MegaX.cfg"). Case-sensitive on purpose —
     // our mods always capitalise the M, third-party mods rarely do.
     file_name.contains("Mega")
 }
