@@ -1,11 +1,11 @@
 {
-  "version": "1.10.37",
-  "notes": "Migration release - moved every Mega repo from ccmrik to LordRikiller. MegaLoad updater + mod-manifest URL + MegaBugs API now point at LordRikiller. Mod DLL fetches now send a GitHub Bearer token, so mod repos can be private. ccmrik redirects keep older installs working until adoption is broad enough to retire the legacy account.",
-  "pub_date": "2026-05-07T03:00:00Z",
+  "version": "1.10.38",
+  "notes": "Migrate MegaBugs ticketing and mod DLL downloads to MegaWorker \u2014 a Cloudflare Worker that holds the GitHub PAT server-side. v1.10.37 baked an obfuscated PAT into the binary; v1.10.38 carries no GitHub credential at all. Each install registers an HMAC secret with the Worker on first launch and signs every write request. Anonymous reads, IP rate limits, owner-signed admin ops. Net: extracting a MegaLoad binary no longer yields any GitHub access.",
+  "pub_date": "2026-05-10T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZvS3pSYUhabFpQZmJTVjVFNUVHbHh2ell6MzFKYkRNR1h5cERwTytoNWVDQm8wUHJtVHVOOGd0aFRyK24zRzdHR2srSGdBdXV4Uit0U2NJR1R4N2dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MTE5NDQ3CWZpbGU6TWVnYUxvYWRfMS4xMC4zN194NjQtc2V0dXAubnNpcy56aXAKOGRLeEptMHVTY3VEbEFiQlZvdHZDR2U1aDh5ZEdoSHdxaG9mOWRpdWMzelFSaXhqWS8rNC8yMHVaQTF5VkFxZUFOTUtZK1Z1SVFUOHhUNitVQ1E1QXc9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.37/MegaLoad_1.10.37_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlNaElXRUFwblVBOExKTlVxbnBsa1pQeUlFczJhSVp0a2JWeVdkVEpTdGNiOENvOFUzVkpXQlNUNHRFaW5hZC9BU3A0cFNzMytsWDRISTcycUZjL3dNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MzY3ODQ2CWZpbGU6TWVnYUxvYWRfMS4xMC4zOF94NjQtc2V0dXAubnNpcy56aXAKcTB5TkcrcmQxRDZ4VFdSTlBhdVBLcjJOT3VnS2I5cHdSaXRlY2tCYjVFLzV3aXltYS9OTWh5K3A1VUNYZDBXM0YxZEpXaTVUZkhpL2duVTN0YTZzQ1E9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.38/MegaLoad_1.10.38_x64-setup.nsis.zip"
     }
   }
 }
