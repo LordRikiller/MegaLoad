@@ -329,6 +329,7 @@ pub fn set_megabugs_identity(display_name: String) -> Result<UserIdentity, Strin
     Ok(UserIdentity {
         user_id: result.user_id,
         display_name: result.display_name,
+        hmac_secret: None,
     })
 }
 

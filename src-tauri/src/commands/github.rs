@@ -1,50 +1,21 @@
+use crate::commands::identity::{get_or_create_hmac_secret, read_admin_key};
+use crate::commands::worker_auth::{
+    admin_sig, bugs_contents_path, bugs_contents_url, bugs_git_url, unix_now, user_sig,
+};
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde::Deserialize;
-use std::fs;
-use std::path::Path;
 
 // ---------------------------------------------------------------------------
-// GitHub token — XOR-obfuscated at compile time
-// Set MEGABUGS_TOKEN_OBF env var before building, or leave blank for dev.
+// MegaWorker proxy — replaces direct GitHub PAT use as of v1.10.38.
+//
+// Public function signatures match the pre-Worker API so the rest of the
+// codebase (bugs.rs, sync.rs, identity.rs, chat.rs) doesn't need to change.
+// Internally each function now talks to https://mega-api.lordrik.workers.dev
+// instead of api.github.com — the Worker holds the GitHub PAT server-side
+// and forwards requests after verifying our HMAC for writes.
 // ---------------------------------------------------------------------------
-const OBFUSCATION_KEY: u8 = 0xAB;
 
-pub const REPO: &str = "LordRikiller/MegaBugs";
 pub const USER_AGENT: &str = concat!("MegaLoad/", env!("CARGO_PKG_VERSION"));
-
-fn get_github_token() -> Option<String> {
-    let obfuscated: &[u8] = match option_env!("MEGABUGS_TOKEN_OBF") {
-        Some(s) => s.as_bytes(),
-        None => return None,
-    };
-    let bytes: Vec<u8> = (0..obfuscated.len() / 2)
-        .filter_map(|i| {
-            u8::from_str_radix(
-                &String::from_utf8_lossy(&obfuscated[i * 2..i * 2 + 2]),
-                16,
-            )
-            .ok()
-        })
-        .map(|b| b ^ OBFUSCATION_KEY)
-        .collect();
-    String::from_utf8(bytes).ok()
-}
-
-fn get_github_token_dev() -> Option<String> {
-    let home = std::env::var("USERPROFILE").ok()?;
-    let path = Path::new(&home).join(".megaload").join("megabugs-token");
-    fs::read_to_string(path).ok().map(|s| s.trim().to_string())
-}
-
-pub fn github_token() -> Result<String, String> {
-    get_github_token()
-        .or_else(get_github_token_dev)
-        .ok_or_else(|| "No GitHub token configured".to_string())
-}
-
-// ---------------------------------------------------------------------------
-// GitHub Contents API helpers
-// ---------------------------------------------------------------------------
 
 #[derive(Deserialize, Debug)]
 struct GitHubContent {
@@ -60,18 +31,16 @@ struct GitHubBlob {
     encoding: String,
 }
 
-/// Fetch a blob's base64 content via the Git Data API. Used as a fallback for
-/// blobs >1 MB where the Contents API returns `content: ""` and `encoding: "none"`.
+/// Fetch a blob's base64 content via the Worker's `/bugs/git/blobs/<sha>` proxy.
+/// Used as a fallback for blobs >1 MB where the Contents API truncates.
 fn github_get_blob_base64(sha: &str) -> Result<String, String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/git/blobs/{}", REPO, sha);
+    let url = bugs_git_url(&format!("blobs/{}", sha));
     let resp = crate::commands::http::agent()
         .get(&url)
-        .set("Authorization", &format!("token {}", token))
         .set("User-Agent", USER_AGENT)
         .set("Accept", "application/vnd.github+json")
         .call()
-        .map_err(|e| format!("GitHub blob GET failed for {}: {}", sha, e))?;
+        .map_err(|e| format!("Worker blob GET failed for {}: {}", sha, e))?;
 
     let body = resp
         .into_string()
@@ -87,17 +56,15 @@ fn github_get_blob_base64(sha: &str) -> Result<String, String> {
     Ok(blob.content.replace('\n', "").replace('\r', ""))
 }
 
-/// Read a file from the repo. Returns (content_string, sha).
+/// Read a file from the MegaBugs repo via the Worker. Returns (decoded_content, sha).
 pub fn github_get_file(path: &str) -> Result<(String, String), String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
+    let url = bugs_contents_url(path);
     let resp = crate::commands::http::agent()
         .get(&url)
-        .set("Authorization", &format!("token {}", token))
         .set("User-Agent", USER_AGENT)
         .set("Accept", "application/vnd.github+json")
         .call()
-        .map_err(|e| format!("GitHub API GET failed for {}: {}", path, e))?;
+        .map_err(|e| format!("Worker GET failed for {}: {}", path, e))?;
 
     let body = resp
         .into_string()
@@ -113,7 +80,6 @@ pub fn github_get_file(path: &str) -> Result<(String, String), String> {
         .replace('\r', "");
 
     // Contents API truncates blobs >1 MB: content is empty and encoding is "none".
-    // Fall back to the Git Data API blob endpoint to fetch the full base64 payload.
     let encoding_is_base64 = gc
         .encoding
         .as_deref()
@@ -132,17 +98,58 @@ pub fn github_get_file(path: &str) -> Result<(String, String), String> {
     Ok((text, gc.sha))
 }
 
-/// Create or update a file in the repo.
+/// Sign and send a PUT request to /bugs/contents/<path>. Body is the
+/// JSON-serialised GitHub Contents API payload.
+fn signed_put(path: &str, body: &str) -> Result<ureq::Response, String> {
+    let (user_id, secret) = get_or_create_hmac_secret()?;
+    let ts = unix_now();
+    let sig = user_sig(&secret, "PUT", &bugs_contents_path(path), &ts, body.as_bytes())?;
+
+    crate::commands::http::agent()
+        .put(&bugs_contents_url(path))
+        .set("User-Agent", USER_AGENT)
+        .set("Content-Type", "application/json")
+        .set("X-MegaLoad-User", &user_id)
+        .set("X-MegaLoad-Timestamp", &ts)
+        .set("X-MegaLoad-Sig", &sig)
+        .send_string(body)
+        .map_err(|e| format!("Worker PUT failed for {}: {}", path, e))
+}
+
+/// Sign and send a DELETE request. Uses admin HMAC if the local admin key
+/// file is present; otherwise user HMAC. Worker accepts either.
+fn signed_delete(path: &str, body: &str) -> Result<ureq::Response, String> {
+    let ts = unix_now();
+    let canonical_path = bugs_contents_path(path);
+    let mut req = crate::commands::http::agent()
+        .delete(&bugs_contents_url(path))
+        .set("User-Agent", USER_AGENT)
+        .set("Content-Type", "application/json")
+        .set("X-MegaLoad-Timestamp", &ts);
+
+    if let Some(admin_key) = read_admin_key() {
+        let sig = admin_sig(&admin_key, "DELETE", &canonical_path, &ts, body.as_bytes())?;
+        req = req.set("X-MegaLoad-Admin-Sig", &sig);
+    } else {
+        let (user_id, secret) = get_or_create_hmac_secret()?;
+        let sig = user_sig(&secret, "DELETE", &canonical_path, &ts, body.as_bytes())?;
+        req = req
+            .set("X-MegaLoad-User", &user_id)
+            .set("X-MegaLoad-Sig", &sig);
+    }
+
+    req.send_string(body)
+        .map_err(|e| format!("Worker DELETE failed for {}: {}", path, e))
+}
+
+/// Create or update a file in the MegaBugs repo via the Worker.
 pub fn github_put_file(
     path: &str,
     content: &[u8],
     message: &str,
     sha: Option<&str>,
 ) -> Result<String, String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
     let encoded = B64.encode(content);
-
     let mut body = serde_json::json!({
         "message": message,
         "content": encoded,
@@ -151,14 +158,7 @@ pub fn github_put_file(
         body["sha"] = serde_json::Value::String(s.to_string());
     }
 
-    let resp = crate::commands::http::agent()
-        .put(&url)
-        .set("Authorization", &format!("token {}", token))
-        .set("User-Agent", USER_AGENT)
-        .set("Accept", "application/vnd.github+json")
-        .send_string(&body.to_string())
-        .map_err(|e| format!("GitHub API PUT failed for {}: {}", path, e))?;
-
+    let resp = signed_put(path, &body.to_string())?;
     let resp_body = resp
         .into_string()
         .map_err(|e| format!("Read error: {}", e))?;
@@ -179,15 +179,7 @@ pub fn is_conflict_error(err: &str) -> bool {
     err.contains("409")
 }
 
-/// PUT a file with automatic 409 retry. On stale-SHA the caller's `prepare`
-/// closure is invoked to refetch the current SHA (and optionally re-derive
-/// the content based on whatever now lives at `path`). Tries up to `max_attempts`
-/// times before giving up.
-///
-/// `prepare` returns `(content_bytes, sha_to_send)`. On the first iteration the
-/// caller can return `(initial_content, initial_sha)`; on retries the closure
-/// must `github_get_file(path)` itself and return the new SHA along with whatever
-/// content makes sense (e.g. re-merged, or the same payload if pure overwrite).
+/// PUT a file with automatic 409 retry. Same shape as the pre-Worker version.
 pub fn github_put_file_with_retry<F>(
     path: &str,
     message: &str,
@@ -212,17 +204,15 @@ where
     Err(format!("PUT exhausted retries for {}: {}", path, last_err))
 }
 
-/// List files in a repo directory. Returns vec of (path, sha).
+/// List files in a repo directory via the Worker.
 pub fn github_list_dir(path: &str) -> Result<Vec<(String, String)>, String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
+    let url = bugs_contents_url(path);
     let resp = crate::commands::http::agent()
         .get(&url)
-        .set("Authorization", &format!("token {}", token))
         .set("User-Agent", USER_AGENT)
         .set("Accept", "application/vnd.github+json")
         .call()
-        .map_err(|e| format!("GitHub API GET dir failed for {}: {}", path, e))?;
+        .map_err(|e| format!("Worker GET dir failed for {}: {}", path, e))?;
 
     let body = resp
         .into_string()
@@ -240,38 +230,26 @@ pub fn github_list_dir(path: &str) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
-/// Delete a file from the repo.
+/// Delete a file from the MegaBugs repo via the Worker.
 pub fn github_delete_file(path: &str, sha: &str, message: &str) -> Result<(), String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
-
     let body = serde_json::json!({
         "message": message,
         "sha": sha,
-    });
-
-    crate::commands::http::agent()
-        .delete(&url)
-        .set("Authorization", &format!("token {}", token))
-        .set("User-Agent", USER_AGENT)
-        .set("Accept", "application/vnd.github+json")
-        .send_string(&body.to_string())
-        .map_err(|e| format!("GitHub API DELETE failed for {}: {}", path, e))?;
-
+    })
+    .to_string();
+    signed_delete(path, &body)?;
     Ok(())
 }
 
 /// Read a file's raw base64 content without decoding. Used for binary attachments.
 pub fn github_get_raw_base64(path: &str) -> Result<String, String> {
-    let token = github_token()?;
-    let url = format!("https://api.github.com/repos/{}/contents/{}", REPO, path);
+    let url = bugs_contents_url(path);
     let resp = crate::commands::http::agent()
         .get(&url)
-        .set("Authorization", &format!("token {}", token))
         .set("User-Agent", USER_AGENT)
         .set("Accept", "application/vnd.github+json")
         .call()
-        .map_err(|e| format!("GitHub API GET failed for {}: {}", path, e))?;
+        .map_err(|e| format!("Worker GET failed for {}: {}", path, e))?;
 
     let body = resp
         .into_string()
@@ -286,8 +264,6 @@ pub fn github_get_raw_base64(path: &str) -> Result<String, String> {
         .replace('\n', "")
         .replace('\r', "");
 
-    // Contents API truncates blobs >1 MB: content is empty and encoding is "none".
-    // Fall back to the Git Data API blob endpoint, which returns base64 regardless of size.
     let encoding_is_base64 = gc
         .encoding
         .as_deref()

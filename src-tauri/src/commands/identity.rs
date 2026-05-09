@@ -15,6 +15,12 @@ use tauri::command;
 pub struct MegaLoadIdentity {
     pub user_id: String,
     pub display_name: String,
+    /// Per-install HMAC secret (32 random bytes hex-encoded) used to sign
+    /// write requests against MegaWorker. Generated lazily on first use via
+    /// `ensure_hmac_secret()`. Existing identities without this field get
+    /// one populated on first launch with v1.10.38+.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hmac_secret: Option<String>,
 }
 
 /// Backwards-compat alias — MegaBugs uses this type name
@@ -125,6 +131,46 @@ fn iso_now() -> String {
 // ---------------------------------------------------------------------------
 
 const LINK_CODE_CHARS: &[u8] = b"ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+/// Generate a 32-byte random secret, hex-encoded (64 chars).
+/// Used as the HMAC key for signing MegaWorker write requests.
+fn generate_hmac_secret() -> String {
+    use rand::RngCore;
+    let mut bytes = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    hex::encode(bytes)
+}
+
+/// Get the current install's HMAC secret, generating + persisting one if the
+/// identity file predates v1.10.38.
+pub fn get_or_create_hmac_secret() -> Result<(String, String), String> {
+    let mut identity = get_megaload_identity()?;
+    if let Some(s) = identity.hmac_secret.clone() {
+        return Ok((identity.user_id, s));
+    }
+    let secret = generate_hmac_secret();
+    identity.hmac_secret = Some(secret.clone());
+    let dir = megaload_data_dir();
+    let _ = fs::create_dir_all(&dir);
+    let json = serde_json::to_string_pretty(&identity).map_err(|e| e.to_string())?;
+    fs::write(dir.join(IDENTITY_FILE), &json)
+        .map_err(|e| format!("Failed to persist hmac_secret: {}", e))?;
+    let _ = fs::write(dir.join(LEGACY_IDENTITY_FILE), &json);
+    app_log("Generated hmac_secret for existing identity");
+    Ok((identity.user_id, secret))
+}
+
+/// Read the local admin key file contents. Used to sign owner-only Worker
+/// requests. Returns None if not an admin.
+pub fn read_admin_key() -> Option<String> {
+    std::env::var("USERPROFILE")
+        .ok()
+        .map(|home| Path::new(&home).join(".megaload").join("megabugs-admin.key"))
+        .filter(|p| p.exists())
+        .and_then(|p| fs::read_to_string(p).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
 
 fn generate_link_code() -> String {
     // 12 chars in XXXX-XXXX-XXXX format — 30^12 = ~531 trillion combos
@@ -299,9 +345,21 @@ pub fn set_megaload_identity(display_name: String) -> Result<IdentityResult, Str
         ));
     }
 
+    // Preserve existing hmac_secret on rename, generate fresh one on first creation
+    let hmac_secret = if is_existing {
+        fs::read_to_string(&path)
+            .ok()
+            .and_then(|d| serde_json::from_str::<MegaLoadIdentity>(&d).ok())
+            .and_then(|id| id.hmac_secret)
+            .or_else(|| Some(generate_hmac_secret()))
+    } else {
+        Some(generate_hmac_secret())
+    };
+
     let identity = MegaLoadIdentity {
         user_id: user_id.clone(),
         display_name: trimmed.clone(),
+        hmac_secret,
     };
 
     // Save locally
@@ -408,9 +466,12 @@ pub fn link_existing_account(display_name: String, link_code: String) -> Result<
         return Err("Invalid link code. Check the code from your other device and try again.".to_string());
     }
 
+    // Linking from another device — generate a fresh HMAC secret for this install.
+    // Each device has its own secret registered with the Worker under the same user_id.
     let identity = MegaLoadIdentity {
         user_id: entry.user_id.clone(),
         display_name: entry.display_name.clone(),
+        hmac_secret: Some(generate_hmac_secret()),
     };
 
     // Save locally

@@ -2063,14 +2063,18 @@ checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "megaload"
-version = "1.10.36"
+version = "1.10.38"
 dependencies = [
  "base64 0.22.1",
  "filetime",
+ "hex",
+ "hmac",
  "native-tls",
  "notify",
+ "rand 0.8.5",
  "serde",
  "serde_json",
+ "sha2",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

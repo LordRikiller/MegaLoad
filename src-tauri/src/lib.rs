@@ -31,6 +31,15 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .setup(|_app| {
+            // Register this install's HMAC secret with MegaWorker on launch.
+            // Idempotent — re-registers existing user_id with possibly new secret.
+            // Spawned off the main thread so a slow/down Worker doesn't block UI.
+            std::thread::spawn(|| {
+                commands::worker_auth::register_with_worker_best_effort();
+            });
+            Ok(())
+        })
         .manage(ConfigWatcherState {
             watcher: std::sync::Mutex::new(None),
         })

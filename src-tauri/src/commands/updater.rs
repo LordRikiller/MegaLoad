@@ -10,9 +10,35 @@ use tauri::command;
 use tauri::{AppHandle, Manager};
 
 /// URL to the single manifest file — ONE request to check ALL mods.
-/// Hosted as a release asset on the MegaLoad repo.
-const MANIFEST_URL: &str =
-    "https://github.com/LordRikiller/MegaLoad/releases/latest/download/mod-manifest.json";
+/// Served by MegaWorker, which proxies the underlying release asset and
+/// handles GitHub auth server-side.
+const MANIFEST_URL: &str = "https://mega-api.lordrik.workers.dev/manifest";
+
+/// MegaWorker base URL — used to rewrite `download_url` fields in the
+/// manifest from `github.com/<owner>/<repo>/releases/download/<ver>/<file>`
+/// into `mega-api.lordrik.workers.dev/mod/<repo>/<ver>/<file>` so DLL
+/// downloads go through the Worker (which holds the GitHub PAT).
+const WORKER_BASE: &str = "https://mega-api.lordrik.workers.dev";
+
+/// Rewrite a manifest `download_url` from a GitHub release-asset URL into the
+/// Worker proxy URL. Idempotent — returns input unchanged if already a Worker
+/// URL or if it doesn't match the expected GitHub shape.
+fn rewrite_to_worker_url(github_url: &str) -> String {
+    if github_url.starts_with(WORKER_BASE) {
+        return github_url.to_string();
+    }
+    // Expect: https://github.com/<owner>/<repo>/releases/download/<ver>/<file>
+    if let Some(rest) = github_url.strip_prefix("https://github.com/") {
+        let parts: Vec<&str> = rest.split('/').collect();
+        if parts.len() >= 6 && parts[2] == "releases" && parts[3] == "download" {
+            let repo = parts[1];
+            let version = parts[4];
+            let file = parts[5..].join("/");
+            return format!("{}/mod/{}/{}/{}", WORKER_BASE, repo, version, file);
+        }
+    }
+    github_url.to_string()
+}
 
 /// Minimum seconds between update checks (5 minutes).
 const CHECK_COOLDOWN_SECS: u64 = 300;
@@ -151,14 +177,14 @@ fn save_cache(bepinex_path: &str, mods: &[ModUpdateInfo]) {
     }
 }
 
-/// Fetch the mod manifest — a single HTTP request for all mod info.
+/// Fetch the mod manifest from MegaWorker — single request for all mod info.
+/// `download_url` fields are rewritten to point at the Worker so DLL fetches
+/// also go through it.
 fn fetch_manifest() -> Result<ModManifest, String> {
-    let mut req = crate::commands::http::agent().get(MANIFEST_URL)
-        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")));
-    if let Ok(token) = crate::commands::github::github_token() {
-        req = req.set("Authorization", &format!("Bearer {}", token));
-    }
-    let resp = req.call()
+    let resp = crate::commands::http::agent()
+        .get(MANIFEST_URL)
+        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")))
+        .call()
         .map_err(|e| {
             let msg = format!("{}", e);
             if msg.contains("403") || msg.contains("429") {
@@ -171,7 +197,12 @@ fn fetch_manifest() -> Result<ModManifest, String> {
     let body = resp
         .into_string()
         .map_err(|e| format!("Read error: {}", e))?;
-    serde_json::from_str(&body).map_err(|e| format!("Manifest parse error: {}", e))
+    let mut manifest: ModManifest =
+        serde_json::from_str(&body).map_err(|e| format!("Manifest parse error: {}", e))?;
+    for m in manifest.mods.iter_mut() {
+        m.download_url = rewrite_to_worker_url(&m.download_url);
+    }
+    Ok(manifest)
 }
 
 /// Build update info for each mod from the manifest.
@@ -407,13 +438,14 @@ pub fn install_mod_update(
 
     let dll_path = mod_dir.join(&dll_name);
 
-    // Download the DLL (this is a direct file download, not an API call — no rate limit)
-    let mut req = crate::commands::http::agent().get(&download_url)
-        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")));
-    if let Ok(token) = crate::commands::github::github_token() {
-        req = req.set("Authorization", &format!("Bearer {}", token));
-    }
-    let resp = req.call()
+    // Download the DLL via MegaWorker. The manifest's `download_url` was
+    // rewritten in `fetch_manifest()` so we should already have a Worker URL,
+    // but rewrite defensively in case a stale cached entry slipped through.
+    let download_url = rewrite_to_worker_url(&download_url);
+    let resp = crate::commands::http::agent()
+        .get(&download_url)
+        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")))
+        .call()
         .map_err(|e| format!("Download failed for {}: {}", mod_name, e))?;
 
     let mut bytes: Vec<u8> = Vec::new();
