@@ -317,6 +317,7 @@ export function Cart() {
         open={showListModal}
         onClose={() => setShowListModal(false)}
         itemIds={cartItems.map((c) => c.id)}
+        materialIds={materials.map((m) => m.id)}
         filterSnapshot={{}}
       />
     </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, ListChecks, Plus } from "lucide-react";
+import { X, ListChecks, Plus, ShoppingCart, Hammer } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useMegaListStore, isLiveList } from "../../stores/megaListStore";
 import type { MegaListFilterSnapshot } from "../../types/megaList";
@@ -11,10 +11,16 @@ interface Props {
   onClose: () => void;
   itemIds: string[];
   filterSnapshot: Omit<MegaListFilterSnapshot, "exportedAt">;
+  /**
+   * When set, surfaces an Items/Materials toggle so the user can choose which
+   * IDs land in the list. Cart uses this to swap between the cart Items
+   * (`itemIds`) and the aggregated craft Materials (`materialIds`).
+   */
+  materialIds?: string[];
 }
 
 /** Modal for "Export to list" — choose new/existing list, add filtered items. */
-export function ExportToListModal({ open, onClose, itemIds, filterSnapshot }: Props) {
+export function ExportToListModal({ open, onClose, itemIds, filterSnapshot, materialIds }: Props) {
   const navigate = useNavigate();
   // Subscribe to the raw lists array; filtering inline in the selector returns
   // a fresh reference every snapshot, which trips React 18's getSnapshot
@@ -27,18 +33,23 @@ export function ExportToListModal({ open, onClose, itemIds, filterSnapshot }: Pr
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [name, setName] = useState("");
   const [selectedListId, setSelectedListId] = useState<string>("");
+  const [contentMode, setContentMode] = useState<"items" | "materials">("items");
 
   if (!open) return null;
+
+  const showContentToggle = Array.isArray(materialIds);
+  const effectiveIds = showContentToggle && contentMode === "materials" ? materialIds! : itemIds;
 
   const close = () => {
     setName("");
     setSelectedListId("");
     setMode("new");
+    setContentMode("items");
     onClose();
   };
 
   const commit = () => {
-    if (itemIds.length === 0) {
+    if (effectiveIds.length === 0) {
       addToast({ type: "warning", title: "Nothing to export", message: "No items match the current filters.", duration: 2500 });
       return;
     }
@@ -46,7 +57,7 @@ export function ExportToListModal({ open, onClose, itemIds, filterSnapshot }: Pr
     if (mode === "new") {
       const finalName = name.trim() || `List ${new Date().toLocaleString()}`;
       const snapshot: MegaListFilterSnapshot = { ...filterSnapshot, exportedAt: new Date().toISOString() };
-      const items = itemIds.map((id) => ({
+      const items = effectiveIds.map((id) => ({
         itemId: id,
         checked: false,
         addedAt: snapshot.exportedAt,
@@ -58,12 +69,12 @@ export function ExportToListModal({ open, onClose, itemIds, filterSnapshot }: Pr
       navigate(`/megalist/${id}`);
     } else {
       if (!selectedListId) return;
-      const added = addItems(selectedListId, itemIds, "export");
+      const added = addItems(selectedListId, effectiveIds, "export");
       const target = lists.find((l) => l.id === selectedListId);
       addToast({
         type: "success",
         title: "Added to list",
-        message: `"${target?.name ?? ""}" — ${added} new item${added === 1 ? "" : "s"} (${itemIds.length - added} already present)`,
+        message: `"${target?.name ?? ""}" — ${added} new item${added === 1 ? "" : "s"} (${effectiveIds.length - added} already present)`,
         duration: 2500,
       });
       close();
@@ -88,10 +99,37 @@ export function ExportToListModal({ open, onClose, itemIds, filterSnapshot }: Pr
         </div>
 
         <div className="p-4 space-y-4">
-          <p className="text-xs text-zinc-500">
-            {itemIds.length} item{itemIds.length === 1 ? "" : "s"} from the current filter
-            {filterSnapshot.biomes && filterSnapshot.biomes.length > 0 ? ` · ${filterSnapshot.biomes.join(", ")}` : ""}
-          </p>
+          {showContentToggle ? (
+            <div className="flex gap-1 p-1 bg-zinc-900/60 rounded-lg">
+              <button
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  contentMode === "items" ? "bg-brand-500/20 text-brand-400" : "text-zinc-500 hover:text-zinc-200",
+                )}
+                onClick={() => setContentMode("items")}
+              >
+                <ShoppingCart className="w-3 h-3" />
+                Items ({itemIds.length})
+              </button>
+              <button
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  contentMode === "materials" ? "bg-brand-500/20 text-brand-400" : "text-zinc-500 hover:text-zinc-200",
+                )}
+                onClick={() => setContentMode("materials")}
+                disabled={!materialIds || materialIds.length === 0}
+                title={!materialIds || materialIds.length === 0 ? "No materials to add" : undefined}
+              >
+                <Hammer className="w-3 h-3" />
+                Materials ({materialIds?.length ?? 0})
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-500">
+              {effectiveIds.length} item{effectiveIds.length === 1 ? "" : "s"} from the current filter
+              {filterSnapshot.biomes && filterSnapshot.biomes.length > 0 ? ` · ${filterSnapshot.biomes.join(", ")}` : ""}
+            </p>
+          )}
 
           <div className="flex gap-1 p-1 bg-zinc-900/60 rounded-lg">
             <button

@@ -492,6 +492,7 @@ const RAW_MATERIAL_BIOME = {
   "Coal": "Meadows",
   "ChickenEgg": "Plains",
   "ChickenMeat": "Plains",
+  "BarleyFlour": "Plains",        // Milled from Barley (Plains) at the Windmill — windmill conversions aren't recipes
   // Cooked meats used as recipe ingredients (tier = source creature biome)
   "CookedMeat": "Meadows",
   "CookedDeerMeat": "Meadows",
@@ -872,8 +873,8 @@ const BIOME_OVERRIDE = {
   "Skeleton_NoArcher": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"], // +Plains
   "Skeleton_Poison": ["Black Forest"],
   "Hatchling": ["Mountain"],
-  "Hive": ["Meadows"],
-  "TheHive": ["Meadows"],
+  "Hive": ["Mistlands"],          // Seeker Hive (10000 HP, drops TrophySeekerQueen + QueenDrop)
+  "TheHive": ["Mountain"],        // Mislabelled "The Hive" in the dump — actually Drake Nest loot (TrophyHatchling + FreezeGland)
   "BogWitchKvastur": ["Swamp"],
 
   // ─── Boss/event rewards ───
@@ -2173,7 +2174,7 @@ function guessCreatureBiome(prefab) {
   if (p.includes("troll") || p.includes("greydwarf") || p.includes("skeleton") || p.includes("gdking") ||
       p.includes("ghost")) return "Black Forest";
   if (p.includes("boar") || p.includes("deer") || p.includes("neck") || p.includes("greyling") ||
-      p.includes("eikthyr") || p.includes("chicken") || p.includes("hive")) return "Meadows";
+      p.includes("eikthyr") || p.includes("chicken")) return "Meadows";
   if (p.includes("serpent") || p.includes("leviathan")) return "Ocean";
   return "";
 }
