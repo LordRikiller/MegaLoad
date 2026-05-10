@@ -20,8 +20,8 @@
     },
     {
       "name": "MegaFood",
-      "version": "1.4.2",
-      "download_url": "https://github.com/LordRikiller/MegaFood/releases/download/v1.4.2/MegaFood.dll",
+      "version": "1.4.3",
+      "download_url": "https://github.com/LordRikiller/MegaFood/releases/download/v1.4.3/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
       "description": "MegaFood + MegaMead — 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration"
@@ -76,8 +76,8 @@
     },
     {
       "name": "MegaTrainer",
-      "version": "1.6.2",
-      "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.2/MegaTrainer.dll",
+      "version": "1.6.3",
+      "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.3/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
       "description": "In-game cheat trainer — god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
