@@ -36,8 +36,8 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.16.1",
-      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.1/MegaQoL.dll",
+      "version": "1.16.2",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.2/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
@@ -76,8 +76,8 @@
     },
     {
       "name": "MegaTrainer",
-      "version": "1.6.3",
-      "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.3/MegaTrainer.dll",
+      "version": "1.6.4",
+      "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.4/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
       "description": "In-game cheat trainer — god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
