@@ -55,6 +55,7 @@ pub fn validate_download_url(url: &str) -> Result<(), String> {
         "api.github.com",
         "gcdn.thunderstore.io",
         "thunderstore.io",
+        "mega-api.lordrik.workers.dev",
     ];
     // Extract host from URL
     let without_scheme = &url["https://".len()..];
