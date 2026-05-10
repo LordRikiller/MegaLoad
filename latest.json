@@ -1,11 +1,11 @@
 {
-  "version": "1.10.39",
-  "notes": "Sync runs in the background and no longer blocks the UI. Removed the per-edit auto-sync triggers — changes to configs, trainer, mods, and Thunderstore installs no longer kick off a push immediately. Cloud sync now happens via the existing 30s poll, the initial pull on launch, and a single push when Valheim exits. The full-screen 'sync in progress' overlay on Mods/Browse/Configs is gone, so every tab stays usable while a push or pull runs.",
+  "version": "1.10.40",
+  "notes": "Hotfix: whitelist mega-api.lordrik.workers.dev in validate_download_url so mod updates work via the Worker proxy. v1.10.38/39 rewrote DLL URLs to the Worker but missed updating the client-side host allowlist, so every mod update bounced with \"Download URL host not allowed\". One-line fix.",
   "pub_date": "2026-05-10T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUpSMEVISG1oa1dCSXJrdVp2QmlPYTFLZWwzbkRvVGxuL1B1V3prTHpOVnRWcDdPdXRJVlBxZjZTV3YwOFhnK0ZBVVZMcXRCM2VZeW1mT29BZDR3U2dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MzcxNjc0CWZpbGU6TWVnYUxvYWRfMS4xMC4zOV94NjQtc2V0dXAubnNpcy56aXAKcGt5Vm4wTzBmV0dIcm1SbXBWZGVTTDROSHFGWFNFMHZuSHcyNXBlLytTdzErRDdhOE4yOS8xd0FaWUNxR0t6R2VrZHdFZ2g4UzBqcDM0cmgyNVNpQ3c9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.39/MegaLoad_1.10.39_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJMb21mREhlYllrL25QaXdDb2Fic2EyMFkxQXR5eVN4VW8xV0lIM1Q0WVZkM0QxeFZCV24vWTRGVnJseVF5bldMb2F3WnRiNTVSNFd6dDFkTWltRVEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4Mzc0MjMyCWZpbGU6TWVnYUxvYWRfMS4xMC40MF94NjQtc2V0dXAubnNpcy56aXAKTDVEVWFjZHkyaEJjZ1ZnejZRVCt5ckl3TUgyS3NoaFZ0a3dvNWV3dllnSTB3M1lKb3F0eG50ZzI3Q3N3VEJpa3VFeHNIKzdFbERFTmFYSmY3L1EyRFE9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.40/MegaLoad_1.10.40_x64-setup.nsis.zip"
     }
   }
 }
