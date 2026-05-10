@@ -1,26 +1,22 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useSyncStore } from "../stores/syncStore";
-import { useProfileStore } from "../stores/profileStore";
 import { useIdentityStore } from "../stores/identityStore";
 import { useToastStore } from "../stores/toastStore";
 import { useMegaListStore } from "../stores/megaListStore";
 import { useGameStatusStore } from "../stores/gameStatusStore";
 
 const POLL_INTERVAL_MS = 30_000; // Check for remote changes every 30s
-const DEBOUNCE_MS = 3_000; // Push 3s after FIRST change (non-resetting)
 const INITIAL_PULL_DELAY_MS = 2_000; // Let IdentityGate clear first
 
 /**
  * Auto-sync hook — handles:
  * 1. Initial pull on app startup (if sync enabled)
  * 2. Periodic polling for remote changes (30s) — paused while Valheim is running
- * 3. Non-resetting debounced push after local changes (3s from first trigger) —
- *    skipped while Valheim is running (DLLs are locked anyway)
- * 4. Single push + reconcile on game-exit transition (running → not running)
+ * 3. Single push + reconcile on game-exit transition (running → not running)
  *
- * Game-pause rationale: while Valheim is in-session, mod/config changes are
- * locked behind the game holding file handles, and pulling another device's
- * changes mid-game would just churn the cloud copy. Sync resumes on exit.
+ * Local edits are NOT pushed on every change — they're caught by the periodic
+ * poll/push cadence and the game-exit push. Per-edit pushing was removed in
+ * v1.10.39 because it was causing UI lockouts and unnecessary cloud churn.
  *
  * Mount once in AppShell.
  */
@@ -33,12 +29,10 @@ export function useAutoSync() {
   const pullAllProfiles = useSyncStore((s) => s.pullAllProfiles);
   const pushAllProfiles = useSyncStore((s) => s.pushAllProfiles);
   const addToast = useToastStore((s) => s.addToast);
-  const activeProfileId = useProfileStore((s) => s.activeProfileId);
   const identity = useIdentityStore((s) => s.identity);
   const valheimRunning = useGameStatusStore((s) => !!s.status?.valheim_running);
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialPullTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialPullDone = useRef(false);
   const wasGameRunning = useRef(false);
@@ -160,40 +154,10 @@ export function useAutoSync() {
     wasGameRunning.current = valheimRunning;
   }, [valheimRunning, enabled, autoSync, pushAllProfiles]);
 
-  // Non-resetting debounced push — fires 3s after the FIRST trigger,
-  // not the last. This ensures changes get pushed promptly even if the
-  // user is making rapid edits. Suppressed while game is running so we
-  // don't push partial state mid-session; the game-exit hook above
-  // catches up once the user is back in MegaLoad.
-  const schedulePush = useCallback(() => {
-    if (!enabled || !autoSync || valheimRunning) return;
-
-    // Only start a new timer if one isn't already running
-    if (debounceTimerRef.current) return;
-
-    debounceTimerRef.current = setTimeout(async () => {
-      debounceTimerRef.current = null;
-      try {
-        await pushAllProfiles();
-      } catch {
-        // Error already set in store
-      }
-    }, DEBOUNCE_MS);
-  }, [enabled, autoSync, valheimRunning, pushAllProfiles]);
-
-  // Push when active profile changes
-  useEffect(() => {
-    if (!enabled || !autoSync || !activeProfileId) return;
-    schedulePush();
-  }, [activeProfileId, enabled, autoSync, schedulePush]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     };
   }, []);
-
-  return { schedulePush };
 }

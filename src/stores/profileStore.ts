@@ -8,7 +8,6 @@ import {
   type Profile,
   type ProfileStore as ApiProfileStore,
 } from "../lib/tauri-api";
-import { useSyncStore } from "./syncStore";
 
 interface ProfileState {
   profiles: Profile[];
@@ -46,26 +45,22 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   createProfile: async (name: string) => {
     const profile = await apiCreateProfile(name);
     await get().fetchProfiles();
-    useSyncStore.getState().triggerAutoSync();
     return profile;
   },
 
   deleteProfile: async (id: string) => {
     await apiDeleteProfile(id);
     await get().fetchProfiles();
-    useSyncStore.getState().triggerAutoSync();
   },
 
   setActiveProfile: async (id: string) => {
     await apiSetActive(id);
     set({ activeProfileId: id });
-    useSyncStore.getState().triggerAutoSync();
   },
 
   renameProfile: async (id: string, newName: string) => {
     await apiRename(id, newName);
     await get().fetchProfiles();
-    useSyncStore.getState().triggerAutoSync();
   },
 
   activeProfile: () => {

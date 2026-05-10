@@ -9,7 +9,6 @@ import {
   type ThunderstoreListItem,
   type InstalledTsMod,
 } from "../lib/tauri-api";
-import { useSyncStore } from "./syncStore";
 
 interface ThunderstoreState {
   items: ThunderstoreListItem[];
@@ -111,9 +110,7 @@ export const useThunderstoreStore = create<ThunderstoreState>((set, get) => ({
         latest.download_url,
         latest.version_number
       );
-      // Refresh installed list
       await get().loadInstalledMods(bepinexPath);
-      useSyncStore.getState().triggerAutoSync();
       return result;
     } finally {
       set((s) => {
@@ -145,7 +142,6 @@ export const useThunderstoreStore = create<ThunderstoreState>((set, get) => ({
         folderName
       );
       await get().loadInstalledMods(bepinexPath);
-      useSyncStore.getState().triggerAutoSync();
       return result;
     } finally {
       set((s) => {
@@ -159,7 +155,6 @@ export const useThunderstoreStore = create<ThunderstoreState>((set, get) => ({
   uninstall: async (bepinexPath: string, fullName: string) => {
     await uninstallThunderstoreMod(bepinexPath, fullName);
     await get().loadInstalledMods(bepinexPath);
-    useSyncStore.getState().triggerAutoSync();
   },
 
   setQuery: (query: string) => set({ query }),

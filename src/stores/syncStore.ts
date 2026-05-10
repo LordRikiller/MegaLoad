@@ -34,7 +34,6 @@ interface SyncState {
   pushAllProfiles: () => Promise<void>;
   pullAllProfiles: () => Promise<void>;
   checkForRemoteChanges: () => Promise<boolean>;
-  triggerAutoSync: () => Promise<void>;
 }
 
 export const useSyncStore = create<SyncState>((set, get) => ({
@@ -221,21 +220,4 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       return false;
     }
   },
-
-  triggerAutoSync: async () => {
-    const { enabled, autoSync } = get();
-    if (!enabled || !autoSync) return;
-
-    // Debounce — coalesce bursts of config edits into a single push.
-    // Fires on a background timer so the UI stays responsive.
-    if (_autoSyncTimer) clearTimeout(_autoSyncTimer);
-    _autoSyncTimer = setTimeout(() => {
-      _autoSyncTimer = null;
-      // Fire-and-forget — do NOT await, so the caller returns immediately.
-      void get().pushAllProfiles();
-    }, AUTO_SYNC_DEBOUNCE_MS);
-  },
 }));
-
-const AUTO_SYNC_DEBOUNCE_MS = 2000;
-let _autoSyncTimer: ReturnType<typeof setTimeout> | null = null;

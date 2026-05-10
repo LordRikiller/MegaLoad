@@ -1,11 +1,11 @@
 {
-  "version": "1.10.38",
-  "notes": "Migrate MegaBugs ticketing and mod DLL downloads to MegaWorker \u2014 a Cloudflare Worker that holds the GitHub PAT server-side. v1.10.37 baked an obfuscated PAT into the binary; v1.10.38 carries no GitHub credential at all. Each install registers an HMAC secret with the Worker on first launch and signs every write request. Anonymous reads, IP rate limits, owner-signed admin ops. Net: extracting a MegaLoad binary no longer yields any GitHub access.",
+  "version": "1.10.39",
+  "notes": "Sync runs in the background and no longer blocks the UI. Removed the per-edit auto-sync triggers — changes to configs, trainer, mods, and Thunderstore installs no longer kick off a push immediately. Cloud sync now happens via the existing 30s poll, the initial pull on launch, and a single push when Valheim exits. The full-screen 'sync in progress' overlay on Mods/Browse/Configs is gone, so every tab stays usable while a push or pull runs.",
   "pub_date": "2026-05-10T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUlNaElXRUFwblVBOExKTlVxbnBsa1pQeUlFczJhSVp0a2JWeVdkVEpTdGNiOENvOFUzVkpXQlNUNHRFaW5hZC9BU3A0cFNzMytsWDRISTcycUZjL3dNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MzY3ODQ2CWZpbGU6TWVnYUxvYWRfMS4xMC4zOF94NjQtc2V0dXAubnNpcy56aXAKcTB5TkcrcmQxRDZ4VFdSTlBhdVBLcjJOT3VnS2I5cHdSaXRlY2tCYjVFLzV3aXltYS9OTWh5K3A1VUNYZDBXM0YxZEpXaTVUZkhpL2duVTN0YTZzQ1E9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.38/MegaLoad_1.10.38_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUpSMEVISG1oa1dCSXJrdVp2QmlPYTFLZWwzbkRvVGxuL1B1V3prTHpOVnRWcDdPdXRJVlBxZjZTV3YwOFhnK0ZBVVZMcXRCM2VZeW1mT29BZDR3U2dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MzcxNjc0CWZpbGU6TWVnYUxvYWRfMS4xMC4zOV94NjQtc2V0dXAubnNpcy56aXAKcGt5Vm4wTzBmV0dIcm1SbXBWZGVTTDROSHFGWFNFMHZuSHcyNXBlLytTdzErRDdhOE4yOS8xd0FaWUNxR0t6R2VrZHdFZ2g4UzBqcDM0cmgyNVNpQ3c9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.39/MegaLoad_1.10.39_x64-setup.nsis.zip"
     }
   }
 }

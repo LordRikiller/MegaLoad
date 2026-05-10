@@ -30,7 +30,6 @@ import {
   Crown,
 } from "lucide-react";
 import { cn, formatModName } from "../lib/utils";
-import { SyncingOverlay } from "../components/SyncingOverlay";
 import { iconForModName } from "../lib/modIcons";
 
 export function Browse() {
@@ -230,7 +229,6 @@ export function Browse() {
 
   return (
     <div className="relative flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <SyncingOverlay />
       {/* Toast */}
       {toast && (
         <div className="fixed top-14 right-6 z-50 px-4 py-2.5 rounded-lg bg-brand-500/90 text-zinc-950 text-sm font-medium shadow-xl animate-in slide-in-from-top-2 duration-300 max-w-sm">

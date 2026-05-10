@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useProfileStore } from "../stores/profileStore";
-import { useSyncStore } from "../stores/syncStore";
 import {
   getConfigFiles,
   saveConfigValue,
@@ -29,7 +28,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn, formatModName } from "../lib/utils";
-import { SyncingOverlay } from "../components/SyncingOverlay";
 
 /** Natural sort comparator — handles "1 - Foo", "2 - Bar", "10 - Baz" correctly */
 function naturalCompare(a: string, b: string): number {
@@ -177,8 +175,6 @@ export function ConfigEditor() {
         )
       );
       setChangeCount((c) => c + 1);
-      // Trigger cloud sync after config change
-      useSyncStore.getState().triggerAutoSync();
     },
     []
   );
@@ -304,7 +300,6 @@ export function ConfigEditor() {
 
   return (
     <div className="relative flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <SyncingOverlay />
       {/* Toast */}
       {toast && (
         <div className="fixed top-14 right-6 z-50 px-4 py-2.5 rounded-lg bg-brand-500/90 text-zinc-950 text-sm font-medium shadow-xl animate-in slide-in-from-top-2 duration-300">
