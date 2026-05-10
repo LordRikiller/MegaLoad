@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-10T03:17:16Z",
+  "updated_at": "2026-05-10T05:05:45Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -84,8 +84,8 @@
     },
     {
       "name": "MegaBuilder",
-      "version": "1.6.4",
-      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.6.4/MegaBuilder.dll",
+      "version": "1.6.5",
+      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.6.5/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
       "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m); auto-prunes orphan config sections on launch"
