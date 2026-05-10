@@ -76,8 +76,8 @@
     },
     {
       "name": "MegaTrainer",
-      "version": "1.6.4",
-      "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.4/MegaTrainer.dll",
+      "version": "1.6.5",
+      "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.5/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
       "description": "In-game cheat trainer — god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
