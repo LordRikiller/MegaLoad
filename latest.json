@@ -1,11 +1,11 @@
 {
-  "version": "1.10.41",
-  "notes": "Valheim Data fixes — Fish Wraps now correctly tagged Plains (was Black Forest) and Majestic Carapace correctly tagged Mistlands (was Meadows). Bread Dough now also Plains. Cart \"Add to list\" gains an Items / Materials toggle so you can drop the aggregated craft mats straight into a MegaList instead of the products.",
-  "pub_date": "2026-05-11T00:00:00Z",
+  "version": "1.10.42",
+  "notes": "MegaBugs ticket submission no longer dies on Worker 401 — the Worker's HMAC entry can silently drop out of Cloudflare KV; MegaLoad now auto-re-registers and retries the upload, and surfaces the actual Worker reason instead of a bare \"status code 401\".",
+  "pub_date": "2026-05-16T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUpza2dzem1yTDc4YjM0MDJ3TUgzZ1VoRkthSEpsbjlBQXhudUZUdDFOcnBqdTRqcVplakhyakxIRENwRXJZZGxxNDlpUkNaeFpxK3ZBZzdnMDFLVkE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4NDUxNTI0CWZpbGU6TWVnYUxvYWRfMS4xMC40MV94NjQtc2V0dXAubnNpcy56aXAKTE4zVDNxWWkxOHhFNHZTS2ZnajMyc3JqYlFqTG5mUTVTTEdmRzI3aUhOUXd6RUEzaW1SSlhocTZiV01mZzdWNTB4eWdhVk90OVM1WkdVcEROTnd1RFE9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.41/MegaLoad_1.10.41_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtOREdVNER1M09ONU1jVXFLQWZiTU9qZm16QWYwODVGSE8wVkFySTdxN3M2cXVlenVKc0N1TGM0Ym5aUG41RmJweE9XUmhadjd6am8yT2JpVjJwTmdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4ODkwOTg3CWZpbGU6TWVnYUxvYWRfMS4xMC40Ml94NjQtc2V0dXAubnNpcy56aXAKRWtvb2o3bmpCTzQ5QW9POE9INGNCR3BkdFZmMWloNWpqWmV2c1B4T2hTNm0vRzhxTXZRTThQWG5LSmR0UG4vYXNadFNaR3BGU1FYRnVNNVkrU09QRGc9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.42/MegaLoad_1.10.42_x64-setup.nsis.zip"
     }
   }
 }

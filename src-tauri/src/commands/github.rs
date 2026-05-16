@@ -1,6 +1,8 @@
+use crate::commands::app_log::app_log;
 use crate::commands::identity::{get_or_create_hmac_secret, read_admin_key};
 use crate::commands::worker_auth::{
-    admin_sig, bugs_contents_path, bugs_contents_url, bugs_git_url, unix_now, user_sig,
+    admin_sig, bugs_contents_path, bugs_contents_url, bugs_git_url, register_with_worker,
+    unix_now, user_sig,
 };
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde::Deserialize;
@@ -98,12 +100,23 @@ pub fn github_get_file(path: &str) -> Result<(String, String), String> {
     Ok((text, gc.sha))
 }
 
-/// Sign and send a PUT request to /bugs/contents/<path>. Body is the
-/// JSON-serialised GitHub Contents API payload.
-fn signed_put(path: &str, body: &str) -> Result<ureq::Response, String> {
-    let (user_id, secret) = get_or_create_hmac_secret()?;
+/// Single-shot signed PUT. Returns the body-bearing ureq::Error verbatim so the
+/// caller can read the response body on non-2xx (the Worker writes the actual
+/// 401 reason there — "Unknown user", "Invalid signature", etc.).
+fn signed_put_once(path: &str, body: &str) -> Result<ureq::Response, ureq::Error> {
+    let (user_id, secret) = get_or_create_hmac_secret().map_err(|e| {
+        // Wrap the secret-generation failure as a transport error so the caller
+        // gets a uniform Result type. ureq::Error::Transport carries an
+        // io-style message; that's adequate for the user-facing surface.
+        let io = std::io::Error::new(std::io::ErrorKind::Other, e);
+        ureq::Error::from(io)
+    })?;
     let ts = unix_now();
-    let sig = user_sig(&secret, "PUT", &bugs_contents_path(path), &ts, body.as_bytes())?;
+    let sig = user_sig(&secret, "PUT", &bugs_contents_path(path), &ts, body.as_bytes())
+        .map_err(|e| {
+            let io = std::io::Error::new(std::io::ErrorKind::Other, e);
+            ureq::Error::from(io)
+        })?;
 
     crate::commands::http::agent()
         .put(&bugs_contents_url(path))
@@ -113,12 +126,60 @@ fn signed_put(path: &str, body: &str) -> Result<ureq::Response, String> {
         .set("X-MegaLoad-Timestamp", &ts)
         .set("X-MegaLoad-Sig", &sig)
         .send_string(body)
-        .map_err(|e| format!("Worker PUT failed for {}: {}", path, e))
 }
 
-/// Sign and send a DELETE request. Uses admin HMAC if the local admin key
-/// file is present; otherwise user HMAC. Worker accepts either.
-fn signed_delete(path: &str, body: &str) -> Result<ureq::Response, String> {
+/// Format a ureq error for user-facing surfacing. On HTTP Status errors we read
+/// the response body so the Worker's "Unknown user" / "Invalid signature" etc.
+/// reaches the user — the bare ureq Display strips it.
+fn fmt_ureq_err(path: &str, verb: &str, err: ureq::Error) -> String {
+    match err {
+        ureq::Error::Status(code, resp) => {
+            let body = resp.into_string().unwrap_or_default();
+            let trimmed = body.trim();
+            if trimmed.is_empty() {
+                format!("Worker {} failed for {}: status code {}", verb, path, code)
+            } else {
+                format!(
+                    "Worker {} failed for {}: status code {} — {}",
+                    verb, path, code, trimmed
+                )
+            }
+        }
+        e => format!("Worker {} failed for {}: {}", verb, path, e),
+    }
+}
+
+/// Sign and send a PUT request to /bugs/contents/<path>. Body is the
+/// JSON-serialised GitHub Contents API payload.
+///
+/// Auto-retries once on 401 after re-registering with the Worker. Cloudflare KV
+/// has been observed to silently drop user:<id> entries; re-registration fixes
+/// it transparently and saves the user from "PUT failed: 401" mystery errors.
+fn signed_put(path: &str, body: &str) -> Result<ureq::Response, String> {
+    match signed_put_once(path, body) {
+        Ok(r) => Ok(r),
+        Err(ureq::Error::Status(401, resp)) => {
+            let detail = resp.into_string().unwrap_or_default();
+            app_log(&format!(
+                "Worker PUT 401 for {} — re-registering and retrying ({})",
+                path,
+                detail.trim()
+            ));
+            if let Err(e) = register_with_worker() {
+                return Err(format!(
+                    "Worker PUT failed for {}: 401 — {}; auto re-register failed: {}",
+                    path,
+                    detail.trim(),
+                    e
+                ));
+            }
+            signed_put_once(path, body).map_err(|e| fmt_ureq_err(path, "PUT", e))
+        }
+        Err(e) => Err(fmt_ureq_err(path, "PUT", e)),
+    }
+}
+
+fn signed_delete_once(path: &str, body: &str) -> Result<ureq::Response, ureq::Error> {
     let ts = unix_now();
     let canonical_path = bugs_contents_path(path);
     let mut req = crate::commands::http::agent()
@@ -128,18 +189,55 @@ fn signed_delete(path: &str, body: &str) -> Result<ureq::Response, String> {
         .set("X-MegaLoad-Timestamp", &ts);
 
     if let Some(admin_key) = read_admin_key() {
-        let sig = admin_sig(&admin_key, "DELETE", &canonical_path, &ts, body.as_bytes())?;
+        let sig = admin_sig(&admin_key, "DELETE", &canonical_path, &ts, body.as_bytes())
+            .map_err(|e| {
+                let io = std::io::Error::new(std::io::ErrorKind::Other, e);
+                ureq::Error::from(io)
+            })?;
         req = req.set("X-MegaLoad-Admin-Sig", &sig);
     } else {
-        let (user_id, secret) = get_or_create_hmac_secret()?;
-        let sig = user_sig(&secret, "DELETE", &canonical_path, &ts, body.as_bytes())?;
+        let (user_id, secret) = get_or_create_hmac_secret().map_err(|e| {
+            let io = std::io::Error::new(std::io::ErrorKind::Other, e);
+            ureq::Error::from(io)
+        })?;
+        let sig = user_sig(&secret, "DELETE", &canonical_path, &ts, body.as_bytes()).map_err(|e| {
+            let io = std::io::Error::new(std::io::ErrorKind::Other, e);
+            ureq::Error::from(io)
+        })?;
         req = req
             .set("X-MegaLoad-User", &user_id)
             .set("X-MegaLoad-Sig", &sig);
     }
 
     req.send_string(body)
-        .map_err(|e| format!("Worker DELETE failed for {}: {}", path, e))
+}
+
+/// Sign and send a DELETE request. Uses admin HMAC if the local admin key
+/// file is present; otherwise user HMAC. Worker accepts either.
+///
+/// Auto-retries once on 401 (user-signed only — admin key doesn't roam through KV).
+fn signed_delete(path: &str, body: &str) -> Result<ureq::Response, String> {
+    match signed_delete_once(path, body) {
+        Ok(r) => Ok(r),
+        Err(ureq::Error::Status(401, resp)) if read_admin_key().is_none() => {
+            let detail = resp.into_string().unwrap_or_default();
+            app_log(&format!(
+                "Worker DELETE 401 for {} — re-registering and retrying ({})",
+                path,
+                detail.trim()
+            ));
+            if let Err(e) = register_with_worker() {
+                return Err(format!(
+                    "Worker DELETE failed for {}: 401 — {}; auto re-register failed: {}",
+                    path,
+                    detail.trim(),
+                    e
+                ));
+            }
+            signed_delete_once(path, body).map_err(|e| fmt_ureq_err(path, "DELETE", e))
+        }
+        Err(e) => Err(fmt_ureq_err(path, "DELETE", e)),
+    }
 }
 
 /// Create or update a file in the MegaBugs repo via the Worker.
