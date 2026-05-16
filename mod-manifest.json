@@ -28,8 +28,8 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.6.54",
-      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.54/MegaShot.dll",
+      "version": "2.6.55",
+      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.55/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system, Armageddon beam mode"
