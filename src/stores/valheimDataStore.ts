@@ -792,28 +792,32 @@ function isPlayerBuildable(piece: ValheimItem): boolean {
   return (piece.recipe || []).every(ing => isMaterialObtainable(ing.id));
 }
 
-/** Get all unique raw ingredients needed to build BuildPieces (optionally
- *  filtered to specific sub-categories — Wall, Floor, Roof, etc.). Mirrors
- *  getStationMaterials but pivots on the BuildPiece sub-category axis instead
- *  of the station axis. Skips decoration-only pieces (see isPlayerBuildable)
- *  so Ashlands ruin pots don't pollute the rollup. */
-export function getBuildPieceMaterials(subcategories: string[]): CartMaterial[] {
+// Item types that have crafting recipes the player can use directly
+// (Weapons/Armour at Forge, Food at Cauldron, etc.). Plantables/Materials/
+// Creatures/WorldObjects/Misc don't get a Materials filter — saplings are
+// planted not crafted, materials are the inputs, the rest aren't crafted.
+export const CRAFTABLE_TYPES: ReadonlyArray<string> = [
+  "Weapon", "Armor", "Clothing", "Food", "Potion", "Tool", "Ammo", "BuildPiece",
+];
+
+/** Aggregate raw materials needed to craft every item in `items` that has a
+ *  recipe. Works across any pre-filtered set (typically the output of
+ *  getFilteredItems). Skips decoration-only BuildPieces via isPlayerBuildable
+ *  and filters out non-raw ingredient types so the list stays raw resources
+ *  only (Torch-tool exception preserved for piece_dvergr_lantern). */
+export function getCraftableMaterials(items: ValheimItem[]): CartMaterial[] {
   const totals = new Map<string, CartMaterial>();
-  const filterSet = subcategories.length > 0 ? new Set(subcategories) : null;
-  for (const item of VALHEIM_ITEMS) {
-    if (item.type !== "BuildPiece") continue;
-    if (filterSet && !filterSet.has(item.subcategory)) continue;
-    if (!isPlayerBuildable(item)) continue;
-    for (const ing of item.recipe) {
+  for (const item of items) {
+    if (!CRAFTABLE_TYPES.includes(item.type)) continue;
+    if (item.type === "BuildPiece" && !isPlayerBuildable(item)) continue;
+    if ((!item.recipe || item.recipe.length === 0) && (!item.upgradeCosts || item.upgradeCosts.length === 0)) continue;
+    for (const ing of item.recipe || []) {
       const canonical = _bpItemMap.get(ing.id);
-      // Prefer the canonical name from the item record so manually-added
-      // entries (ITEM_ADDITIONS) override raw token names left over from the
-      // pieces dump (e.g. "$item_pot_shard_red" → "Red Pot Shard").
       const displayName = canonical?.name || ing.name;
       const prev = totals.get(ing.id);
       totals.set(ing.id, { id: ing.id, name: displayName, amount: (prev?.amount || 0) + ing.amount });
     }
-    for (const uc of item.upgradeCosts) {
+    for (const uc of item.upgradeCosts || []) {
       for (const r of uc.resources) {
         const canonical = _bpItemMap.get(r.id);
         const displayName = canonical?.name || r.name;
@@ -822,10 +826,6 @@ export function getBuildPieceMaterials(subcategories: string[]): CartMaterial[] 
       }
     }
   }
-  // Drop ingredients that are themselves crafted weapons/armor/tools/ammo so
-  // the list stays raw materials only (matches getStationMaterials).
-  // Exception: Torch-subcategory tools (Dvergr Lantern) are real building
-  // ingredients for piece_dvergr_lantern + piece_dvergr_lantern_pole — keep them.
   for (const [id] of totals) {
     const ingItem = _bpItemMap.get(id);
     if (ingItem && NON_RAW_MAT_TYPES.has(ingItem.type) && ingItem.subcategory !== "Torch") {
@@ -835,14 +835,14 @@ export function getBuildPieceMaterials(subcategories: string[]): CartMaterial[] 
   return [...totals.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Count BuildPieces aggregated by getBuildPieceMaterials for header display. */
-export function getBuildPieceCount(subcategories: string[]): number {
-  const filterSet = subcategories.length > 0 ? new Set(subcategories) : null;
+/** Count of items in `items` that contribute to getCraftableMaterials (have a
+ *  recipe / upgrades and pass the BuildPiece player-buildable gate). */
+export function getCraftableItemCount(items: ValheimItem[]): number {
   let n = 0;
-  for (const item of VALHEIM_ITEMS) {
-    if (item.type !== "BuildPiece") continue;
-    if (filterSet && !filterSet.has(item.subcategory)) continue;
-    if (!isPlayerBuildable(item)) continue;
+  for (const item of items) {
+    if (!CRAFTABLE_TYPES.includes(item.type)) continue;
+    if (item.type === "BuildPiece" && !isPlayerBuildable(item)) continue;
+    if ((!item.recipe || item.recipe.length === 0) && (!item.upgradeCosts || item.upgradeCosts.length === 0)) continue;
     n++;
   }
   return n;
@@ -938,9 +938,12 @@ interface ValheimDataState {
   // Station materials mode: false = show items, "craft" = craft materials, "build" = build materials
   stationMaterialsMode: false | "craft" | "build";
   setStationMaterialsMode: (mode: false | "craft" | "build") => void;
-  // Build piece materials mode: false = show pieces, "materials" = show aggregated build mats
-  buildPieceMaterialsMode: false | "materials";
-  setBuildPieceMaterialsMode: (mode: false | "materials") => void;
+  // Item materials mode: false = show items, "materials" = aggregated raw mats
+  // for all currently-filtered craftable items (Weapons / Armour / Food /
+  // Potions / Tools / Ammo / BuildPieces). Same UX as the old build-piece-only
+  // toggle, just applied to any craftable scope.
+  itemMaterialsMode: false | "materials";
+  setItemMaterialsMode: (mode: false | "materials") => void;
   // Return path — when set, the Back button on item/station/vendor detail
   // navigates to this route instead of clearing selection in place.
   // Set by cross-page links (e.g. PlayerData inventory click → item detail).
@@ -991,9 +994,17 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   tableSortKey: "name",
   tableSortDir: "asc",
   stationMaterialsMode: false,
-  setStationMaterialsMode: (on) => set({ stationMaterialsMode: on }),
-  buildPieceMaterialsMode: false,
-  setBuildPieceMaterialsMode: (on) => set({ buildPieceMaterialsMode: on }),
+  setStationMaterialsMode: (on) => set((s) => ({
+    stationMaterialsMode: on,
+    itemMaterialsMode: on ? false : s.itemMaterialsMode,
+  })),
+  itemMaterialsMode: false,
+  setItemMaterialsMode: (on) => set((s) => ({
+    itemMaterialsMode: on,
+    // Toggling on item-mats forces off station-mats so the two views never
+    // fight for precedence in the render switch.
+    stationMaterialsMode: on ? false : s.stationMaterialsMode,
+  })),
   returnPath: null,
   setReturnPath: (returnPath) => set({ returnPath }),
   cartItems: [],
@@ -1003,7 +1014,7 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   setActiveType: (t) => set((s) => ({
     activeTypes: t ? [t] : [],
     activeSubcategories: [],
-    buildPieceMaterialsMode: t === "BuildPiece" ? s.buildPieceMaterialsMode : false,
+    itemMaterialsMode: t && CRAFTABLE_TYPES.includes(t) ? s.itemMaterialsMode : false,
   })),
   setActiveSubcategory: (s) => set({ activeSubcategories: s ? [s] : [] }),
   setActiveBiome: (b) => set({ activeBiomes: b ? [b] : [] }),
@@ -1013,10 +1024,11 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   // Toggle in/out of array (for sidebar checkboxes)
   toggleType: (t) => set((s) => {
     const nextTypes = s.activeTypes.includes(t) ? s.activeTypes.filter(x => x !== t) : [...s.activeTypes, t];
+    const stillCraftable = nextTypes.some((x) => CRAFTABLE_TYPES.includes(x));
     return {
       activeTypes: nextTypes,
       activeSubcategories: [],
-      buildPieceMaterialsMode: nextTypes.includes("BuildPiece") ? s.buildPieceMaterialsMode : false,
+      itemMaterialsMode: stillCraftable ? s.itemMaterialsMode : false,
     };
   }),
   toggleSubcategory: (sub) => set((s) => ({
