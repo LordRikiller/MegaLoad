@@ -52,8 +52,8 @@
     },
     {
       "name": "MegaFarming",
-      "version": "1.3.6",
-      "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.3.6/MegaFarming.dll",
+      "version": "1.3.7",
+      "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.3.7/MegaFarming.dll",
       "dll_name": "MegaFarming.dll",
       "plugin_folder": "MegaFarming",
       "description": "Mass farming — hold-key mass harvest pickables/beehives, grid plant any cultivator plant, plant anywhere (any biome), plus custom plantables (bushes, mushrooms, thistle, fiddleheads) added to the Cultivator. Plantable delete on cultivate, growth + respawn timer hover (saplings AND picked berry bushes / mushrooms etc.), stump markers on picked renewables."
@@ -84,8 +84,8 @@
     },
     {
       "name": "MegaBuilder",
-      "version": "1.6.7",
-      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.6.7/MegaBuilder.dll",
+      "version": "1.6.8",
+      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.6.8/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
       "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m); auto-prunes orphan config sections on launch"
