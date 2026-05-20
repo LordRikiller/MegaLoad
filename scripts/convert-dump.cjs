@@ -132,6 +132,7 @@ const BLACKLISTED_PREFABS = new Set([
   // Debug/test/unused items
   "CapeTest",           // Cape test item — not available in game
   "ShieldKnight",       // Knight Shield UNUSED — not available in game
+  "PickaxeStone",       // Stone Pickaxe — recipe exists in prefab data but disabled in-game (m_enabled=false, not surfaced by dumper)
 
   // Boss altar upgrade pickups — not player-usable items
   "HealthUpgrade_Bonemass",
@@ -1705,7 +1706,7 @@ for (const item of items) {
   const biomes = guessBiomes(item.prefab, recipe);
   
   const recipeIngredients = recipe ? recipe.resources
-    .filter(r => r.item)
+    .filter(r => r.item && r.amount > 0)
     .map(r => ({
       id: r.item,
       name: loc(findItemName(r.item)),
