@@ -1395,6 +1395,12 @@ export function getCartMaterials(cartItems: CartEntry[]): CartMaterial[] {
   for (const entry of cartItems) {
     const item = VALHEIM_ITEMS.find((i) => i.id === entry.id);
     if (!item) continue;
+    if (item.recipe.length === 0) {
+      // Non-craftable item — gathered/dropped/bought as itself.
+      const prev = totals.get(item.id);
+      totals.set(item.id, { id: item.id, name: item.name, amount: (prev?.amount || 0) + 1 });
+      continue;
+    }
     // Add base recipe
     for (const ing of item.recipe) {
       const prev = totals.get(ing.id);

@@ -1,11 +1,11 @@
 {
-  "version": "1.10.43",
-  "notes": "Valheim Data — Pieces/Materials toggle now works for every craftable type. Filter to Weapons, Armour, Food, Potions, Tools or Ammo (alone or combined) and flick to Materials to roll up every raw ingredient (with upgrade costs) needed to craft the lot — same UX as the build-piece materials view, just generalised.",
-  "pub_date": "2026-05-16T00:00:00Z",
+  "version": "1.10.48",
+  "notes": "Shopping Cart — any item now adds to cart, not just craftables. Drops, raw resources and creatures land in the Materials panel as 1× of themselves so your shopping list is the lot.",
+  "pub_date": "2026-05-22T12:15:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJucnlaMkduSWRrdlg0WG03N043c09ybTFpbHg0MVZzbGM4WVVqck15UU12U1FjN0lsbk5vSlc2L213RThXMUE1L0tSQU1EQkpoM01hZHovc2IzT0FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4OTE4NTA0CWZpbGU6TWVnYUxvYWRfMS4xMC40M194NjQtc2V0dXAubnNpcy56aXAKelVHQXV1YVpFMUVVR2RFaEd5UHc2c3F0NjVzRDh2ZHZMVURQeUcrRCtBZE9JQVdMQnBkdXBrYWxRRXhLaWo2R00xcGZNWjJxR1pEdFpMcHJDaVhnRFE9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.43/MegaLoad_1.10.43_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFFc1ZDU05lYUVoUmpJbm5RWUY0aXVrZjFueUN3VE5XZmo5YXU2cWdvUkJBc2N6bjdnZ3Y4Q3Q3VHVTV1U4TXpscGNOMUthSVM2eFpicytndXNmbWdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc5NDUxNDk3CWZpbGU6TWVnYUxvYWRfMS4xMC40OF94NjQtc2V0dXAubnNpcy56aXAKWEs4WFFhcStUTHFTSDJZaEN6MytYYXhSV2lNS2VPdnVBYzFiYlUwSmxTQ2VCSFZmOEl5WlQ1YWJpdWNYQVdES0kybG9UUFN1ai8zc1Vvanh0R0VvRGc9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.48/MegaLoad_1.10.48_x64-setup.nsis.zip"
     }
   }
 }

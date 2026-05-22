@@ -1748,50 +1748,48 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                 Wiki
               </a>
             )}
-            {item.recipe.length > 0 && (
-              <div className="flex items-center gap-2">
-                {!cartItems.some((c) => c.id === item.id) && item.maxQuality > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-zinc-500">Lv</span>
-                    <button
-                      title="Decrease level"
-                      onClick={() => setCartLevel(Math.max(1, cartLevel - 1))}
-                      className="w-5 h-5 rounded flex items-center justify-center glass border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="w-5 text-center text-xs font-mono text-zinc-300">{cartLevel}</span>
-                    <button
-                      title="Increase level"
-                      onClick={() => setCartLevel(Math.min(item.maxQuality, cartLevel + 1))}
-                      className="w-5 h-5 rounded flex items-center justify-center glass border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-                {(() => {
-                  const inCart = cartItems.some((c) => c.id === item.id);
-                  return inCart ? (
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg glass border border-zinc-800 text-[11px] text-red-400 hover:text-red-300 hover:border-red-500/30 transition-colors"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Remove
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => addToCart(item.id, cartLevel)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-500/15 border border-brand-500/30 text-[11px] font-medium text-brand-400 hover:bg-brand-500/25 transition-colors"
-                    >
-                      <ShoppingCart className="w-3 h-3" />
-                      Cart
-                    </button>
-                  );
-                })()}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {!cartItems.some((c) => c.id === item.id) && item.maxQuality > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-zinc-500">Lv</span>
+                  <button
+                    title="Decrease level"
+                    onClick={() => setCartLevel(Math.max(1, cartLevel - 1))}
+                    className="w-5 h-5 rounded flex items-center justify-center glass border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="w-5 text-center text-xs font-mono text-zinc-300">{cartLevel}</span>
+                  <button
+                    title="Increase level"
+                    onClick={() => setCartLevel(Math.min(item.maxQuality, cartLevel + 1))}
+                    className="w-5 h-5 rounded flex items-center justify-center glass border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              {(() => {
+                const inCart = cartItems.some((c) => c.id === item.id);
+                return inCart ? (
+                  <button
+                    onClick={() => removeFromCart(item.id)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg glass border border-zinc-800 text-[11px] text-red-400 hover:text-red-300 hover:border-red-500/30 transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => addToCart(item.id, cartLevel)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-500/15 border border-brand-500/30 text-[11px] font-medium text-brand-400 hover:bg-brand-500/25 transition-colors"
+                  >
+                    <ShoppingCart className="w-3 h-3" />
+                    Cart
+                  </button>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </div>

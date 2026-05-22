@@ -182,7 +182,7 @@ export function Cart() {
           <div className="text-center">
             <ShoppingCart className="w-16 h-16 text-zinc-800 mx-auto mb-4" />
             <p className="text-zinc-500 text-lg">Your cart is empty</p>
-            <p className="text-zinc-600 text-sm mt-1">Add craftable items from the Valheim Data page</p>
+            <p className="text-zinc-600 text-sm mt-1">Add any item from the Valheim Data page</p>
             <button
               onClick={() => navigate("/valheim-data")}
               className="mt-4 px-4 py-2 rounded-lg bg-brand-500/15 border border-brand-500/30 text-sm font-medium text-brand-400 hover:bg-brand-500/25 transition-colors"

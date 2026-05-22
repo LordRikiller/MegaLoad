@@ -1,7 +1,7 @@
 {
   "name": "megaload",
   "private": true,
-  "version": "1.10.44",
+  "version": "1.10.48",
   "type": "module",
   "scripts": {
     "dev": "vite",
