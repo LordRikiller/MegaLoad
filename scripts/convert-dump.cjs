@@ -805,14 +805,15 @@ const BIOME_OVERRIDE = {
 
   // ─── Multi-biome tree/rock/forage materials ───
   "Wood": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
-  "FineWood": ["Meadows", "Plains"],
-  "RoundLog": ["Meadows", "Black Forest", "Mountain", "Plains"],
+  "FineWood": ["Meadows", "Black Forest", "Swamp", "Plains"],   // +BF/Swamp (Shipwrecks dot the shores of BF, Swamp and Plains — drop Finewood when destroyed)
+  "RoundLog": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],   // +Swamp (Pine trees grow at Swamp/Black Forest borders)
   "Stone": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],
   "DeerHide": ["Meadows", "Black Forest", "Plains"],
   "Flint": ["Meadows", "Black Forest"],
-  "Resin": ["Meadows", "Black Forest"],
-  "Mushroom": ["Meadows", "Black Forest"],
-  "Feathers": ["Meadows", "Black Forest", "Mountain", "Plains", "Ashlands"],
+  "Resin": ["Meadows", "Black Forest", "Swamp", "Mountain"],                  // +Swamp/Mountain (Fir trees grow there — Mountain is Fir-only per wiki)
+  "FirCone": ["Black Forest", "Swamp", "Mountain"],                           // +Swamp/Mountain (Fir trees grow there — Mountain is Fir-only per wiki)
+  "Mushroom": ["Meadows", "Black Forest", "Swamp"],                            // +Swamp (verified on Mushroom wiki page)
+  "Feathers": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],  // +Swamp (Sunken Crypt chests — confirmed in-game)
   "Coal": ["Meadows", "Black Forest", "Swamp"],
   "LeatherScraps": ["Meadows", "Black Forest", "Swamp", "Mountain"],  // +Swamp (Sunken Crypts), +Mountain (Bat drops)
   "BirchSeeds": ["Meadows", "Plains"],
@@ -886,7 +887,7 @@ const BIOME_OVERRIDE = {
   "StaminaUpgrade_Wraith": ["Swamp"],
   "VegvisirShard_Bonemass": ["Swamp"],
   // AxeHead1 moved to Vendor section above (Meadows)
-  "AxeHead2": ["Swamp"],
+  "AxeHead2": ["Meadows"],                 // Found in Abandoned House ruins (variant 2) in Meadows — NOT Swamp
 
   // ─── Miscellaneous ───
   "HelmetYule": ["Black Forest"],
@@ -917,8 +918,11 @@ const WORLD_DROPS = {
     {source: "Oak Tree", biome: "Meadows", type: "Tree"},
     {source: "Oak Tree", biome: "Plains", type: "Tree"},
     {source: "Pine Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Pine Tree", biome: "Swamp", type: "Tree"},
     {source: "Pine Tree", biome: "Mountain", type: "Tree"},
     {source: "Fir Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Fir Tree", biome: "Swamp", type: "Tree"},
+    {source: "Fir Tree", biome: "Mountain", type: "Tree"},     // Mountain is Fir-only per wiki
     {source: "Ancient Tree", biome: "Swamp", type: "Tree"},
   ],
   "FineWood": [
@@ -926,10 +930,15 @@ const WORLD_DROPS = {
     {source: "Birch Tree", biome: "Plains", type: "Tree"},
     {source: "Oak Tree", biome: "Meadows", type: "Tree"},
     {source: "Oak Tree", biome: "Plains", type: "Tree"},
-    {source: "Shipwreck", biome: "Ocean", type: "Destructible"},
+    // Shipwrecks sit on the shores of Black Forest, Swamp and Plains (NOT Ocean per wiki).
+    // Each destructible part drops 3-15 Finewood when smashed.
+    {source: "Shipwreck", biome: "Black Forest", type: "Destructible"},
+    {source: "Shipwreck", biome: "Swamp", type: "Destructible"},
+    {source: "Shipwreck", biome: "Plains", type: "Destructible"},
   ],
   "RoundLog": [
     {source: "Pine Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Pine Tree", biome: "Swamp", type: "Tree"},
     {source: "Pine Tree", biome: "Mountain", type: "Tree"},
     {source: "Destroyed Structure", biome: "Meadows", type: "Destructible"},
     {source: "Destroyed Structure", biome: "Plains", type: "Destructible"},
@@ -946,6 +955,8 @@ const WORLD_DROPS = {
   "Resin": [
     {source: "Beech Tree", biome: "Meadows", type: "Tree"},
     {source: "Fir Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Fir Tree", biome: "Swamp", type: "Tree"},
+    {source: "Fir Tree", biome: "Mountain", type: "Tree"},
   ],
   // ─── Seeds from trees ───
   "BeechSeeds": [
@@ -960,6 +971,8 @@ const WORLD_DROPS = {
   ],
   "FirCone": [
     {source: "Fir Tree", biome: "Black Forest", type: "Tree"},
+    {source: "Fir Tree", biome: "Swamp", type: "Tree"},
+    {source: "Fir Tree", biome: "Mountain", type: "Tree"},
   ],
   "Acorn": [
     {source: "Oak Tree", biome: "Meadows", type: "Tree"},
@@ -1021,10 +1034,11 @@ const WORLD_DROPS = {
   "Mushroom": [
     {source: "Ground Spawn", biome: "Meadows", type: "Pickup"},
     {source: "Ground Spawn", biome: "Black Forest", type: "Pickup"},
+    {source: "Ground Spawn", biome: "Swamp", type: "Pickup"},
   ],
   "MushroomYellow": [
     {source: "Ground Spawn", biome: "Black Forest", type: "Pickup"},
-    {source: "Ground Spawn", biome: "Plains", type: "Pickup"},
+    {source: "Dungeon Floor", biome: "Swamp", type: "Pickup"},   // Sunken Crypt loose loot (NOT Plains — was extraction bug)
   ],
   "MushroomBlue": [
     {source: "Dungeon Floor", biome: "Black Forest", type: "Pickup"},
@@ -1218,9 +1232,11 @@ const CHEST_LOOT = {
   },
   "Sunken Crypt Chest": {
     biome: "Swamp",
-    // Verified: Sunken Crypt chests. Feathers removed (not confirmed). Added Entrails, Ooze, ArrowIron (Ironhead).
+    // Verified in-game by Milord 2026-05-22: Sunken Crypt chests DO contain Feathers
+    // (re-added — previously stripped on a wiki cross-check but the wiki was wrong).
     items: ["Coins", "Amber", "AmberPearl", "Ruby", "IronScrap", "Chain",
-            "WitheredBone", "ElderBark", "Entrails", "Ooze", "ArrowPoison", "ArrowIron"],
+            "WitheredBone", "ElderBark", "Entrails", "Ooze", "ArrowPoison", "ArrowIron",
+            "Feathers"],
   },
   "Frost Cave Chest": {
     biome: "Mountain",
@@ -2290,6 +2306,7 @@ const ITEM_FIXUPS = {
   "HelmetSweatBand":         { biomes: ["Meadows"], source: ["Vendor"] },     // Hildir
   "Sparkler":                { biomes: ["Meadows"], source: ["Vendor"] },     // Hildir
   "AxeHead1":                { biomes: ["Meadows"], source: ["Pickup"] },     // Abandoned House ruins (variant 6)
+  "AxeHead2":                { biomes: ["Meadows"], source: ["Pickup"] },     // Abandoned House ruins (variant 2) — was incorrectly tagged Swamp
   "TankardOdin":             { biomes: [],          source: ["DLC (Unobtainable)"] },  // Beta supporter DLC only
   "Tankard":                 { source: ["Crafting"] },                         // Workbench-crafted only
   "BogWitchKvastur":         { biomes: ["Swamp"] },
