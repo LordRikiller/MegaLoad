@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-22T08:12:00Z",
+  "updated_at": "2026-05-23T02:35:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -20,11 +20,11 @@
     },
     {
       "name": "MegaFood",
-      "version": "1.4.3",
-      "download_url": "https://github.com/LordRikiller/MegaFood/releases/download/v1.4.3/MegaFood.dll",
+      "version": "1.4.4",
+      "download_url": "https://github.com/LordRikiller/MegaFood/releases/download/v1.4.4/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
-      "description": "MegaFood + MegaMead — 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration"
+      "description": "MegaFood + MegaMead — 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration. MegaMead Base is brewed at the Mead Ketil."
     },
     {
       "name": "MegaShot",
@@ -44,11 +44,11 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.15",
-      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.15/MegaStuff.dll",
+      "version": "1.4.16",
+      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.16/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
-      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup, configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch"
+      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch"
     },
     {
       "name": "MegaFarming",
