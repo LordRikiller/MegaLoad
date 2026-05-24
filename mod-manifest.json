@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-24T06:50:00Z",
+  "updated_at": "2026-05-24T09:29:42Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -28,16 +28,16 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.6.59",
-      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.59/MegaShot.dll",
+      "version": "2.6.60",
+      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.60/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope/zoom, AOE, DoT, fire rate, magazine/reload system, Armageddon beam mode"
     },
     {
       "name": "MegaQoL",
-      "version": "1.16.4",
-      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.4/MegaQoL.dll",
+      "version": "1.16.5",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.5/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
