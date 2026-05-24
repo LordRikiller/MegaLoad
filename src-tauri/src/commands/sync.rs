@@ -392,6 +392,39 @@ fn bundle_content_hash(bundle: &SyncProfileBundle) -> String {
     format!("{:016x}", fnv1a_hash(json.as_bytes()))
 }
 
+/// Bundle signature with `last_updated` zeroed and mod arrays sorted so the
+/// hash is stable across snapshot orderings. Used by the push short-circuit
+/// to detect "merged matches remote" and skip the redundant PUT — this is what
+/// makes the 30s poll-push loop cheap when nothing has changed.
+fn bundle_content_signature(bundle: &SyncProfileBundle) -> String {
+    let mut b = bundle.clone();
+    b.last_updated = String::new();
+    b.mods.sort_by(|x, y| x.name.cmp(&y.name).then(x.file_name.cmp(&y.file_name)));
+    b.thunderstore_mods.sort_by(|x, y| x.full_name.cmp(&y.full_name));
+    bundle_content_hash(&b)
+}
+
+/// Stable signature of the profile list inside a manifest. Used by the
+/// manifest-push short-circuit to skip the PUT when only `last_sync` would
+/// move (peer devices key off `last_sync` to decide whether to pull, so a
+/// frivolous bump triggers a useless pull on every peer's next poll).
+fn manifest_profiles_signature(profiles: &[SyncProfileEntry], machine_id: &str) -> String {
+    let mut sorted: Vec<&SyncProfileEntry> = profiles.iter().collect();
+    sorted.sort_by(|x, y| x.id.cmp(&y.id));
+    let mut buf = String::with_capacity(machine_id.len() + sorted.len() * 64);
+    buf.push_str(machine_id);
+    for p in sorted {
+        buf.push('|');
+        buf.push_str(&p.id);
+        buf.push(':');
+        buf.push_str(&p.name);
+        buf.push(':');
+        buf.push(if p.is_active { 'A' } else { '-' });
+        buf.push(if p.is_linked { 'L' } else { '-' });
+    }
+    format!("{:016x}", fnv1a_hash(buf.as_bytes()))
+}
+
 // ---------------------------------------------------------------------------
 // GitHub sync paths
 // ---------------------------------------------------------------------------
@@ -494,47 +527,68 @@ pub fn sync_push_all(profiles_json: String) -> Result<(), String> {
 
     app_log(&format!("Sync push: {} profiles", profiles.len()));
 
-    // 1. Build and push manifest (GET SHA + PUT = 2 API calls)
-    let manifest = SyncManifest {
-        user_id: user_id.clone(),
-        last_sync: iso_now(),
-        machine_id: settings.machine_id.clone(),
-        profiles: profiles.iter().map(|p| SyncProfileEntry {
-            id: p.id.clone(),
-            name: p.name.clone(),
-            is_active: p.is_active,
-            is_linked: false,
-        }).collect(),
-    };
-
-    let manifest_path = sync_manifest_path(user_id);
-    let manifest_json = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
-    // 409-retry the manifest push — two devices changing profiles around the same time
-    // used to drop one's update silently.
-    github_put_file_with_retry(
-        &manifest_path,
-        &format!("Sync — {}", identity.display_name),
-        3,
-        |attempt| {
-            let sha = if attempt == 1 {
-                github_get_file(&manifest_path).ok().map(|(_, s)| s)
-            } else {
-                match github_get_file(&manifest_path) {
-                    Ok((_, s)) => Some(s),
-                    Err(_) => None,
-                }
-            };
-            Ok((manifest_json.as_bytes().to_vec(), sha))
-        },
-    )?;
-
-    // 2. Push each profile bundle (GET SHA + PUT = 2 API calls per profile)
+    // 1. Push each profile bundle first (GET SHA + maybe PUT per profile).
+    //    `push_profile_bundle` now returns `true` only when a PUT actually
+    //    fired — the no-op short-circuit makes idle poll-push cheap.
     let mut failed: Vec<String> = Vec::new();
+    let mut bundles_changed: u32 = 0;
     for p in &profiles {
-        if let Err(e) = push_profile_bundle(user_id, &identity.display_name, p) {
-            app_log(&format!("Sync push failed for {}: {}", p.name, e));
-            failed.push(p.name.clone());
+        match push_profile_bundle(user_id, &identity.display_name, p) {
+            Ok(true) => bundles_changed += 1,
+            Ok(false) => {}
+            Err(e) => {
+                app_log(&format!("Sync push failed for {}: {}", p.name, e));
+                failed.push(p.name.clone());
+            }
         }
+    }
+
+    // 2. Manifest push — only when something actually changed. Without this
+    //    guard, every 30s poll-push would bump `last_sync` and trip every peer
+    //    device's `sync_check_remote_changed` into a useless pull cycle,
+    //    burning ~5 API calls per profile per peer per poll until the PAT
+    //    hourly limit choked sync entirely.
+    let desired_profiles: Vec<SyncProfileEntry> = profiles.iter().map(|p| SyncProfileEntry {
+        id: p.id.clone(),
+        name: p.name.clone(),
+        is_active: p.is_active,
+        is_linked: false,
+    }).collect();
+    let manifest_path = sync_manifest_path(user_id);
+    let remote_manifest_sig = github_get_file(&manifest_path)
+        .ok()
+        .and_then(|(c, _)| serde_json::from_str::<SyncManifest>(&c).ok())
+        .map(|m| manifest_profiles_signature(&m.profiles, &m.machine_id));
+    let desired_sig = manifest_profiles_signature(&desired_profiles, &settings.machine_id);
+    let manifest_needs_push = bundles_changed > 0
+        || remote_manifest_sig.as_deref() != Some(desired_sig.as_str());
+
+    if manifest_needs_push {
+        let manifest = SyncManifest {
+            user_id: user_id.clone(),
+            last_sync: iso_now(),
+            machine_id: settings.machine_id.clone(),
+            profiles: desired_profiles,
+        };
+        let manifest_json = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+        // 409-retry the manifest push — two devices changing profiles around the same time
+        // used to drop one's update silently.
+        github_put_file_with_retry(
+            &manifest_path,
+            &format!("Sync — {}", identity.display_name),
+            3,
+            |attempt| {
+                let sha = if attempt == 1 {
+                    github_get_file(&manifest_path).ok().map(|(_, s)| s)
+                } else {
+                    match github_get_file(&manifest_path) {
+                        Ok((_, s)) => Some(s),
+                        Err(_) => None,
+                    }
+                };
+                Ok((manifest_json.as_bytes().to_vec(), sha))
+            },
+        )?;
     }
 
     // 3. Update local settings
@@ -542,24 +596,31 @@ pub fn sync_push_all(profiles_json: String) -> Result<(), String> {
     settings.last_push = Some(iso_now());
     save_sync_settings(&settings)?;
 
-    app_log("Sync push complete");
-    if failed.is_empty() {
-        sync_log::emit(
-            "PushAll",
-            "success",
-            format!(
-                "Pushed {} profile{}",
-                profiles.len(),
-                if profiles.len() == 1 { "" } else { "s" }
-            ),
-        );
+    if manifest_needs_push {
+        app_log(&format!("Sync push complete ({} bundles changed)", bundles_changed));
     } else {
+        app_log("Sync push: no changes — skipped manifest");
+    }
+    if !failed.is_empty() {
         sync_log::emit(
             "PushAll",
             "failed",
             format!("{} failed: {}", failed.len(), failed.join(", ")),
         );
+    } else if manifest_needs_push {
+        sync_log::emit(
+            "PushAll",
+            "success",
+            format!(
+                "Pushed {} profile{} ({} changed)",
+                profiles.len(),
+                if profiles.len() == 1 { "" } else { "s" },
+                bundles_changed,
+            ),
+        );
     }
+    // Silent no-op when nothing changed — the 30s poll-push would otherwise
+    // flood the user-visible Sync Log with empty rows.
     Ok(())
 }
 
@@ -628,7 +689,7 @@ fn merge_profile_bundle(local: SyncProfileBundle, remote: SyncProfileBundle) -> 
     }
 }
 
-fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushInfo) -> Result<(), String> {
+fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushInfo) -> Result<bool, String> {
     let local = snapshot_bundle(&profile.id, &profile.name, &profile.bepinex_path)?;
     let bundle_path = sync_bundle_path(user_id, &profile.id);
 
@@ -672,10 +733,27 @@ fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushI
     }
 
     // Merge with remote (or use local as-is if no remote yet).
-    let merged = match remote {
-        Some(r) => merge_profile_bundle(local, r),
+    let merged = match &remote {
+        Some(r) => merge_profile_bundle(local, r.clone()),
         None => local,
     };
+
+    // Short-circuit: skip the PUT when merged content matches remote (only
+    // `last_updated` would have moved). Mirrors the MegaList no-op pattern —
+    // makes the 30s poll-push loop near-free when nothing has actually changed
+    // locally. Without this, every poll cycle burns ~2 API calls per profile.
+    if let Some(ref r) = remote {
+        if bundle_content_signature(&merged) == bundle_content_signature(r) {
+            app_log(&format!(
+                "Sync push: {} unchanged — skip PUT ({} mods, {} configs)",
+                profile.name,
+                merged.mods.len(),
+                merged.configs.len(),
+            ));
+            return Ok(false);
+        }
+    }
+
     let bundle_json = serde_json::to_string_pretty(&merged).map_err(|e| e.to_string())?;
     let configs_count = merged.configs.len();
     let mods_count = merged.mods.len();
@@ -716,7 +794,7 @@ fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushI
         "Pushed bundle: {} ({} mods, {} configs)",
         profile.name, mods_count, configs_count
     ));
-    Ok(())
+    Ok(true)
 }
 
 // Keep sync_push_profile for backwards compatibility (delegates to push_all pattern)
@@ -738,7 +816,7 @@ pub fn sync_push_profile(profile_id: String, profile_name: String, bepinex_path:
         is_linked: false,
     };
 
-    push_profile_bundle(user_id, &identity.display_name, &profile)?;
+    let _ = push_profile_bundle(user_id, &identity.display_name, &profile)?;
 
     let mut settings = load_sync_settings();
     settings.last_push = Some(iso_now());

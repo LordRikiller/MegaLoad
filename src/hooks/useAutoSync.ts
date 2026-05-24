@@ -11,12 +11,17 @@ const INITIAL_PULL_DELAY_MS = 2_000; // Let IdentityGate clear first
 /**
  * Auto-sync hook — handles:
  * 1. Initial pull on app startup (if sync enabled)
- * 2. Periodic polling for remote changes (30s) — paused while Valheim is running
- * 3. Single push + reconcile on game-exit transition (running → not running)
+ * 2. Periodic pull + push every 30s — paused while Valheim is running
+ * 3. Final push + reconcile on game-exit transition (running → not running)
  *
  * Local edits are NOT pushed on every change — they're caught by the periodic
- * poll/push cadence and the game-exit push. Per-edit pushing was removed in
+ * push cadence and the game-exit push. Per-edit pushing was removed in
  * v1.10.39 because it was causing UI lockouts and unnecessary cloud churn.
+ * The 30s poll-push was added in v1.10.53: prior to that, configs only
+ * uploaded on Valheim exit, so any session that didn't launch the game
+ * stranded its edits locally (ticket 20260524-222756-b294a49e). The Rust
+ * push path short-circuits when nothing has changed, so an idle poll-push
+ * is cheap.
  *
  * Mount once in AppShell.
  */
@@ -114,6 +119,16 @@ export function useAutoSync() {
       } catch {
         // Silent fail on poll
       }
+      // Push any local edits to the cloud. The Rust side short-circuits when
+      // the merged bundle matches remote (only `last_updated` would change),
+      // so an idle poll-push is essentially free. Without this, configs only
+      // sync on Valheim exit — sessions that never launch the game would
+      // strand their edits locally (ticket 20260524-222756-b294a49e).
+      try {
+        await pushAllProfiles();
+      } catch {
+        // Silent fail on poll
+      }
       try {
         await useMegaListStore.getState().reconcile();
       } catch {
@@ -127,7 +142,7 @@ export function useAutoSync() {
         pollTimerRef.current = null;
       }
     };
-  }, [enabled, autoSync, syncing, valheimRunning, checkForRemoteChanges, pullAllProfiles, addToast]);
+  }, [enabled, autoSync, syncing, valheimRunning, checkForRemoteChanges, pullAllProfiles, pushAllProfiles, addToast]);
 
   // Game-exit hook — fire one push + reconcile when Valheim closes. Catches
   // the case where the user toggled mods or edited configs while the game was
