@@ -12,8 +12,8 @@
     },
     {
       "name": "MegaMegingjord",
-      "version": "1.8.2",
-      "download_url": "https://github.com/LordRikiller/MegaMegingjord/releases/download/v1.8.2/MegaMegingjord.dll",
+      "version": "1.8.3",
+      "download_url": "https://github.com/LordRikiller/MegaMegingjord/releases/download/v1.8.3/MegaMegingjord.dll",
       "dll_name": "MegaMegingjord.dll",
       "plugin_folder": "MegaMegingjord",
       "description": "Megingjord belt powers — carry weight, headlamp, swamp key, sealbreaker, wishbone, seafloor walk"
