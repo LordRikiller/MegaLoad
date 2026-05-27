@@ -68,11 +68,11 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.4.7",
-      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.4.7/MegaFactory.dll",
+      "version": "1.4.8",
+      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.4.8/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
-      "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with a work order system - runs in the background regardless of player distance, leaves 1 of each item type per container. v1.4.7: when MegaStuff's pull-to-chest is enabled, a work order pauses if no nearby chest has room for its output, instead of littering the ground."
+      "description": "Auto-feed factory stations (Kiln, Smelter, Blast Furnace, Windmill, Spinning Wheel, Eitr Refinery) with a work order system - runs in the background regardless of player distance, leaves 1 of each item type per container. When MegaStuff's pull-to-chest is enabled, a work order pauses if chests holding that output metal are all full (stays vanilla if no chest holds it yet), so bars don't pile on the ground."
     },
     {
       "name": "MegaTrainer",
