@@ -19,6 +19,7 @@ use commands::sync_log::*;
 use commands::thunderstore::*;
 use commands::trainer::*;
 use commands::updater::*;
+use commands::valheim_data::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -204,6 +205,9 @@ pub fn run() {
             // Sync event log
             read_sync_events,
             clear_sync_events,
+            // Valheim Data (remote-served via MegaWorker)
+            fetch_valheim_data,
+            read_cached_valheim_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

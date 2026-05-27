@@ -39,6 +39,8 @@ import { useChatStore } from "../../stores/chatStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useBugStore } from "../../stores/bugStore";
 import { detectValheimPath, launchValheim, checkGameStatus, startSteam, deployBundledPlugins } from "../../lib/tauri-api";
+import { refreshValheimData } from "../../lib/valheimDataLoader";
+import { useValheimDataStore } from "../../stores/valheimDataStore";
 import type { GameStatus } from "../../lib/tauri-api";
 
 const navItems = [
@@ -242,6 +244,23 @@ export function Sidebar() {
     // Always check MegaLoad itself alongside mod updates — the Tauri updater
     // populates the Titlebar badge + Settings surface if a new version is out.
     useAppUpdateStore.getState().checkForAppUpdate().catch((e) => console.warn("[MegaLoad]", e));
+    // Also refresh remote Valheim data — the 15-min poll handles passive updates,
+    // but the manual button is the natural place to give users an "update now" lever.
+    // Surface a toast on actual change so the click feels productive even when
+    // there's no app/mod update.
+    refreshValheimData()
+      .then((changed) => {
+        if (changed) {
+          const version = useValheimDataStore.getState().dataVersionLabel;
+          addToast({
+            type: "success",
+            title: "Valheim data refreshed",
+            message: `Pulled v${version} from the data feed.`,
+            duration: 4000,
+          });
+        }
+      })
+      .catch((e) => console.warn("[MegaLoad]", e));
     if (gameStatus?.valheim_running) {
       addToast({
         type: "warning",

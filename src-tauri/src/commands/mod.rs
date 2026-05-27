@@ -18,4 +18,5 @@ pub mod sync_log;
 pub mod thunderstore;
 pub mod trainer;
 pub mod updater;
+pub mod valheim_data;
 pub mod worker_auth;

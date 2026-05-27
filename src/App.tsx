@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
+import { startValheimDataPoll, stopValheimDataPoll } from "./lib/valheimDataLoader";
 import { Dashboard } from "./pages/Dashboard";
 import { Mods } from "./pages/Mods";
 import { Browse } from "./pages/Browse";
@@ -18,6 +20,13 @@ import { MegaChat } from "./pages/MegaChat";
 import { AdminPanel } from "./pages/AdminPanel";
 
 function App() {
+  // Remote Valheim data: fire an immediate fetch, then poll every 15 min.
+  // Cleanup tears the timer down on unmount (in practice only fires in dev).
+  useEffect(() => {
+    startValheimDataPoll();
+    return () => stopValheimDataPoll();
+  }, []);
+
   return (
     <Routes>
       <Route element={<AppShell />}>

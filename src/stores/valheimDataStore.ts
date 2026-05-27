@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { VALHEIM_ITEMS, type ValheimItem } from "../data/valheim-items";
+import { replaceValheimItems } from "../data/valheimItemsRuntime";
 
 export type SortOption = "name-asc" | "name-desc" | "tier-asc" | "tier-desc" | "biome-grouped";
 export type ViewMode = "grid" | "table";
@@ -880,7 +881,20 @@ export function getStationUpgrades(stationName: string): ValheimItem[] {
     .filter((i): i is ValheimItem => i != null);
 }
 
+/** Where the currently-loaded VALHEIM_ITEMS came from. */
+export type DataSource = "bundled" | "cache" | "remote";
+
 interface ValheimDataState {
+  /** Monotonic counter — components subscribe via useValheimDataStore((s) => s.dataVersion)
+   *  to re-render after a hot-swap from the MegaWorker. Bumped by applyRemoteData. */
+  dataVersion: number;
+  /** Origin of the dataset currently mounted in VALHEIM_ITEMS. */
+  dataSource: DataSource;
+  /** Remote-data version string from the Worker (YYYY-MM-DD-NNN), empty if bundled. */
+  dataVersionLabel: string;
+  /** Replace the bundled dataset with a remote payload and bump dataVersion so
+   *  subscribers re-render. Used by lib/valheimDataLoader.ts on launch + poll. */
+  applyRemoteData: (items: ValheimItem[], version: string, source?: DataSource) => void;
   query: string;
   activeTypes: string[];
   activeSubcategories: string[];
@@ -974,6 +988,17 @@ export interface NavSnapshot {
 const savedViewMode = (typeof localStorage !== "undefined" ? localStorage.getItem("valheim-view-mode") : null) as ViewMode | null;
 
 export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
+  dataVersion: 0,
+  dataSource: "bundled",
+  dataVersionLabel: "",
+  applyRemoteData: (items, version, source = "remote") => {
+    replaceValheimItems(items);
+    set((s) => ({
+      dataVersion: s.dataVersion + 1,
+      dataSource: source,
+      dataVersionLabel: version,
+    }));
+  },
   query: "",
   activeTypes: [],
   activeSubcategories: [],
@@ -1178,9 +1203,17 @@ export function getFilteredItems(
     // any item flagged plantable===true (seeds/crops/mushrooms that keep their
     // primary Material/Food typing). Without this, Carrot/Onion/etc. wouldn't
     // surface under the Plantable filter.
+    //
+    // "Food" similarly matches type==="Food" (cooked dishes) AND any item
+    // flagged eatable===true (raw foraged plants/berries/mushrooms typed
+    // Material that can also be eaten directly for a HP/Stam/Eitr buff). So
+    // Mushroom/Blueberries/Honey/etc. surface under BOTH Material and Food.
     const plantableActive = activeTypes.includes("Plantable");
+    const foodActive = activeTypes.includes("Food");
     items = items.filter((i) =>
-      activeTypes.includes(i.type) || (plantableActive && i.plantable === true)
+      activeTypes.includes(i.type)
+      || (plantableActive && i.plantable === true)
+      || (foodActive && i.eatable === true)
     );
   }
   if (activeSubcategories.length > 0) {
@@ -1297,6 +1330,12 @@ export function getTypeCounts(
     // tagged so the Plantable filter shows the right total.
     if (item.plantable === true && item.type !== "Plantable") {
       counts["Plantable"] = (counts["Plantable"] || 0) + 1;
+    }
+    // Food is a union: type==="Food" OR eatable===true. Raw foraged plants
+    // (Mushroom/Blueberries/Honey/etc.) are type=Material but eatable=true,
+    // so the Food filter total includes them.
+    if (item.eatable === true && item.type !== "Food") {
+      counts["Food"] = (counts["Food"] || 0) + 1;
     }
   }
   return counts;

@@ -61,6 +61,47 @@ const PLANTABLE_FLAG = new Set([
   "MushroomJotunPuffs", "MushroomMagecap",
 ]);
 
+// Items that are primary-typed Material but can ALSO be eaten directly for
+// a Health/Stamina/Eitr buff (foraged plants, raw berries, raw vegetables,
+// wild mushrooms). Stamped with eatable=true so they surface under the Food
+// filter alongside cooked dishes, while staying under Material as their main
+// home. Mirrors the existing plantable=true / Plantable filter pattern.
+//
+// Excluded:
+//   - Dandelion + Thistle + Toadstool — recipe-only, not directly eaten.
+//   - Pukeberries (Bukeperries) — gives no food buff, debuff-clear only.
+//   - Raw meats (RawMeat/DeerMeat/BjornMeat) — can't be eaten raw in vanilla.
+const EATABLE_FLAG = new Set([
+  // Wild foraged
+  "Mushroom", "MushroomYellow",
+  "Blueberries", "Raspberry", "Cloudberry",
+  "RoyalJelly", "Fiddleheadfern",
+  "MushroomJotunPuffs", "MushroomMagecap", "MushroomSmokePuff",
+  // Farmed / cultivated raw produce
+  "Honey", "Carrot", "Turnip", "Onion", "Vineberry",
+  // Animal husbandry — raw eggs give Health/Stamina buffs when eaten directly
+  // (and ChickenEgg / VoltureEgg are also recipe ingredients).
+  "ChickenEgg", "VoltureEgg", "AsksvinEgg",
+]);
+
+// Foraged + farmed plants/mushrooms/berries typed Material despite the game
+// dump tagging them Consumable. Matches the wiki Materials → Nature nav. See
+// mapItemType + mapSubcategory for the type/subcategory overrides driven by
+// this list. Cooked foods are not in here — they stay type=Food.
+const FORAGED_AS_MATERIAL = new Set([
+  // Gathering — wild forageable plants/mushrooms/berries
+  "Mushroom", "MushroomYellow",
+  // MushroomBlue is stripped via ITEM_REMOVE (console-only / cut content)
+  "Blueberries", "Raspberry", "Cloudberry",
+  "RoyalJelly", "Fiddleheadfern",
+  "MushroomJotunPuffs", "MushroomMagecap", "MushroomSmokePuff",
+  "MushroomBzerker", // Toadstool — Bog Witch vendor, ingredient for Berserkir mead
+  // Farming — crops + raw produce that double as recipe ingredients
+  "Honey", "Carrot", "Onion", "Vineberry",
+  // Note: Dandelion, Thistle, Turnip, Flax, Barley already type=Material in
+  // upstream dumps; included here is unnecessary but no harm.
+]);
+
 // ── Localization resolver ──
 function loc(token) {
   if (!token) return "";
@@ -317,6 +358,46 @@ function mapItemType(gameType, prefab, shared) {
   if (prefab === "FishingRod") return "Tool";
   if ((prefab.startsWith("Feast") && prefab !== "Feaster") || prefab === "MeatPlatter") return "Food";
 
+  // Mead Bases — crafted at the Mead Ketill (not raw materials despite the
+  // game tagging them gameType=Material). Surface them as Potion so they sit
+  // alongside their fermented siblings on the Mead Ketill / Potion filters.
+  if (prefab.startsWith("MeadBase")) return "Potion";
+
+  // Fireworks rockets — decorative novelty items (Hildir vendor), not raw mats.
+  if (prefab.startsWith("FireworksRocket")) return "Misc";
+
+  // Bukeperries — game dump tags as Consumable, but it gives no Health/Stamina
+  // buff. It's a debuff-clearing collectable you forage off Greydwarf/Fuling
+  // shamans, sitting better next to other dropped materials than under Food.
+  if (prefab === "Pukeberries") return "Material";
+
+  // Boss summoners — game dump tags Misc, but per wiki Materials → Bosses →
+  // Summoning all of these are Materials (they're also crafting ingredients:
+  // AncientSeed → Heart of the Forest trinket; DragonEgg → Wolf Armor;
+  // GoblinTotem → Fuling cape, etc.). WitheredBone + BellFragment already
+  // land here via dump gameType; force the rest to match.
+  if (prefab === "AncientSeed" || prefab === "DragonEgg" || prefab === "GoblinTotem") {
+    return "Material";
+  }
+
+  // Animal husbandry eggs — game dump tags Misc, but they're recipe ingredients
+  // (ChickenEgg → Sweetbread / Cooked Egg / Mushroom Omelette; VoltureEgg →
+  // Roasted Crust Pie) and/or hatchable taming items (AsksvinEgg). All three
+  // also give a Health/Stamina buff when eaten raw — paired with eatable=true
+  // they surface under BOTH the Material filter (primary, wiki Animal
+  // Husbandry) AND the Food filter.
+  if (prefab === "ChickenEgg" || prefab === "VoltureEgg" || prefab === "AsksvinEgg") {
+    return "Material";
+  }
+
+  // Foraged + farmed raw plants/mushrooms/berries — game dump tags them
+  // Consumable (because you can eat them raw), but the wiki Materials nav
+  // groups them under "Nature → Gathering / Farming". They're primarily
+  // recipe ingredients used at the Cauldron / Mead Ketill / Stone Oven, with
+  // direct-eat as a bonus survival option. Surface them as Material so the
+  // Material biome filter rolls them up alongside Wood/Stone/Ore/etc.
+  if (FORAGED_AS_MATERIAL.has(prefab)) return "Material";
+
   // Drinking items — not weapons, decorative/celebratory
   if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin") return "Misc";
 
@@ -368,6 +449,9 @@ const SUBCATEGORY_OVERRIDE = {
   DvergrKeyFragment:   "Boss Caller",
   Bell:                "Boss Caller",
   BellFragment:        "Boss Caller",
+  ChickenEgg:          "Egg",
+  VoltureEgg:          "Egg",
+  AsksvinEgg:          "Egg",
 };
 
 // ── Map game ItemType to subcategory ──
@@ -377,6 +461,27 @@ function mapSubcategory(gameType, prefab, shared) {
   // Special cases
   if (prefab === "FishingRod") return "Fishing Rod";
   if ((prefab.startsWith("Feast") && prefab !== "Feaster") || prefab === "MeatPlatter") return "Feast";
+
+  // Mead Bases — Potion-typed but distinct from finished meads so they stay
+  // separable on the detail UI ("Mead Base: Minor Health" → Mead Base, not Consumable).
+  if (prefab.startsWith("MeadBase")) return "Mead Base";
+
+  // Fireworks rockets sit in Misc with their own subcategory so they group together.
+  if (prefab.startsWith("FireworksRocket")) return "Fireworks";
+
+  // Bukeperries — typed Material per mapItemType override; keep its subcategory
+  // consistent with other foraged/dropped materials so it groups with them on
+  // the Material filter.
+  if (prefab === "Pukeberries") return "Material";
+
+  // Foraged + farmed Material override — keep their subcategory aligned with
+  // their re-typed primary category. Mushroom-prefix entries get "Mushroom"
+  // for a cleaner grouping; berries get "Berry"; rest fall back to Material.
+  if (FORAGED_AS_MATERIAL.has(prefab)) {
+    if (prefab.startsWith("Mushroom")) return "Mushroom";
+    if (["Blueberries","Raspberry","Cloudberry","Vineberry"].includes(prefab)) return "Berry";
+    return "Material";
+  }
 
   // Drinking items — decorative
   if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin") return "Misc";
@@ -598,7 +703,7 @@ const RAW_MATERIAL_BIOME = {
   "CookedBugMeat": "Mistlands",
   "RoyalJelly": "Mistlands",
   "GiantBloodSack": "Mistlands",
-  "MushroomSmokePuff": "Mistlands",
+  "MushroomSmokePuff": "Ashlands",   // Wiki: Ashlands forage, NOT Mistlands
   "Softtissue": "Mistlands",
   "Wisp": "Mistlands",
   "BlackMarble": "Mistlands",
@@ -651,8 +756,8 @@ const RAW_MATERIAL_BIOME = {
 // Items that should keep multi-biome or specific override lists (fish, vendor items, etc.)
 const BIOME_OVERRIDE = {
   // Fish — biome is where they're caught, not crafted
-  "Fish1": ["Meadows"],           // Perch
-  "Fish2": ["Black Forest"],      // Pike
+  "Fish1": ["Meadows", "Black Forest"],   // Perch — fishable in both Meadows + BF lakes; passive creature in BF (per BF wiki)
+  "Fish2": ["Meadows", "Black Forest"],   // Pike — fishable in Meadows AND Black Forest lakes per wiki
   "Fish3": ["Ocean"],             // Tuna
   "Fish4_cave": ["Mountain"],     // Tetra
   "Fish5": ["Black Forest"],      // Trollfish
@@ -663,7 +768,7 @@ const BIOME_OVERRIDE = {
   "Fish10": ["Deep North"],       // Northern Salmon
   "Fish11": ["Ashlands"],         // Magmafish
   "Fish12": ["Mistlands"],          // Pufferfish — caught offshore Mistlands
-  "FishRaw": ["Meadows"],
+  "FishRaw": ["Swamp"],   // Requires Food Preparation Table (Swamp tier — needs Iron)
   "FishAnglerRaw": ["Mistlands"],
   // Cooked meats — biome from the raw meat source, not the cooking recipe
   "CookedMeat": ["Meadows"],
@@ -740,7 +845,7 @@ const BIOME_OVERRIDE = {
   // ─── Multi-biome loot (found in chests/dungeons across many biomes) ───
   "Amber": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
   "AmberPearl": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
-  "Ruby": ["Black Forest", "Swamp", "Mountain", "Plains", "Mistlands"],
+  "Ruby": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Mistlands"],   // +Meadows (Buried Chests yield Ruby per Meadows wiki)
   "SilverNecklace": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],
   "Coins": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Mistlands", "Ashlands"],
 
@@ -780,7 +885,7 @@ const BIOME_OVERRIDE = {
   // ─── Mushrooms & foraged items (multi-biome foraging) ───
   "MushroomYellow": ["Black Forest", "Swamp"],
   "MushroomBzerker": ["Swamp"],
-  "MushroomSmokePuff": ["Mistlands"],
+  "MushroomSmokePuff": ["Ashlands"],   // Wiki Ashlands forage — re-tagged from Mistlands
   "Carrot": ["Black Forest"],
   "Turnip": ["Swamp"],
   "Onion": ["Mountain"],
@@ -789,7 +894,7 @@ const BIOME_OVERRIDE = {
   // ─── Ores & mining materials ───
   "IronOre": ["Swamp"],
   "FlametalOreNew": ["Ashlands"],
-  "CopperScrap": ["Black Forest", "Mistlands"],  // BF copper deposits + Mistlands ancient armor/sword mounds
+  "CopperScrap": ["Mistlands"],  // Mistlands only — Dvergr lanterns/barrels + Ancient sword/armor mounds (BF copper deposits drop CopperOre, not scrap)
   "BronzeScrap": ["Ashlands"],
   "Bronze": ["Black Forest", "Mountain", "Ashlands"],
   "BlackCore": ["Mistlands"],
@@ -809,12 +914,15 @@ const BIOME_OVERRIDE = {
   "RoundLog": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],   // +Swamp (Pine trees grow at Swamp/Black Forest borders)
   "Stone": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],
   "DeerHide": ["Meadows", "Black Forest", "Plains"],
+  "DeerMeat": ["Meadows", "Black Forest"],   // Deer creature spawns in both Meadows and BF, drops meat in both
   "Flint": ["Meadows", "Black Forest"],
   "Resin": ["Meadows", "Black Forest", "Swamp", "Mountain"],                  // +Swamp/Mountain (Fir trees grow there — Mountain is Fir-only per wiki)
   "FirCone": ["Black Forest", "Swamp", "Mountain"],                           // +Swamp/Mountain (Fir trees grow there — Mountain is Fir-only per wiki)
   "Mushroom": ["Meadows", "Black Forest", "Swamp"],                            // +Swamp (verified on Mushroom wiki page)
   "Feathers": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],  // +Swamp (Sunken Crypt chests — confirmed in-game)
   "Coal": ["Meadows", "Black Forest", "Swamp"],
+  "Honey": ["Meadows", "Black Forest"],          // Beehives sit on Abandoned Houses (Meadows) AND on BF abandoned buildings
+  "QueenBee": ["Meadows", "Black Forest"],       // Same beehive source as Honey
   "LeatherScraps": ["Meadows", "Black Forest", "Swamp", "Mountain"],  // +Swamp (Sunken Crypts), +Mountain (Bat drops)
   "BirchSeeds": ["Meadows", "Plains"],
   "PineCone": ["Black Forest"],
@@ -892,6 +1000,20 @@ const BIOME_OVERRIDE = {
   // ─── Miscellaneous ───
   "HelmetYule": ["Black Forest"],
   "Sparkler": ["Meadows"],
+
+  // ─── Black Forest deep-audit additions (2026-05-22) ───
+  // Dandelion: Greydwarf Brute drop in BF.
+  // ArrowFire / ArrowFlint: Burial Chamber chest loot (BF) — chest already
+  // lists them but top-level biomes only had Meadows.
+  "Dandelion": ["Meadows", "Black Forest"],
+  "ArrowFire": ["Meadows", "Black Forest"],
+  "ArrowFlint": ["Meadows", "Black Forest"],
+
+  // ─── Biome-by-biome audit (2026-05-23) ───
+  // JuteRed: drops from Cultists in Frost Caves (Mountain) AND Dvergr loot (Mistlands)
+  // SharpeningStone: found in Swamp Sunken Crypts AND Plains Fuling structures
+  "JuteRed": ["Mountain", "Mistlands"],
+  "SharpeningStone": ["Swamp", "Plains"],
 
   // ─── Build pieces ───
   "blackmarble_head01": ["Mistlands"],
@@ -1128,6 +1250,7 @@ const WORLD_DROPS = {
     {source: "Fishing", biome: "Black Forest", type: "Pickup"},
   ],
   "Fish2": [
+    {source: "Fishing", biome: "Meadows", type: "Pickup"},
     {source: "Fishing", biome: "Black Forest", type: "Pickup"},
   ],
   "Fish3": [
@@ -1800,7 +1923,12 @@ for (const item of items) {
            : IRON_COOKING_STATION_ITEMS.has(item.prefab) ? "Iron Cooking Station"
            : STONE_OVEN_ITEMS.has(item.prefab) ? "Stone Oven"
            : (recipe
-               ? (resolvedType === "Potion" && mapStation(recipe.craftingStation) === "Mead Ketill"
+               // Final meads inherit a MeadBase's Mead-Ketill recipe but are
+               // produced at the Fermenter. MeadBase items themselves stay at
+               // Mead Ketill (their actual crafting station).
+               ? (resolvedType === "Potion"
+                   && mapStation(recipe.craftingStation) === "Mead Ketill"
+                   && !item.prefab.startsWith("MeadBase")
                    ? "Fermenter"
                    : mapStation(recipe.craftingStation))
                : ""),
@@ -2223,6 +2351,17 @@ for (const entry of converted) {
   }
 }
 
+// ── Eatable flag on raw foraged plants / berries / mushrooms ──
+// These are primary-typed Material (raw resources) but can also be eaten
+// directly for a Health/Stamina buff. Stamped with eatable=true so they
+// surface under the Food filter while staying under Material as their main
+// home. Mirrors the plantable flag pattern above.
+for (const entry of converted) {
+  if (EATABLE_FLAG.has(entry.id)) {
+    entry.eatable = true;
+  }
+}
+
 // ── Build piece biome resolution ─────────────────────────────
 // Build pieces aren't in recipeMap, so getItemBiomeTier can't resolve them.
 // Use max-tier of ingredients (same logic as crafted items). Plantable
@@ -2271,6 +2410,206 @@ for (const entry of converted) {
 }
 console.log(`Inherited biomes for ${inherited} items from their ingredients`);
 
+// ── Cooked-food biome station-and-gating pass ─────────────────
+// Cooked foods + crafted potions/meads inherit biomes from BOTH their gating
+// ingredients AND their crafting station (incl. station-upgrade tier from
+// minStationLevel). Milord's rule: the recipe is only available once you can
+// build the station AND obtain every ingredient.
+//
+// Algorithm per item:
+//   1. Station tier from STATION_TIER_INFO[station] + STATION_LEVEL_GATE
+//      bump for minStationLevel (e.g. Cauldron Lv 3 needs Silver → Mountain).
+//   2. For each ingredient, earliest biome tier (min of biomes).
+//   3. Effective tier = max(station_tier, max(ingredient_tier)).
+//   4. Compute biomes:
+//      - If station gates alone (station_tier strictly greatest):
+//          biomes = [station_biome] — you craft AT the station, so the dish
+//          lives where the station is first accessible. (You carry lower-tier
+//          ingredients with you to the station.)
+//      - If ingredient gates alone (some ingredient_tier > station_tier):
+//          biomes = INTERSECTION of biome lists of ingredients at effective
+//          tier, fallback to UNION if intersection empty.
+//      - If tied (station_tier == max ingredient_tier):
+//          INTERSECT ingredient biomes with "biomes >= station_tier" filter,
+//          since the station can exist anywhere from station_tier onward.
+//
+// Pass runs multiple times so dependency chains (DeerStew uses CookedDeerMeat)
+// converge after their dependencies have been updated.
+// Stations relevant to food/potion recipes — name → {tier, biome (first biome)}.
+// The biome is where the station is FIRST buildable; the station can be re-built
+// in any biome ≥ that tier, so the gating logic treats `biome at station_tier`
+// as the floor.
+const STATION_TIER_INFO = {
+  "Cooking Station":          { tier: 0, biome: "Meadows" },        // wood only
+  "Iron Cooking Station":     { tier: 3, biome: "Swamp" },          // Iron (Swamp)
+  "Stone Oven":               { tier: 3, biome: "Swamp" },          // Iron + Stone + SurtlingCore
+  "Cauldron":                 { tier: 1, biome: "Black Forest" },   // Tin (BF)
+  "Mead Ketill":              { tier: 1, biome: "Black Forest" },   // Tin + Copper (BF)
+  "Fermenter":                { tier: 1, biome: "Black Forest" },   // FineWood + Bronze + Resin
+  "Food Preparation Table":   { tier: 3, biome: "Swamp" },          // Iron
+};
+
+// Station-upgrade tiers — recipes with minStationLevel > 1 require the upgrade
+// at that level, which itself has biome-tier ingredients. Format: station name
+// → array indexed by level (level 1 = base, level 2 = ext1, etc.) of biome tier.
+const STATION_LEVEL_GATE = {
+  "Cauldron": [
+    1, // Lv 1 base (BF)
+    3, // Lv 2 spice rack — Turnip (Swamp) is highest
+    4, // Lv 3 butcher table — Silver (Mountain)
+    5, // Lv 4 pots — Black Metal (Plains)
+    6, // Lv 5 mortar — Black Marble (Mistlands)
+    7, // Lv 6 rolling pins — Flametal + Ashwood (Ashlands)
+  ],
+  "Forge": [
+    1, // Lv 1 base (BF)
+    1, // Lv 2 anvils — Bronze (BF)
+    3, // Lv 3 sharpening stone — SharpeningStone (Swamp)
+    3, // Lv 4 — Iron (Swamp)
+    1, // Lv 5 — Copper (BF)
+    3, // Lv 6 — Iron (Swamp)
+  ],
+  "Workbench": [
+    0, // Lv 1 base (Meadows)
+    0, // Lv 2 chopping block (Meadows)
+    0, // Lv 3 tanning rack (Meadows — Leather Scraps)
+    1, // Lv 4 adze (BF — Finewood + Bronze)
+    4, // Lv 5 toolshelf (Mountain — Iron + Obsidian)
+  ],
+  "Black Forge": [
+    6, // Lv 1 base (Mistlands)
+    6, // Lv 2 vise — Mechanical Spring (Mistlands)
+    7, // Lv 3 metalcutter — Flametal (Ashlands)
+    7, // Lv 4 gemcutter — Flametal (Ashlands)
+  ],
+};
+
+function getStationGate(stationName, minLevel) {
+  const info = STATION_TIER_INFO[stationName];
+  if (!info) return null;
+  let tier = info.tier;
+  const levels = STATION_LEVEL_GATE[stationName];
+  if (levels && minLevel >= 1 && minLevel <= levels.length) {
+    const lvlTier = levels[minLevel - 1];
+    if (lvlTier > tier) tier = lvlTier;
+  }
+  // Biome at the gated tier (where the station-with-upgrades first works).
+  const biome = tier < BIOME_PROGRESSION.length ? BIOME_PROGRESSION[tier] : info.biome;
+  return { tier, biome };
+}
+
+const COOKED_FOOD_STATIONS = new Set([
+  "Cooking Station", "Iron Cooking Station", "Stone Oven", "Cauldron",
+  "Mead Ketill", "Fermenter", "Food Preparation Table",
+]);
+// Recipes whose ingredient list is "pick 1 of N alternatives", not "use all N".
+// The default AND-gating rule (max ingredient tier) wrongly picks the highest-
+// tier alternative; for OR recipes we use MIN tier (the cheapest works).
+const OR_RECIPE_ALTERNATIVES = new Set([
+  "FishRaw", // 12 fish alternatives, any one yields Raw Fish at the Prep Table
+]);
+function ingredientEarliestTier(ingEntry) {
+  let earliest = 999;
+  for (const b of ingEntry.biomes || []) {
+    const t = BIOME_TIER[b];
+    if (typeof t === "number" && t < earliest) earliest = t;
+  }
+  return earliest;
+}
+function recomputeCookedBiomes(entry) {
+  // Foods + Potions (incl. Mead Bases) + Materials crafted at a recognised
+  // food/potion station (covers FishRaw, BreadDough, uncooked intermediates).
+  if (entry.type !== "Food" && entry.type !== "Potion" && entry.type !== "Material") return false;
+  if (!COOKED_FOOD_STATIONS.has(entry.station)) return false;
+  if (!entry.recipe || entry.recipe.length === 0) return false;
+
+  const stationGate = getStationGate(entry.station, entry.stationLevel || 1);
+  const stationTier = stationGate ? stationGate.tier : -1;
+
+  // Ingredient earliest tiers
+  let ingGatingTier;
+  const ingTiers = [];
+  for (const ing of entry.recipe) {
+    const ingEntry = convertedMap[ing.id];
+    if (!ingEntry) { ingTiers.push(null); continue; }
+    const t = ingredientEarliestTier(ingEntry);
+    ingTiers.push({ ent: ingEntry, tier: t });
+  }
+  if (OR_RECIPE_ALTERNATIVES.has(entry.id)) {
+    // OR recipe — gating is the CHEAPEST alternative (lowest tier).
+    let minTier = 999;
+    for (const it of ingTiers) {
+      if (!it) continue;
+      if (it.tier < minTier) minTier = it.tier;
+    }
+    ingGatingTier = minTier < 999 ? minTier : -1;
+  } else {
+    // AND recipe — gating is the highest-tier ingredient.
+    let maxTier = -1;
+    for (const it of ingTiers) {
+      if (!it) continue;
+      if (it.tier < 999 && it.tier > maxTier) maxTier = it.tier;
+    }
+    ingGatingTier = maxTier;
+  }
+  const effectiveTier = Math.max(stationTier, ingGatingTier);
+  if (effectiveTier < 0) return false;
+
+  let result;
+  if (stationTier > ingGatingTier && stationGate) {
+    // Station gates alone — dish lives where the station + upgrades first work.
+    result = new Set([stationGate.biome]);
+  } else {
+    // Ingredient(s) gate (possibly tied with station). Intersect biome lists of
+    // ingredients at effective tier. If station is tied (stationTier ==
+    // effectiveTier), filter the intersection to biomes >= stationTier (the
+    // station's accessibility floor).
+    const sets = [];
+    for (const it of ingTiers) {
+      if (!it) continue;
+      if (it.tier !== effectiveTier) continue;
+      sets.push(new Set(it.ent.biomes || []));
+    }
+    if (sets.length === 0) return false;
+    result = new Set(sets[0]);
+    for (let i = 1; i < sets.length; i++) {
+      for (const b of [...result]) if (!sets[i].has(b)) result.delete(b);
+    }
+    if (result.size === 0) {
+      // Union fallback
+      result = new Set();
+      for (const s of sets) for (const b of s) result.add(b);
+    }
+    if (stationTier === effectiveTier) {
+      // Drop biomes below the station tier (station can't be built there).
+      for (const b of [...result]) {
+        const t = BIOME_TIER[b];
+        if (typeof t === "number" && t < stationTier) result.delete(b);
+      }
+      if (result.size === 0 && stationGate) result.add(stationGate.biome);
+    }
+  }
+
+  const sorted = BIOME_PROGRESSION.filter((b) => result.has(b));
+  if (sorted.length === entry.biomes.length && sorted.every((b, i) => b === entry.biomes[i])) {
+    return false; // no-op
+  }
+  entry.biomes = sorted;
+  return true;
+}
+
+// Iterate until stable (max 5 passes — recipe nesting is shallow).
+let totalRetiered = 0;
+for (let pass = 0; pass < 5; pass++) {
+  let n = 0;
+  for (const entry of converted) {
+    if (recomputeCookedBiomes(entry)) n++;
+  }
+  totalRetiered += n;
+  if (n === 0) break;
+}
+console.log(`Cooked-food station+gating pass corrected ${totalRetiered} entries`);
+
 // ── Post-processing fixups (corrections verified against wiki / in-game) ──
 // These fix extraction pipeline bugs and item data errors that can't be solved
 // by BIOME_OVERRIDE alone (source changes, stat cleanup, missing items, etc.)
@@ -2310,7 +2649,8 @@ const ITEM_FIXUPS = {
   "TankardOdin":             { biomes: [],          source: ["DLC (Unobtainable)"] },  // Beta supporter DLC only
   "Tankard":                 { source: ["Crafting"] },                         // Workbench-crafted only
   "BogWitchKvastur":         { biomes: ["Swamp"] },
-  "CeramicPlate":     { biomes: ["Mistlands"], source: ["Crafting"] },
+  "CeramicPlate":     { biomes: ["Ashlands"], source: ["Chest Loot","Destructible"] },  // Charred Fortress chests + ruin pot shards
+  "ShieldCore":       { biomes: ["Ashlands"], source: ["Creature Drop"] },              // Morgen miniboss drop in Ashlands
   "BoneFragments":    { biomes: ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"] },
   // Audit: missing biomes
   "Chain":            { biomes: ["Swamp", "Plains", "Mistlands"] },  // +Plains (Sealed Tower chests), +Mistlands (Dvergr structures)
@@ -2413,6 +2753,10 @@ const ITEM_REMOVE = new Set([
   // don't pollute Furniture or the build-mats rollup.
   "piece_pot1_red", "piece_pot2_red", "piece_pot3_red",
   "piece_pot1_cracked", "piece_pot2_cracked", "piece_pot3_cracked",
+  // Blue Mushroom is console-only / cut content — the prefab ships in the
+  // dump and the wiki marks it unobtainable. Strip it so the Material/Food
+  // rollups don't show a ghost item the player can never legitimately get.
+  "MushroomBlue",
 ]);
 
 // Items to add (missing from extraction)
@@ -2583,6 +2927,12 @@ export interface ValheimItem {
                         // crop seeds, plantable produce/mushrooms. Surfaces these
                         // under the Plantable filter even when their primary
                         // type is Material/Food.
+  eatable?: boolean;    // True for raw foraged/farmed plants that can also be
+                        // eaten directly for a Health/Stamina/Eitr buff (Mushroom,
+                        // Blueberries, Honey, Carrot, Turnip, Onion, JotunPuffs,
+                        // Magecap, SmokePuff, RoyalJelly, Fiddlehead, Vineberry).
+                        // Surfaces these under the Food filter while keeping
+                        // their primary type as Material.
   tameable?: boolean;   // Creatures only — true for Boar, Wolf, Lox, Asksvin
   tameFoods?: string[]; // Creatures only — prefab IDs of foods this creature will eat to tame
   faction?: string;     // Creatures only — pretty-printed (e.g. "Forest")
