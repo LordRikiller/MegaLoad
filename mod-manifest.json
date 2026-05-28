@@ -28,8 +28,8 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.6.90",
-      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.90/MegaShot.dll",
+      "version": "2.6.91",
+      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.91/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope w/ Night/Heat/NightToDay vision modes (N) + creature labels, Armageddon OneShot meteor-slam"
