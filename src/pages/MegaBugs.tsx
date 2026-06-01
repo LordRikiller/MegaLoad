@@ -74,8 +74,11 @@ const priorityStyles: Record<TicketPriority, { label: string; classes: string; I
   },
 };
 
-function effectivePriority(p: TicketPriority | undefined): TicketPriority {
-  return p ?? "normal";
+// Clamp to a known priority. Guards against legacy/bad data (e.g. a ticket saved
+// with "high") — an unknown value falls back to "normal" rather than indexing
+// priorityStyles with a missing key, which would crash the whole page on `.Icon`.
+function effectivePriority(p: TicketPriority | string | undefined): TicketPriority {
+  return p && p in priorityStyles ? (p as TicketPriority) : "normal";
 }
 
 // Canonical lowercase mod/category tags. Stored inside the ticket's `labels` array
@@ -1630,7 +1633,7 @@ function PriorityDropdown({
   onChange: (next: TicketPriority) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const style = priorityStyles[current];
+  const style = priorityStyles[effectivePriority(current)];
   const Icon = style.Icon;
   return (
     <div className="relative">

@@ -228,15 +228,39 @@ fn is_process_running(name: &str) -> bool {
     }
 }
 
-/// Detect whether Steam Cloud sync is active for Valheim.
-/// Uses three signals:
-///   1. appmanifest_892970.acf StateFlags has active bits (update/sync in progress)
-///   2. remotecache.vdf was modified very recently (sync metadata still being written)
-///   3. Remote save files (.fch, .db, .fwl) were modified very recently (files still uploading)
-///
-/// IMPORTANT: remotecache.vdf is written as the FINAL step of sync completion,
-/// so the window must be short enough to not report "syncing" after sync is done.
-/// 15s for remotecache.vdf and 10s for saves balances detection vs false positives.
+// Steam writes every cloud operation for the app to <Steam>/logs/cloud_log.txt,
+// tagged "[AppID 892970]". A post-exit upload episode — the one we must not race —
+// brackets like this:
+//
+//   Starting sync (up,AC Exit,)                 <- episode opens
+//   ... AutoCloud complete ...                  <- (eval phase done; NOT the end)
+//   Need to upload file worlds/Underworld.db
+//   HTTP upload for file '...' beginning . . .
+//   Upload OK for file ...
+//   Upload complete, result OK                  <- uploads done
+//   YldWriteCacheDirectoryToFile - saved to '...892970/remotecache.vdf'  <- closes
+//
+// The cache write is the FINAL step. That is precisely why the previous detector
+// was INVERTED: it treated a fresh remotecache.vdf mtime as "syncing", but Steam
+// only touches that file AFTER the sync finishes — so it flagged "syncing" for a
+// few seconds once the upload was already done, and stayed silent during the
+// actual upload. We now look for an upload start with no following terminator.
+
+/// How many bytes to read from the end of cloud_log.txt. An episode is at most a
+/// few hundred lines; 256 KiB covers thousands, so the markers are always in view.
+const CLOUD_LOG_TAIL_BYTES: u64 = 256 * 1024;
+/// Steam writes cloud_log.txt continuously while uploading. If it hasn't been
+/// touched within this window, no sync is active — this also clears a stuck or
+/// interrupted episode that never logged its terminator.
+const CLOUD_LOG_STALE_SECS: u64 = 180;
+
+/// Detect whether a Steam operation that must block launch is in progress.
+/// Two independent signals:
+///   1. appmanifest_892970.acf StateFlags has active bits → a game update,
+///      validation, or download is running (launching mid-update is unsafe).
+///   2. cloud_log.txt shows an upload episode that has started but not yet written
+///      its terminating "Upload complete" / cache-write line → Steam Cloud is
+///      actively uploading the previous session's saves.
 fn is_cloud_syncing(valheim_path: &str) -> bool {
     let game_dir = PathBuf::from(valheim_path);
 
@@ -264,63 +288,73 @@ fn is_cloud_syncing(valheim_path: &str) -> bool {
         }
     }
 
+    // Signal 2: real Steam Cloud upload in flight (the post-exit sync we race).
     let steam_root = match steamapps.parent() {
         Some(p) => p,
         None => return false,
     };
-    let userdata = steam_root.join("userdata");
-    if !userdata.exists() {
-        return false;
-    }
-
-    if let Ok(entries) = fs::read_dir(&userdata) {
-        for entry in entries.flatten() {
-            let app_dir = entry.path().join(VALHEIM_APP_ID);
-
-            // Signal 2: remotecache.vdf modified within 15s
-            // (Steam writes this as the final sync step, so keep the window tight
-            // to avoid false positives after sync completes)
-            let cache_path = app_dir.join("remotecache.vdf");
-            if was_modified_within_secs(&cache_path, 15) {
-                app_log("[cloud-sync] Signal 2: remotecache.vdf modified within 15s");
-                return true;
-            }
-
-            // Signal 3: Check actual remote save files — if character/world files
-            // were recently modified, Steam is still writing them during sync.
-            // Path: userdata/<ID>/892970/remote/
-            let remote_dir = app_dir.join("remote");
-            if remote_dir.exists() {
-                if has_recently_modified_saves(&remote_dir, 10) {
-                    app_log("[cloud-sync] Signal 3: save files modified within 10s");
-                    return true;
-                }
-            }
-        }
+    if is_cloud_upload_in_flight(steam_root) {
+        app_log("[cloud-sync] Signal 2: cloud_log.txt shows an upload episode in flight");
+        return true;
     }
 
     false
 }
 
-/// Recursively check if any save files (.fch, .db, .fwl) under a directory
-/// were modified within the last N seconds.
-fn has_recently_modified_saves(dir: &Path, secs: u64) -> bool {
-    let save_extensions = ["fch", "db", "fwl"];
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                if has_recently_modified_saves(&path, secs) {
-                    return true;
-                }
-            } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                if save_extensions.contains(&ext) && was_modified_within_secs(&path, secs) {
-                    return true;
-                }
-            }
+/// Parse the tail of <Steam>/logs/cloud_log.txt and decide whether Valheim's most
+/// recent upload episode is still open — i.e. an upload has started and no
+/// terminating "Upload complete" / cache-write line has followed it yet.
+fn is_cloud_upload_in_flight(steam_root: &Path) -> bool {
+    let log_path = steam_root.join("logs").join("cloud_log.txt");
+
+    // Recency guard: bounds the bracket check and clears stuck/interrupted episodes.
+    if !was_modified_within_secs(&log_path, CLOUD_LOG_STALE_SECS) {
+        return false;
+    }
+
+    let tail = match read_file_tail(&log_path, CLOUD_LOG_TAIL_BYTES) {
+        Some(t) => t,
+        None => return false,
+    };
+
+    let tag = format!("[AppID {}]", VALHEIM_APP_ID);
+    let mut last_upload_start: Option<usize> = None;
+    let mut last_terminator: Option<usize> = None;
+
+    for (i, line) in tail.lines().enumerate() {
+        if !line.contains(&tag) {
+            continue;
+        }
+        if line.contains("Starting sync (up") {
+            last_upload_start = Some(i);
+        } else if line.contains("Upload complete, result OK") || line.contains("remotecache.vdf") {
+            // Any "Upload complete" or cache-write terminates the prior episode.
+            last_terminator = Some(i);
         }
     }
-    false
+
+    match (last_upload_start, last_terminator) {
+        // An upload started after the last terminator → still uploading.
+        (Some(start), Some(end)) => start > end,
+        // An upload started and nothing terminated it within the tail window.
+        (Some(_), None) => true,
+        // No upload episode in the tail → not uploading.
+        _ => false,
+    }
+}
+
+/// Read up to `max_bytes` from the end of a file as a lossy UTF-8 string. A
+/// partial first line (from seeking mid-file) is harmless — it just won't match
+/// any marker. Returns None if the file can't be opened or read.
+fn read_file_tail(path: &Path, max_bytes: u64) -> Option<String> {
+    use std::io::{Read, Seek, SeekFrom};
+    let mut file = fs::File::open(path).ok()?;
+    let len = file.metadata().ok()?.len();
+    let start = len.saturating_sub(max_bytes);
+    file.seek(SeekFrom::Start(start)).ok()?;
+    let mut buf = Vec::with_capacity((len - start) as usize);
+    file.read_to_end(&mut buf).ok()?;
+    Some(String::from_utf8_lossy(&buf).into_owned())
 }
 
 /// Parse a top-level key-value pair from a Valve ACF/VDF text file.

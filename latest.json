@@ -1,11 +1,11 @@
 {
-  "version": "1.10.53",
-  "notes": "Cloud sync no longer strands local edits when Valheim isn't launched. The 30s auto-sync poll now pushes as well as pulls, and the Rust push path short-circuits when nothing has changed (so idle polls stay near-free). Ticket 20260524-222756-b294a49e.",
-  "pub_date": "2026-05-25T00:00:00Z",
+  "version": "1.10.54",
+  "notes": "Two fixes. (1) The MegaBugs page no longer crashes on the All / In Progress filters \u2014 a ticket with an out-of-range priority now falls back to Normal instead of taking the whole page down. (2) The Steam Cloud sync indicator was inverted: it said 'ready to launch' while Steam was still uploading your save, then flipped to 'syncing' a few seconds after the upload had already finished. It now reads Steam's cloud log and only blocks launch while an upload is genuinely in flight. Tickets 20260601-224125-5c500f68 and 20260525-232101-762605a1.",
+  "pub_date": "2026-06-01T23:03:30Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZRZm51UkZZZkRYbkhySE53VGd3VUJFd1krczBhVEozT1pWR1VXZFMwc1J3anZ6VExJK05sdTZjeml6eERpU3hoOUdvMG1PbHVXRnMxclc4TUQ1TGdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc5NjY0ODE4CWZpbGU6TWVnYUxvYWRfMS4xMC41M194NjQtc2V0dXAubnNpcy56aXAKcURsL09HY0R4YlovN2pxaDlHcFdoSjk1Rzd1eURGcjNQTERKRTE4a2RnbXlUUjZjaUtpVldyekI0bFhGekdNUDVibE1UNWluc0xRYlVvaC8yWjFoRGc9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.53/MegaLoad_1.10.53_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtxMGJmaEI5M2hjRzNjSTFOZ0NOQUhVZXkxR1lNOHV2ekJvVGVTYldXeGl2MnZlYmdGeFBkNjV6N3lRcXpiRW9aZVZKZjB0eFZnQ01TNnd0Y3JvbEFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwMzU0OTYzCWZpbGU6TWVnYUxvYWRfMS4xMC41NF94NjQtc2V0dXAubnNpcy56aXAKZDZOOUFORWc5MHMvajlHL0lWRnh2TWZFajNjcmtoN2dVaFRMZCtIOXBtTm9wZUMvRUhoVUZyY1V5ZS9IQUJIOHkyRkxHVU9CN25wUUF2Q0gySGxNRFE9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.54/MegaLoad_1.10.54_x64-setup.nsis.zip"
     }
   }
 }
