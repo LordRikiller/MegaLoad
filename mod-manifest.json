@@ -44,8 +44,8 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.25",
-      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.25/MegaStuff.dll",
+      "version": "1.4.26",
+      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.26/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
       "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch"
@@ -68,8 +68,8 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.5.0",
-      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.5.0/MegaFactory.dll",
+      "version": "1.5.1",
+      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.5.1/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
       "description": "Smart factory: same-type stations sharing nearby chests form a cluster and auto-divide the work - drop 4 smelters next to Tin/Copper/Silver/Iron and they each pick one ore, blast furnaces split Black Metal/Flametal, no work orders needed (SmartDistribution config, default on - toggle off for manual work orders). Spare stations double up on the busiest stockpile; surplus stations are idled so output can't overfill storage. Auto-feeds Kiln/Smelter/Blast Furnace/Windmill/Spinning Wheel/Eitr Refinery in the background regardless of player distance, leaves 1 of each item type per container. With MegaStuff pull-to-chest on, stations freeze when output storage is full and auto-resume when space frees."
