@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-02T02:52:47Z",
+  "updated_at": "2026-06-02T03:25:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -36,11 +36,11 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.16.8",
-      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.8/MegaQoL.dll",
+      "version": "1.16.9",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.9/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
+      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). Ballista now holds fire without a clear line of sight to its target, plus optional infinite Flametal-Bolt ammo and an optional MegaShot-Armageddon firing animation (Staff-of-Lightning bolt + meteor-crash on impact). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
     },
     {
       "name": "MegaStuff",
