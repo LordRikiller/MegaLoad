@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-01T10:32:00Z",
+  "updated_at": "2026-06-02T01:19:15Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -36,11 +36,11 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.16.7",
-      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.7/MegaQoL.dll",
+      "version": "1.16.8",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.8/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
+      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
     },
     {
       "name": "MegaStuff",
