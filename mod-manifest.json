@@ -44,11 +44,11 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.27",
-      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.27/MegaStuff.dll",
+      "version": "1.4.28",
+      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.28/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
-      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch"
+      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch. Chest deposit sparkle now fires once per chest (not once per item in a big dump), lingers longer (Speed config), and the sound is toggleable."
     },
     {
       "name": "MegaFarming",
