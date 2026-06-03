@@ -581,7 +581,18 @@ fn save_ts_installed_mod(
 /// Install Thunderstore mods that are tracked in sync but missing locally.
 /// Used during sync pull to replicate a profile across machines.
 #[command]
-pub fn sync_install_thunderstore_mods(
+pub async fn sync_install_thunderstore_mods(
+    bepinex_path: String,
+    remote_mods_json: String,
+) -> Result<u32, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        sync_install_thunderstore_mods_impl(bepinex_path, remote_mods_json)
+    })
+    .await
+    .map_err(|e| format!("sync_install_thunderstore_mods task panicked: {}", e))?
+}
+
+fn sync_install_thunderstore_mods_impl(
     bepinex_path: String,
     remote_mods_json: String,
 ) -> Result<u32, String> {

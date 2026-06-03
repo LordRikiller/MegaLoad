@@ -159,35 +159,42 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
         // Pull bundled profile (configs + mod state) — 1 API call
         set({ syncProgress: `Pulling "${remote.name}"...` });
+        let missingMods = 0;
         try {
           const result = await syncPullBundle(remote.id, local.bepinex_path);
           totalConfigs += result.configs_updated;
+          missingMods = result.missing_mods?.length ?? 0;
         } catch (e) {
           addToast({ type: "warning", title: "Sync", message: `Pull failed for "${remote.name}": ${e}`, duration: 5000 });
         }
 
-        // Install mods from manifest that aren't on disk
-        set({ syncProgress: `Installing mods for "${remote.name}"...` });
-        try {
-          const modsInstalled = await syncInstallAllMods(local.bepinex_path);
-          totalMods += modsInstalled;
-        } catch {
-          // Non-critical
-        }
-
-        // Install Thunderstore mods from remote bundle
-        try {
-          const remoteState = await syncPullProfileState(remote.id);
-          if (remoteState.thunderstore_mods && remoteState.thunderstore_mods.length > 0) {
-            set({ syncProgress: `Installing Thunderstore mods for "${remote.name}"...` });
-            const tsInstalled = await syncInstallThunderstoreMods(
-              local.bepinex_path,
-              JSON.stringify(remoteState.thunderstore_mods)
-            );
-            totalMods += tsInstalled;
+        // Only install mods when the pull actually found some missing on disk.
+        // Running the install path on EVERY pull (manifest fetch + per-mod
+        // checks) is what made sync feel like it reinstalled everything each
+        // cycle and hammered the API. A pull with nothing missing skips it.
+        if (missingMods > 0) {
+          set({ syncProgress: `Installing ${missingMods} mod${missingMods !== 1 ? "s" : ""} for "${remote.name}"...` });
+          try {
+            const modsInstalled = await syncInstallAllMods(local.bepinex_path);
+            totalMods += modsInstalled;
+          } catch {
+            // Non-critical
           }
-        } catch {
-          // Non-critical
+
+          // Install Thunderstore mods from remote bundle
+          try {
+            const remoteState = await syncPullProfileState(remote.id);
+            if (remoteState.thunderstore_mods && remoteState.thunderstore_mods.length > 0) {
+              set({ syncProgress: `Installing Thunderstore mods for "${remote.name}"...` });
+              const tsInstalled = await syncInstallThunderstoreMods(
+                local.bepinex_path,
+                JSON.stringify(remoteState.thunderstore_mods)
+              );
+              totalMods += tsInstalled;
+            }
+          } catch {
+            // Non-critical
+          }
         }
 
         profilesProcessed++;

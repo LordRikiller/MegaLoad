@@ -1,11 +1,11 @@
 {
-  "version": "1.10.54",
-  "notes": "Two fixes. (1) The MegaBugs page no longer crashes on the All / In Progress filters \u2014 a ticket with an out-of-range priority now falls back to Normal instead of taking the whole page down. (2) The Steam Cloud sync indicator was inverted: it said 'ready to launch' while Steam was still uploading your save, then flipped to 'syncing' a few seconds after the upload had already finished. It now reads Steam's cloud log and only blocks launch while an upload is genuinely in flight. Tickets 20260601-224125-5c500f68 and 20260525-232101-762605a1.",
-  "pub_date": "2026-06-01T23:03:30Z",
+  "version": "1.10.55",
+  "notes": "Sync overhaul + ticket-number fix. (1) Cloud sync no longer freezes the window — the profile/config/mod sync now runs off the UI thread, so MegaLoad stays responsive while it works in the background. (2) Two synced devices no longer ping-pong: a quirk where the change-detector keyed off the machine ID made every 30s poll trigger a full pull and mod reinstall — that's gone, so sync is far less frequent and invasive. (3) Configs now reliably copy device-to-device (pulled files get their edit-time restamped so the next sync stops skipping them). Mods only reinstall when genuinely missing, idle polls do near-zero network, and the mod-set merge now favours the device that last edited it rather than the one that pushed last. (4) MegaBugs ticket numbers now use Australia/Sydney local time instead of UTC. Tickets 20260602-231641-9f315489 and 20260602-231314-56fe2afd.",
+  "pub_date": "2026-06-02T23:57:49Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUtxMGJmaEI5M2hjRzNjSTFOZ0NOQUhVZXkxR1lNOHV2ekJvVGVTYldXeGl2MnZlYmdGeFBkNjV6N3lRcXpiRW9aZVZKZjB0eFZnQ01TNnd0Y3JvbEFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwMzU0OTYzCWZpbGU6TWVnYUxvYWRfMS4xMC41NF94NjQtc2V0dXAubnNpcy56aXAKZDZOOUFORWc5MHMvajlHL0lWRnh2TWZFajNjcmtoN2dVaFRMZCtIOXBtTm9wZUMvRUhoVUZyY1V5ZS9IQUJIOHkyRkxHVU9CN25wUUF2Q0gySGxNRFE9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.54/MegaLoad_1.10.54_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOURnekR5N2EwTnYwNjlTL0prdG5tbVlzSGtyUE9hTDhUalVOTFc1VXpaRjZuNWdnS3hsR25QY3FyeVhvT0M4RjBRdDdjQzgvL3NncE8vM0hQR2hxbEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNDQ0NjIwCWZpbGU6TWVnYUxvYWRfMS4xMC41NV94NjQtc2V0dXAubnNpcy56aXAKeVp2Y0pQcGJhVHlTcnU3Z3RZUEl6S25KSTl2eFdtK0JGWXBWK0hHZUtERXhvUzhqcGN6ZFgrWXExekhNZE4ydDBPL2xvU3BqOVBnOERoZ2lYV09yQlE9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.55/MegaLoad_1.10.55_x64-setup.nsis.zip"
     }
   }
 }

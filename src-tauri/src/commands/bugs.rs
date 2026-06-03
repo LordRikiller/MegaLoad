@@ -101,51 +101,92 @@ pub struct ImageData {
 
 // GitHub helpers are in crate::commands::github
 
+fn is_leap(y: i64) -> bool {
+    y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
+}
+
+/// Decompose seconds-since-epoch into civil (year, month[1-12], day, hh, mm, ss).
+/// Manual since we don't pull in chrono.
+fn civil_from_secs(total: i64) -> (i64, u32, u32, u32, u32, u32) {
+    let secs_per_day: i64 = 86400;
+    let mut days = total.div_euclid(secs_per_day);
+    let tod = total.rem_euclid(secs_per_day);
+    let hours = (tod / 3600) as u32;
+    let minutes = ((tod % 3600) / 60) as u32;
+    let seconds = (tod % 60) as u32;
+
+    let mut y = 1970i64;
+    loop {
+        let diy = if is_leap(y) { 366 } else { 365 };
+        if days < diy {
+            break;
+        }
+        days -= diy;
+        y += 1;
+    }
+    let month_days = [31, if is_leap(y) { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let mut m = 0usize;
+    for (i, &md) in month_days.iter().enumerate() {
+        if days < md as i64 {
+            m = i;
+            break;
+        }
+        days -= md as i64;
+    }
+    let d = (days + 1) as u32;
+    (y, (m as u32) + 1, d, hours, minutes, seconds)
+}
+
+/// Days since 1970-01-01 for a civil date (Howard Hinnant's algorithm).
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = (if y >= 0 { y } else { y - 399 }) / 400;
+    let yoe = y - era * 400;
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146097 + doe - 719468
+}
+
+/// Day-of-month of the first Sunday in (year, month). dow: 0 = Sunday.
+fn first_sunday(y: i64, month: i64) -> i64 {
+    let dow_first = (days_from_civil(y, month, 1) + 4).rem_euclid(7);
+    1 + ((7 - dow_first) % 7)
+}
+
+/// Australia/Sydney UTC offset (in seconds) for a given UTC instant.
+/// AEST = +10h; AEDT = +11h during DST (first Sunday Oct → first Sunday Apr).
+fn sydney_offset_secs(utc_secs: i64) -> i64 {
+    // Use the +10 local date to decide DST membership; the +11 vs +10 ambiguity
+    // only matters during the 1-hour changeover window — irrelevant for an ID.
+    let (y, m, d, _, _, _) = civil_from_secs(utc_secs + 10 * 3600);
+    let in_dst = match m {
+        11 | 12 | 1 | 2 | 3 => true,
+        10 => d >= first_sunday(y, 10) as u32,
+        4 => d < first_sunday(y, 4) as u32,
+        _ => false,
+    };
+    if in_dst { 11 * 3600 } else { 10 * 3600 }
+}
+
 fn iso_now() -> String {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
-        .as_secs();
-    // Format as ISO 8601 — manual since we don't have chrono
-    let secs_per_day: u64 = 86400;
-    let days = now / secs_per_day;
-    let time_of_day = now % secs_per_day;
-    let hours = time_of_day / 3600;
-    let minutes = (time_of_day % 3600) / 60;
-    let seconds = time_of_day % 60;
+        .as_secs() as i64;
+    let (y, m, d, hh, mm, ss) = civil_from_secs(now);
+    format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", y, m, d, hh, mm, ss)
+}
 
-    // Days since epoch to date (simplified Gregorian)
-    let mut y = 1970i64;
-    let mut remaining = days as i64;
-    loop {
-        let days_in_year = if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) { 366 } else { 365 };
-        if remaining < days_in_year {
-            break;
-        }
-        remaining -= days_in_year;
-        y += 1;
-    }
-    let leap = y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
-    let month_days = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let mut m = 0usize;
-    for (i, &md) in month_days.iter().enumerate() {
-        if remaining < md as i64 {
-            m = i;
-            break;
-        }
-        remaining -= md as i64;
-    }
-    let d = remaining + 1;
-
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
-        y,
-        m + 1,
-        d,
-        hours,
-        minutes,
-        seconds
-    )
+/// `YYYYMMDD-HHMMSS` stamp in Australia/Sydney local time, for ticket IDs.
+/// Unlike `iso_now()` (which stays UTC for the stored `created_at`/`updated_at`
+/// fields), the ticket ID reads in Milord's local time.
+fn sydney_id_stamp() -> String {
+    let utc = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    let (y, m, d, hh, mm, ss) = civil_from_secs(utc + sydney_offset_secs(utc));
+    format!("{:04}{:02}{:02}-{:02}{:02}{:02}", y, m, d, hh, mm, ss)
 }
 
 // ---------------------------------------------------------------------------
@@ -441,10 +482,10 @@ pub async fn submit_ticket(
 
     let now = iso_now();
 
-    // Generate ticket ID: YYYYMMDD-HHmmss-short_uuid
-    let date_part = now.replace('-', "").replace(':', "").replace('T', "-").replace('Z', "");
+    // Generate ticket ID: YYYYMMDD-HHmmss-short_uuid (timestamp in Australia/Sydney
+    // local time so the ID reads naturally; stored created_at stays UTC).
     let short_uuid = &uuid::Uuid::new_v4().to_string()[..8];
-    let ticket_id = format!("{}-{}", &date_part[..15], short_uuid);
+    let ticket_id = format!("{}-{}", sydney_id_stamp(), short_uuid);
 
     app_log(&format!("MegaBugs: creating ticket {}", ticket_id));
 

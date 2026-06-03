@@ -753,7 +753,13 @@ pub fn deploy_bundled_plugins(app: AppHandle, bepinex_path: String) -> Result<De
 /// Install ALL mods from the manifest that don't exist locally.
 /// Used during sync pull to fully replicate a profile on a new machine.
 #[command]
-pub fn sync_install_all_mods(bepinex_path: String) -> Result<u32, String> {
+pub async fn sync_install_all_mods(bepinex_path: String) -> Result<u32, String> {
+    tauri::async_runtime::spawn_blocking(move || sync_install_all_mods_impl(bepinex_path))
+        .await
+        .map_err(|e| format!("sync_install_all_mods task panicked: {}", e))?
+}
+
+fn sync_install_all_mods_impl(bepinex_path: String) -> Result<u32, String> {
     let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
     let manifest = fetch_manifest()?;
     let mut installed: u32 = 0;

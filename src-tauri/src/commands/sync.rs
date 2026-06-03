@@ -139,6 +139,12 @@ pub struct SyncProfileBundle {
     /// in a `ConfigEntry` so it gets the same per-file watermark treatment.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trainer_state: Option<ConfigEntry>,
+    /// Watermark for the mod set specifically — bumps only when mods/ts_mods
+    /// actually change (see `mods_watermark`). Lets the merge pick the device
+    /// that last *edited* the mod set rather than the one that pushed last.
+    /// Defaults to empty on legacy bundles (treated as oldest).
+    #[serde(default)]
+    pub mods_updated_at: String,
 }
 
 /// Mirror of `SyncProfileBundle` whose configs/trainer_state are the raw
@@ -156,6 +162,8 @@ struct RawSyncProfileBundle {
     configs: HashMap<String, ConfigContentRaw>,
     #[serde(default)]
     trainer_state: Option<ConfigContentRaw>,
+    #[serde(default)]
+    mods_updated_at: String,
 }
 
 /// Parse a bundle JSON, transparently promoting v1 (bare-string configs) to
@@ -186,6 +194,13 @@ fn parse_bundle(content: &str) -> Result<SyncProfileBundle, String> {
             updated_at: fallback.clone(),
         },
     });
+    // Legacy bundles (no mods_updated_at) fall back to the bundle-level
+    // last_updated so they still carry a meaningful, non-empty mods watermark.
+    let mods_updated_at = if raw.mods_updated_at.is_empty() {
+        raw.last_updated.clone()
+    } else {
+        raw.mods_updated_at
+    };
     Ok(SyncProfileBundle {
         profile_id: raw.profile_id,
         profile_name: raw.profile_name,
@@ -194,6 +209,7 @@ fn parse_bundle(content: &str) -> Result<SyncProfileBundle, String> {
         thunderstore_mods: raw.thunderstore_mods,
         configs,
         trainer_state,
+        mods_updated_at,
     })
 }
 
@@ -241,6 +257,120 @@ fn secs_to_iso(now: i64) -> String {
     format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", y, m + 1, d, hours, minutes, seconds)
 }
 
+/// Days since 1970-01-01 for a civil date (Howard Hinnant's algorithm).
+/// Inverse companion to `secs_to_iso` so we can turn a watermark back into a
+/// Unix instant for mtime restamping.
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = (if y >= 0 { y } else { y - 399 }) / 400;
+    let yoe = y - era * 400;
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146097 + doe - 719468
+}
+
+/// Parse an ISO-8601 "YYYY-MM-DDTHH:MM:SSZ" stamp (the shape `iso_now`/
+/// `mtime_iso` emit) back into Unix seconds. Lenient on the trailing zone.
+fn iso_to_unix_secs(s: &str) -> Option<i64> {
+    if s.len() < 19 {
+        return None;
+    }
+    let num = |a: usize, n: usize| -> Option<i64> { s.get(a..a + n)?.trim().parse::<i64>().ok() };
+    let y = num(0, 4)?;
+    let mo = num(5, 2)?;
+    let d = num(8, 2)?;
+    let hh = num(11, 2)?;
+    let mm = num(14, 2)?;
+    let ss = num(17, 2)?;
+    if !(1..=12).contains(&mo) {
+        return None;
+    }
+    Some(days_from_civil(y, mo, d) * 86400 + hh * 3600 + mm * 60 + ss)
+}
+
+/// Set a file's mtime to match an ISO watermark. Used after a pull writes a
+/// config so the freshly-written file no longer looks "newer" than its true
+/// edit time — the same restamp trick the player-data path already uses.
+fn restamp_file_mtime(path: &Path, iso: &str) {
+    if let Some(secs) = iso_to_unix_secs(iso) {
+        if secs >= 0 {
+            let when = std::time::UNIX_EPOCH + std::time::Duration::from_secs(secs as u64);
+            let _ = filetime::set_file_mtime(path, filetime::FileTime::from_system_time(when));
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Push dirty-tracking — in-memory, per run
+// ---------------------------------------------------------------------------
+//
+// The 30s poll-push fires every cycle even when nothing changed locally. The
+// no-op short-circuit inside `push_profile_bundle` still costs a GET (and the
+// manifest compare costs another) to *discover* there's nothing to do. This
+// cache lets an idle push skip those round-trips entirely: we remember the
+// content signature we last confirmed in-sync, and if the current local
+// snapshot still matches it, there is provably nothing to upload — a remote
+// change would have been caught by `sync_check_remote_changed` → pull, which
+// invalidates the cache. Lost on restart (then we GET once and re-cache).
+
+#[derive(Default)]
+struct PushCache {
+    /// profile_id → bundle content signature last confirmed in-sync with cloud.
+    bundle_sig: HashMap<String, String>,
+    /// Manifest profile-list signature last confirmed in-sync with cloud.
+    manifest_sig: Option<String>,
+    /// profile_id → (mods fingerprint, ISO timestamp it last changed). Backs the
+    /// honest mods watermark so "who edited the mod set last" wins the merge
+    /// instead of "whoever pushed most recently".
+    mods_rev: HashMap<String, (String, String)>,
+}
+
+fn push_cache() -> &'static std::sync::Mutex<PushCache> {
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<PushCache>> = std::sync::OnceLock::new();
+    CACHE.get_or_init(|| std::sync::Mutex::new(PushCache::default()))
+}
+
+/// Forget cached push signatures for a profile (and the manifest) — called
+/// after a pull so the next push reconciles against a clean slate.
+fn invalidate_push_cache(profile_id: &str) {
+    if let Ok(mut c) = push_cache().lock() {
+        c.bundle_sig.remove(profile_id);
+        c.manifest_sig = None;
+    }
+}
+
+/// Stable fingerprint of a profile's installed mod set (enabled DLLs +
+/// thunderstore tracking). Order-independent.
+fn mods_fingerprint(mods: &[SyncModEntry], ts_mods: &[SyncThunderstoreMod]) -> String {
+    let mut parts: Vec<String> = mods
+        .iter()
+        .map(|m| format!("{}:{}:{}", m.name, m.file_name, m.enabled))
+        .collect();
+    for t in ts_mods {
+        parts.push(format!("ts:{}:{}", t.full_name, t.version));
+    }
+    parts.sort();
+    format!("{:016x}", fnv1a_hash(parts.join("|").as_bytes()))
+}
+
+/// Resolve the mods watermark for a profile: reuse the cached timestamp while
+/// the fingerprint is unchanged, bump to now the moment the set changes.
+fn mods_watermark(profile_id: &str, mods: &[SyncModEntry], ts_mods: &[SyncThunderstoreMod]) -> String {
+    let fp = mods_fingerprint(mods, ts_mods);
+    let mut c = match push_cache().lock() {
+        Ok(c) => c,
+        Err(_) => return iso_now(),
+    };
+    match c.mods_rev.get(profile_id) {
+        Some((cached_fp, ts)) if *cached_fp == fp => ts.clone(),
+        _ => {
+            let now = iso_now();
+            c.mods_rev.insert(profile_id.to_string(), (fp, now.clone()));
+            now
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Profile snapshot — reads current local state into a bundle
 // ---------------------------------------------------------------------------
@@ -261,6 +391,7 @@ fn snapshot_bundle(profile_id: &str, profile_name: &str, bepinex_path: &str) -> 
     let ts_mods = read_thunderstore_tracking(bepinex_path);
     let configs = read_all_configs(bepinex_path);
     let trainer_state = read_trainer_state(bepinex_path);
+    let mods_updated_at = mods_watermark(profile_id, &mods, &ts_mods);
 
     Ok(SyncProfileBundle {
         profile_id: profile_id.to_string(),
@@ -270,6 +401,7 @@ fn snapshot_bundle(profile_id: &str, profile_name: &str, bepinex_path: &str) -> 
         thunderstore_mods: ts_mods,
         configs,
         trainer_state,
+        mods_updated_at,
     })
 }
 
@@ -392,13 +524,17 @@ fn bundle_content_hash(bundle: &SyncProfileBundle) -> String {
     format!("{:016x}", fnv1a_hash(json.as_bytes()))
 }
 
-/// Bundle signature with `last_updated` zeroed and mod arrays sorted so the
+/// Bundle signature with watermark fields zeroed and mod arrays sorted so the
 /// hash is stable across snapshot orderings. Used by the push short-circuit
 /// to detect "merged matches remote" and skip the redundant PUT — this is what
-/// makes the 30s poll-push loop cheap when nothing has changed.
+/// makes the 30s poll-push loop cheap when nothing has changed. Both
+/// `last_updated` and `mods_updated_at` are excluded: they are metadata that
+/// can differ between devices with identical content, so including them would
+/// trigger spurious pushes.
 fn bundle_content_signature(bundle: &SyncProfileBundle) -> String {
     let mut b = bundle.clone();
     b.last_updated = String::new();
+    b.mods_updated_at = String::new();
     b.mods.sort_by(|x, y| x.name.cmp(&y.name).then(x.file_name.cmp(&y.file_name)));
     b.thunderstore_mods.sort_by(|x, y| x.full_name.cmp(&y.full_name));
     bundle_content_hash(&b)
@@ -408,11 +544,15 @@ fn bundle_content_signature(bundle: &SyncProfileBundle) -> String {
 /// manifest-push short-circuit to skip the PUT when only `last_sync` would
 /// move (peer devices key off `last_sync` to decide whether to pull, so a
 /// frivolous bump triggers a useless pull on every peer's next poll).
-fn manifest_profiles_signature(profiles: &[SyncProfileEntry], machine_id: &str) -> String {
+///
+/// Deliberately does NOT include `machine_id`: the remote manifest carries the
+/// *other* device's id, so folding it in made local and remote signatures never
+/// match, the PUT fired every poll, and the two devices ping-ponged full pulls
+/// (re-installing mods) forever. The signature reflects profile *content* only.
+fn manifest_profiles_signature(profiles: &[SyncProfileEntry]) -> String {
     let mut sorted: Vec<&SyncProfileEntry> = profiles.iter().collect();
     sorted.sort_by(|x, y| x.id.cmp(&y.id));
-    let mut buf = String::with_capacity(machine_id.len() + sorted.len() * 64);
-    buf.push_str(machine_id);
+    let mut buf = String::with_capacity(sorted.len() * 64);
     for p in sorted {
         buf.push('|');
         buf.push_str(&p.id);
@@ -442,7 +582,13 @@ fn sync_bundle_path(user_id: &str, profile_id: &str) -> String {
 // ---------------------------------------------------------------------------
 
 #[command]
-pub fn sync_get_status() -> Result<SyncStatus, String> {
+pub async fn sync_get_status() -> Result<SyncStatus, String> {
+    tauri::async_runtime::spawn_blocking(sync_get_status_impl)
+        .await
+        .map_err(|e| format!("sync_get_status task panicked: {}", e))?
+}
+
+fn sync_get_status_impl() -> Result<SyncStatus, String> {
     let settings = load_sync_settings();
 
     let remote_profiles = if settings.enabled {
@@ -512,7 +658,13 @@ pub fn sync_get_settings() -> Result<SyncSettings, String> {
 /// Push all profiles to the cloud. Each profile = 1 bundled JSON file.
 /// Total API calls: 2 (manifest) + 2 per profile (GET SHA + PUT bundle).
 #[command]
-pub fn sync_push_all(profiles_json: String) -> Result<(), String> {
+pub async fn sync_push_all(profiles_json: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || sync_push_all_impl(profiles_json))
+        .await
+        .map_err(|e| format!("sync_push_all task panicked: {}", e))?
+}
+
+fn sync_push_all_impl(profiles_json: String) -> Result<(), String> {
     let settings = load_sync_settings();
     if !settings.enabled {
         sync_log::emit("PushAll", "skipped", "Cloud sync disabled");
@@ -555,13 +707,30 @@ pub fn sync_push_all(profiles_json: String) -> Result<(), String> {
         is_linked: false,
     }).collect();
     let manifest_path = sync_manifest_path(user_id);
-    let remote_manifest_sig = github_get_file(&manifest_path)
-        .ok()
-        .and_then(|(c, _)| serde_json::from_str::<SyncManifest>(&c).ok())
-        .map(|m| manifest_profiles_signature(&m.profiles, &m.machine_id));
-    let desired_sig = manifest_profiles_signature(&desired_profiles, &settings.machine_id);
-    let manifest_needs_push = bundles_changed > 0
-        || remote_manifest_sig.as_deref() != Some(desired_sig.as_str());
+    let desired_sig = manifest_profiles_signature(&desired_profiles);
+
+    // Dirty-tracking: if no bundle changed and our cached manifest signature
+    // still matches the desired profile list, the cloud manifest is provably
+    // current — skip the GET entirely. An idle poll-push then makes zero
+    // manifest calls. The cache is cleared by any pull, so a peer's change is
+    // still picked up via `sync_check_remote_changed` → pull → invalidate.
+    let cached_matches = bundles_changed == 0
+        && push_cache()
+            .lock()
+            .ok()
+            .and_then(|c| c.manifest_sig.clone())
+            .as_deref()
+            == Some(desired_sig.as_str());
+
+    let manifest_needs_push = if cached_matches {
+        false
+    } else {
+        let remote_manifest_sig = github_get_file(&manifest_path)
+            .ok()
+            .and_then(|(c, _)| serde_json::from_str::<SyncManifest>(&c).ok())
+            .map(|m| manifest_profiles_signature(&m.profiles));
+        bundles_changed > 0 || remote_manifest_sig.as_deref() != Some(desired_sig.as_str())
+    };
 
     if manifest_needs_push {
         let manifest = SyncManifest {
@@ -589,6 +758,13 @@ pub fn sync_push_all(profiles_json: String) -> Result<(), String> {
                 Ok((manifest_json.as_bytes().to_vec(), sha))
             },
         )?;
+    }
+
+    // The cloud manifest now reflects our desired profile list (we either just
+    // PUT it, or confirmed it already matched). Cache that so the next idle
+    // push can skip the manifest GET.
+    if let Ok(mut c) = push_cache().lock() {
+        c.manifest_sig = Some(desired_sig.clone());
     }
 
     // 3. Update local settings
@@ -643,9 +819,12 @@ fn pick_config_entry(a: ConfigEntry, b: ConfigEntry) -> ConfigEntry {
 
 /// Merge two bundles per-file. Configs are unioned by filename; on collision,
 /// the newer `updated_at` wins. Mods + thunderstore_mods stay last-writer
-/// (they describe an installed-state set, not freely-editable content), with
-/// the bundle-level `last_updated` watermark deciding which side is canonical.
-/// Trainer state gets the same per-entry watermark treatment as configs.
+/// (they describe an installed-state set, not freely-editable content), but the
+/// canonical side is now decided by `mods_updated_at` — which only moves when
+/// the set actually changes — rather than the bundle-level `last_updated`,
+/// which always read "now" on the pushing device and so let local always win
+/// (the thrash that reinstalled mods every cycle). Trainer state gets the same
+/// per-entry watermark treatment as configs.
 fn merge_profile_bundle(local: SyncProfileBundle, remote: SyncProfileBundle) -> SyncProfileBundle {
     // Per-file config merge — union by filename, pick by updated_at.
     let mut merged_configs: HashMap<String, ConfigEntry> = remote.configs;
@@ -668,14 +847,13 @@ fn merge_profile_bundle(local: SyncProfileBundle, remote: SyncProfileBundle) -> 
         (None, None) => None,
     };
 
-    // Mods/thunderstore_mods describe the active installed set, not
-    // independent files — they don't have per-entry timestamps, so use the
-    // bundle-level last_updated as the watermark to decide canonical side.
-    let local_newer = local.last_updated >= remote.last_updated;
-    let (mods, ts_mods, profile_name) = if local_newer {
-        (local.mods, local.thunderstore_mods, local.profile_name)
+    // Mods/thunderstore_mods describe the active installed set. Pick the side
+    // whose mod set changed most recently (mods_updated_at); ties keep local.
+    let mods_local_wins = local.mods_updated_at >= remote.mods_updated_at;
+    let (mods, ts_mods, profile_name, mods_updated_at) = if mods_local_wins {
+        (local.mods, local.thunderstore_mods, local.profile_name, local.mods_updated_at)
     } else {
-        (remote.mods, remote.thunderstore_mods, remote.profile_name)
+        (remote.mods, remote.thunderstore_mods, remote.profile_name, remote.mods_updated_at)
     };
 
     SyncProfileBundle {
@@ -686,12 +864,29 @@ fn merge_profile_bundle(local: SyncProfileBundle, remote: SyncProfileBundle) -> 
         thunderstore_mods: ts_mods,
         configs: merged_configs,
         trainer_state: merged_trainer,
+        mods_updated_at,
     }
 }
 
 fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushInfo) -> Result<bool, String> {
     let local = snapshot_bundle(&profile.id, &profile.name, &profile.bepinex_path)?;
     let bundle_path = sync_bundle_path(user_id, &profile.id);
+
+    // Dirty-tracking fast path: if the local snapshot is identical (by content
+    // signature) to what we last confirmed in-sync with the cloud, there is
+    // nothing to upload — skip the GET+merge+PUT entirely. A remote-side change
+    // would have been caught by `sync_check_remote_changed` → pull, which clears
+    // this cache, so we can't miss a peer's edit by short-circuiting here.
+    let local_sig = bundle_content_signature(&local);
+    if push_cache()
+        .lock()
+        .ok()
+        .and_then(|c| c.bundle_sig.get(&profile.id).cloned())
+        .as_deref()
+        == Some(local_sig.as_str())
+    {
+        return Ok(false);
+    }
 
     // Fetch remote (if any) so we can merge per-file rather than overwrite. Two
     // devices editing different .cfg files in the same profile previously
@@ -744,6 +939,9 @@ fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushI
     // locally. Without this, every poll cycle burns ~2 API calls per profile.
     if let Some(ref r) = remote {
         if bundle_content_signature(&merged) == bundle_content_signature(r) {
+            if let Ok(mut c) = push_cache().lock() {
+                c.bundle_sig.insert(profile.id.clone(), local_sig.clone());
+            }
             app_log(&format!(
                 "Sync push: {} unchanged — skip PUT ({} mods, {} configs)",
                 profile.name,
@@ -790,6 +988,12 @@ fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushI
         },
     )?;
 
+    // Cloud now holds our merged content. Remember the local signature so the
+    // next idle push (local unchanged) short-circuits without touching network.
+    if let Ok(mut c) = push_cache().lock() {
+        c.bundle_sig.insert(profile.id.clone(), local_sig.clone());
+    }
+
     app_log(&format!(
         "Pushed bundle: {} ({} mods, {} configs)",
         profile.name, mods_count, configs_count
@@ -799,7 +1003,13 @@ fn push_profile_bundle(user_id: &str, display_name: &str, profile: &ProfilePushI
 
 // Keep sync_push_profile for backwards compatibility (delegates to push_all pattern)
 #[command]
-pub fn sync_push_profile(profile_id: String, profile_name: String, bepinex_path: String) -> Result<(), String> {
+pub async fn sync_push_profile(profile_id: String, profile_name: String, bepinex_path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || sync_push_profile_impl(profile_id, profile_name, bepinex_path))
+        .await
+        .map_err(|e| format!("sync_push_profile task panicked: {}", e))?
+}
+
+fn sync_push_profile_impl(profile_id: String, profile_name: String, bepinex_path: String) -> Result<(), String> {
     let settings = load_sync_settings();
     if !settings.enabled {
         return Err("Cloud sync is not enabled".to_string());
@@ -831,7 +1041,13 @@ pub fn sync_push_profile(profile_id: String, profile_name: String, bepinex_path:
 
 /// Pull the remote sync manifest.
 #[command]
-pub fn sync_pull_manifest() -> Result<SyncManifest, String> {
+pub async fn sync_pull_manifest() -> Result<SyncManifest, String> {
+    tauri::async_runtime::spawn_blocking(sync_pull_manifest_impl)
+        .await
+        .map_err(|e| format!("sync_pull_manifest task panicked: {}", e))?
+}
+
+fn sync_pull_manifest_impl() -> Result<SyncManifest, String> {
     let identity = get_megaload_identity()?;
     let path = sync_manifest_path(&identity.user_id);
 
@@ -851,7 +1067,13 @@ pub fn sync_pull_manifest() -> Result<SyncManifest, String> {
 /// Pull a single profile's bundle from the cloud and apply configs locally.
 /// API calls: 1 GET bundle.
 #[command]
-pub fn sync_pull_bundle(profile_id: String, bepinex_path: String) -> Result<SyncPullResult, String> {
+pub async fn sync_pull_bundle(profile_id: String, bepinex_path: String) -> Result<SyncPullResult, String> {
+    tauri::async_runtime::spawn_blocking(move || sync_pull_bundle_impl(profile_id, bepinex_path))
+        .await
+        .map_err(|e| format!("sync_pull_bundle task panicked: {}", e))?
+}
+
+fn sync_pull_bundle_impl(profile_id: String, bepinex_path: String) -> Result<SyncPullResult, String> {
     let settings = load_sync_settings();
     if !settings.enabled {
         return Err("Cloud sync is not enabled".to_string());
@@ -895,6 +1117,12 @@ pub fn sync_pull_bundle(profile_id: String, bepinex_path: String) -> Result<Sync
             }
         }
         fs::write(&local_path, &remote_entry.content).map_err(|e| e.to_string())?;
+        // Restamp the freshly-written file to the remote's edit time. Without
+        // this, fs::write sets mtime = now, so the pulled file looks "newer"
+        // than its true edit time and the NEXT pull's `local_mtime > remote`
+        // guard wrongly skips a genuine remote update — the reason configs
+        // stopped propagating device-to-device.
+        restamp_file_mtime(&local_path, &remote_entry.updated_at);
         configs_updated += 1;
         app_log(&format!("Sync pull config: {}", file_name));
     }
@@ -914,6 +1142,11 @@ pub fn sync_pull_bundle(profile_id: String, bepinex_path: String) -> Result<Sync
             && (local_trainer.is_none() || local_mtime <= remote_trainer.updated_at.as_str())
         {
             write_trainer_state(&bepinex_path, &remote_trainer.content);
+            let trainer_path = Path::new(&bepinex_path)
+                .parent()
+                .unwrap_or_else(|| Path::new("."))
+                .join("trainer_state.json");
+            restamp_file_mtime(&trainer_path, &remote_trainer.updated_at);
             configs_updated += 1;
             app_log("Sync pull: trainer_state.json");
         }
@@ -941,6 +1174,11 @@ pub fn sync_pull_bundle(profile_id: String, bepinex_path: String) -> Result<Sync
     let mut settings = load_sync_settings();
     settings.last_pull = Some(iso_now());
     save_sync_settings(&settings)?;
+
+    // We just changed local state from the cloud — forget the push dirty-cache
+    // for this profile (and the manifest) so the next push reconciles against a
+    // clean slate rather than trusting a now-stale signature.
+    invalidate_push_cache(&profile_id);
 
     let result = SyncPullResult {
         profile_name: remote.profile_name,
@@ -984,7 +1222,13 @@ pub struct SyncPullResult {
 
 /// Pull a profile's state (for Thunderstore mod info). Returns the bundle.
 #[command]
-pub fn sync_pull_profile_state(profile_id: String) -> Result<SyncProfileBundle, String> {
+pub async fn sync_pull_profile_state(profile_id: String) -> Result<SyncProfileBundle, String> {
+    tauri::async_runtime::spawn_blocking(move || sync_pull_profile_state_impl(profile_id))
+        .await
+        .map_err(|e| format!("sync_pull_profile_state task panicked: {}", e))?
+}
+
+fn sync_pull_profile_state_impl(profile_id: String) -> Result<SyncProfileBundle, String> {
     let identity = get_megaload_identity()?;
     let bundle_path = sync_bundle_path(&identity.user_id, &profile_id);
 
@@ -995,15 +1239,19 @@ pub fn sync_pull_profile_state(profile_id: String) -> Result<SyncProfileBundle, 
 
 // Legacy compat — sync_pull_configs delegates to bundle pull
 #[command]
-pub fn sync_pull_configs(profile_id: String, bepinex_path: String) -> Result<u32, String> {
-    let result = sync_pull_bundle(profile_id, bepinex_path)?;
-    Ok(result.configs_updated)
+pub async fn sync_pull_configs(profile_id: String, bepinex_path: String) -> Result<u32, String> {
+    tauri::async_runtime::spawn_blocking(move || sync_pull_bundle_impl(profile_id, bepinex_path))
+        .await
+        .map_err(|e| format!("sync_pull_configs task panicked: {}", e))?
+        .map(|r| r.configs_updated)
 }
 
 // Legacy compat — sync_pull_profile delegates to bundle pull
 #[command]
-pub fn sync_pull_profile(profile_id: String, bepinex_path: String) -> Result<SyncPullResult, String> {
-    sync_pull_bundle(profile_id, bepinex_path)
+pub async fn sync_pull_profile(profile_id: String, bepinex_path: String) -> Result<SyncPullResult, String> {
+    tauri::async_runtime::spawn_blocking(move || sync_pull_bundle_impl(profile_id, bepinex_path))
+        .await
+        .map_err(|e| format!("sync_pull_profile task panicked: {}", e))?
 }
 
 /// Toggle a mod between plugins/ and disabled_plugins/ during sync.
@@ -1043,7 +1291,13 @@ fn toggle_mod_sync(bepinex_path: &str, file_name: &str, enable: bool) -> Result<
 // ---------------------------------------------------------------------------
 
 #[command]
-pub fn sync_check_remote_changed() -> Result<bool, String> {
+pub async fn sync_check_remote_changed() -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(sync_check_remote_changed_impl)
+        .await
+        .map_err(|e| format!("sync_check_remote_changed task panicked: {}", e))?
+}
+
+fn sync_check_remote_changed_impl() -> Result<bool, String> {
     let settings = load_sync_settings();
     if !settings.enabled {
         return Ok(false);
@@ -2108,6 +2362,7 @@ mod profile_bundle_merge_tests {
             thunderstore_mods: vec![],
             configs: map,
             trainer_state: None,
+            mods_updated_at: last_updated.to_string(),
         }
     }
 
