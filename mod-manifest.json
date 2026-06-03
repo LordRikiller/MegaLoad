@@ -28,16 +28,16 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.6.97",
-      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.97/MegaShot.dll",
+      "version": "2.6.98",
+      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.98/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope w/ Night/Heat/NightToDay vision modes (N) + creature labels, Armageddon OneShot meteor-slam"
     },
     {
       "name": "MegaQoL",
-      "version": "1.16.12",
-      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.12/MegaQoL.dll",
+      "version": "1.16.13",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.13/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage), and Tamed Spike Immunity (your own Sharp Stakes, Ashwood Stakewall and Dvergr Sharp Stakes no longer skewer your tamed animals; wild mobs still cop it). Ballista now holds fire without a clear line of sight to its target, plus optional infinite Flametal-Bolt ammo and an optional MegaShot-Armageddon firing animation (Staff-of-Lightning bolt + meteor-crash on impact). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
