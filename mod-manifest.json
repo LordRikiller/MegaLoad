@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-04T04:24:38Z",
+  "updated_at": "2026-06-04T04:41:53Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -52,8 +52,8 @@
     },
     {
       "name": "MegaFarming",
-      "version": "1.4.2",
-      "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.4.2/MegaFarming.dll",
+      "version": "1.4.3",
+      "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.4.3/MegaFarming.dll",
       "dll_name": "MegaFarming.dll",
       "plugin_folder": "MegaFarming",
       "description": "Mass farming — hold-key mass harvest pickables/beehives, grid plant any cultivator plant (smart spacing so big bushes don't overlap), plant anywhere (any biome), plus custom plantables (bushes, mushrooms, thistle, fiddleheads, royal jelly) added to the Cultivator. Middle-click a crop while holding the Cultivator to remove it, growth + respawn timer hover (saplings AND picked berry bushes / mushrooms etc.), stump markers on picked renewables."
