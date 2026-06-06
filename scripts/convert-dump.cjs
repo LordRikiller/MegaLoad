@@ -1959,7 +1959,9 @@ for (const item of items) {
 const CREATURE_BLACKLIST = new Set([
   "Charred_Melee_Dyrnwyn", "Charred_Melee_Fader",
   "TrainingDummy", "DvergerTest", "Lox_Calf", "Boar_piggy",
-  "Wolf_cub", "Chicken", "Hen", "gd_king",
+  // Chicken is the juvenile (chick) form — hidden like other juveniles
+  // (Lox_Calf/Boar_piggy/Wolf_cub). The adult Hen is surfaced as the tameable.
+  "Wolf_cub", "Chicken", "gd_king",
   "Goblin_Gem",  // Destructible gemstone node, not a creature
 ]);
 const CREATURE_SKIP_PATTERNS = [
@@ -1981,6 +1983,8 @@ const TAMEABLE_CREATURES = new Set([
   "Wolf",
   "Lox",
   "Asksvin",
+  "Chicken",
+  "Hen",
 ]);
 
 // Foods each tameable creature accepts (prefab IDs, in display order).
@@ -1990,6 +1994,10 @@ const TAMEABLE_CREATURE_FOODS = {
   Wolf:    ["RawMeat", "DeerMeat", "NeckTail", "LoxMeat", "FishRaw", "SerpentMeat", "Sausages"],
   Lox:     ["Barley", "Cloudberry", "Flax"],
   Asksvin: ["MushroomSmokePuff", "Vineberry", "Fiddleheadfern"],
+  // Chicken (chick form) tames as it eats and grows; Hen eats the same to breed.
+  // Eats seeds + Barley + Dandelion — NOT Barley flour, and cannot eat Fir cones.
+  Chicken: ["Dandelion", "Barley", "BeechSeeds", "BirchSeeds", "CarrotSeeds", "OnionSeeds", "TurnipSeeds"],
+  Hen:     ["Dandelion", "Barley", "BeechSeeds", "BirchSeeds", "CarrotSeeds", "OnionSeeds", "TurnipSeeds"],
 };
 
 for (const cd of creatureDrops) {
