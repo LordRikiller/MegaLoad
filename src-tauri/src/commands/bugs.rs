@@ -39,7 +39,11 @@ pub struct TicketSummary {
     pub author_name: String,
     pub created_at: String,
     pub updated_at: String,
+    // Defaulted so one malformed index entry can't blank the entire ticket list
+    // for every user (it has before — see the "ticket_type vs type" incident).
+    #[serde(default)]
     pub message_count: usize,
+    #[serde(default)]
     pub labels: Vec<String>,
     /// "urgent" | "normal" | "low". Optional for back-compat with pre-priority tickets;
     /// missing or null is treated as "normal" by the UI.
@@ -53,16 +57,33 @@ pub struct TicketMessage {
     pub author_id: String,
     pub author_name: String,
     pub text: String,
+    // The fields below are defaulted on deserialise so that API-authored or
+    // legacy tickets that omit them still parse instead of hard-erroring. A
+    // single message missing `images`/`timestamp`/`is_admin` used to take down
+    // *every* per-ticket action (open, close, reply, reprioritise) — they all
+    // round-trip the ticket through this struct. See bug 20260623 (MegaBugs
+    // parse-error on open/close). Serialising always writes them back, so the
+    // ticket self-heals on the next write.
+    #[serde(default)]
     pub images: Vec<String>,
+    #[serde(default)]
     pub timestamp: String,
+    #[serde(default)]
     pub is_admin: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SystemInfo {
+    // All four defaulted: API-created tickets have shipped partial/renamed
+    // system_info blocks (e.g. `os_version`/`mods` instead of `os`/`installed_mods`).
+    // Missing keys now default rather than fail the whole ticket.
+    #[serde(default)]
     pub megaload_version: String,
+    #[serde(default)]
     pub os: String,
+    #[serde(default)]
     pub profile_name: String,
+    #[serde(default)]
     pub installed_mods: Vec<String>,
 }
 
@@ -73,13 +94,18 @@ pub struct Ticket {
     pub ticket_type: String,
     pub title: String,
     pub status: String,
+    #[serde(default)]
     pub labels: Vec<String>,
     pub author_id: String,
     pub author_name: String,
     pub created_at: String,
     pub updated_at: String,
+    // Defaulted so a ticket with a missing or partial system_info still opens
+    // and can be closed (SystemInfo defaults all its own fields too).
+    #[serde(default)]
     pub system_info: SystemInfo,
     pub messages: Vec<TicketMessage>,
+    #[serde(default)]
     pub has_log: bool,
     /// "urgent" | "normal" | "low". Optional for back-compat — pre-priority tickets
     /// deserialise to None and render as "normal" in the UI.
@@ -1115,4 +1141,92 @@ fn get_installed_mod_list(bepinex_path: &str) -> Vec<String> {
     }
     mods.sort();
     mods
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Group A regression: a real API-authored ticket whose `system_info` block
+    /// used the old/renamed shape (`os_version`/`mods`, no `profile_name`).
+    /// Before the `#[serde(default)]` hardening this failed with
+    /// "missing field `os`", which broke opening AND closing the ticket.
+    #[test]
+    fn ticket_with_partial_system_info_deserialises() {
+        let json = r#"{
+            "id": "20260516-002943-10dafdbe",
+            "type": "bug",
+            "title": "partial system_info",
+            "status": "in-progress",
+            "labels": ["bug", "megabugs"],
+            "author_id": "id-1",
+            "author_name": "Claude",
+            "created_at": "2026-05-16T00:29:43Z",
+            "updated_at": "2026-05-16T00:29:43Z",
+            "system_info": {
+                "os_version": "Windows 11 Pro",
+                "valheim_version": "manually filed",
+                "megaload_version": "1.10.42",
+                "mods": []
+            },
+            "messages": [{
+                "id": "msg-001",
+                "author_id": "id-1",
+                "author_name": "Claude",
+                "text": "body",
+                "images": [],
+                "timestamp": "2026-05-16T00:29:43Z",
+                "is_admin": true
+            }],
+            "has_log": false,
+            "priority": "urgent"
+        }"#;
+        let t: Ticket = serde_json::from_str(json).expect("partial system_info must parse");
+        // Renamed/absent keys fall back to defaults rather than erroring.
+        assert_eq!(t.system_info.megaload_version, "1.10.42");
+        assert_eq!(t.system_info.os, "");
+        assert_eq!(t.system_info.profile_name, "");
+        assert!(t.system_info.installed_mods.is_empty());
+    }
+
+    /// Group B regression: a message missing `images`, `timestamp` and
+    /// `is_admin` (the exact "missing field `images`" Milord hit).
+    #[test]
+    fn ticket_with_partial_message_deserialises() {
+        let json = r#"{
+            "id": "20260523-030033-ca370560",
+            "type": "bug",
+            "title": "partial message",
+            "status": "in-progress",
+            "labels": ["bug"],
+            "author_id": "id-2",
+            "author_name": "Rik",
+            "created_at": "2026-05-23T03:00:33Z",
+            "updated_at": "2026-05-23T03:08:00Z",
+            "system_info": {
+                "megaload_version": "1.10.52",
+                "os": "Windows 11",
+                "profile_name": "Default",
+                "installed_mods": []
+            },
+            "messages": [{
+                "id": "msg-001",
+                "author_id": "id-2",
+                "author_name": "Rik",
+                "text": "body"
+            }],
+            "has_log": false
+        }"#;
+        let t: Ticket = serde_json::from_str(json).expect("partial message must parse");
+        let m = &t.messages[0];
+        assert!(m.images.is_empty());
+        assert_eq!(m.timestamp, "");
+        assert!(!m.is_admin);
+
+        // And it round-trips: re-serialising writes the now-present fields back,
+        // so closing/replying self-heals the stored ticket.
+        let out = serde_json::to_string(&t).unwrap();
+        assert!(out.contains("\"images\":[]"));
+        assert!(out.contains("\"is_admin\":false"));
+    }
 }

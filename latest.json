@@ -1,11 +1,11 @@
 {
-  "version": "1.10.56",
-  "notes": "Valheim Data browser learns two new tricks. (1) Best Weapon — every creature now shows which weapon type to use against it, read from its damage resistances (e.g. Bear → Slash: swords, axes or knives), with elemental soft-spots flagged too. (2) Bait & Fish — each fish lists the bait that catches it (\"Caught With\"), and each bait lists its fish (\"Catches\"), both clickable to jump between them. Tickets 20260621-133958-038e16fc and 20260621-133714-0a3b7ee5.",
-  "pub_date": "2026-06-23T00:02:00Z",
+  "version": "1.10.57",
+  "notes": "MegaBugs reliability fix. Tickets created via the API/automation that were missing schema fields — a message's images/timestamp/is_admin, or a partial system_info block — could no longer be opened (\"Ticket parse error: missing field `images`\"), and quick-closing one made it reappear instantly because the close path hit the same parse. The ticket deserialiser now tolerates those omissions and self-heals affected tickets on the next save; six existing in-progress tickets were repaired. Ticket 20260623-005327-31743efa.",
+  "pub_date": "2026-06-23T00:55:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJOVTMvWDhSS1NFUzdxRmRDZnMxenpMbUJKZEQvZnBxam1VWjdmOWkxWHdKNWhKOGdzODUrbmVmajJzR0ZDS3JLbUxtNi9yc08vSVZtQnptNHJuQUFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyMTcyODExCWZpbGU6TWVnYUxvYWRfMS4xMC41Nl94NjQtc2V0dXAubnNpcy56aXAKdURnYzE4dGJtaWt2ODZYQjg0eTZHKzk3NTNZMFV1YWNwOXE4a2VtdDBZa2dEYURBSVgrbHJzUElhNFVEZFBNRCtJMlp0TVFNT2M5aGIrSEQydnRxQnc9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.56/MegaLoad_1.10.56_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUx5d05raUtCT05abGp4UlNjU2tpcXhqVDZMam9PaFN3akRwQ3UzWks5NW1XRDRyR1JPcTRzanpCa2UrWnF5cU40VHFNcVlTNEMxZ1dldzRqNW14SndZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyMTc1OTg3CWZpbGU6TWVnYUxvYWRfMS4xMC41N194NjQtc2V0dXAubnNpcy56aXAKdGZibGJQamZZVWpwRGhSbXFVaU55S1l5Z1RjUHV4YWpxeW9SMkczN0hUMmtjOEVPTTVrdHA1SUk1V2RkS29VSlNvNGZLZmlrNDdNdEpxNkNJNDYrREE9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.57/MegaLoad_1.10.57_x64-setup.nsis.zip"
     }
   }
 }
