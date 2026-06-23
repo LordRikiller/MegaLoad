@@ -45,6 +45,7 @@ import {
   MapPin,
   Copy,
   Sprout,
+  Fish,
 } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { saveTextFile } from "../lib/tauri-api";
@@ -295,6 +296,48 @@ function copyItemName(item: ValheimItem, e?: React.MouseEvent) {
  * Clickable pill for a damage type or faction/tameable value on a creature detail.
  * Matches the visual weight of BiomeBadge so cards feel consistent.
  */
+// ── Best-weapon recommendation (MegaBug 20260621-133958-038e16fc) ──────────
+// Turn a creature's damage modifiers into a plain "use this" recommendation.
+// The three physical damage types map to melee weapon categories; elemental
+// weaknesses are surfaced as a bonus tip with how to deliver them.
+const WEAPON_BY_PHYSICAL: Record<string, string> = {
+  Slash: "swords, axes or knives",
+  Pierce: "spears, atgeirs or arrows",
+  Blunt: "maces, clubs or sledgehammers",
+};
+const ELEMENTAL_TIP: Record<string, string> = {
+  Fire: "fire arrows or a fire staff",
+  Frost: "frost arrows, Frostner or the frost staff",
+  Lightning: "the lightning staff or needle arrows",
+  Poison: "poison arrows",
+  Spirit: "silver weapons — Frostner, silver sword or silver arrows",
+};
+const PHYSICAL_TYPES = ["Slash", "Pierce", "Blunt"];
+const ELEMENTAL_TYPES = ["Fire", "Frost", "Lightning", "Poison", "Spirit"];
+
+type WeaponAdvice = {
+  types: string[];          // physical type(s) tied for best
+  rank: 0 | 1 | 2 | 3;      // 3 weak · 2 neutral · 1 resistant · 0 immune
+  anyMelee: boolean;        // all three physical equal and ≥ neutral
+  elemental: { type: string; tip: string }[];
+};
+
+function recommendWeapon(item: ValheimItem): WeaponAdvice | null {
+  if (item.type !== "Creature") return null;
+  if (!item.weakTo?.length && !item.resistantTo?.length && !item.immuneTo?.length) return null;
+  const rankOf = (t: string): 0 | 1 | 2 | 3 =>
+    item.weakTo?.includes(t) ? 3
+    : item.resistantTo?.includes(t) ? 1
+    : item.immuneTo?.includes(t) ? 0
+    : 2; // neutral / unspecified
+  const rank = Math.max(...PHYSICAL_TYPES.map(rankOf)) as 0 | 1 | 2 | 3;
+  const types = PHYSICAL_TYPES.filter((t) => rankOf(t) === rank);
+  const elemental = ELEMENTAL_TYPES
+    .filter((t) => item.weakTo?.includes(t))
+    .map((t) => ({ type: t, tip: ELEMENTAL_TIP[t] }));
+  return { types, rank, anyMelee: types.length === 3 && rank >= 2, elemental };
+}
+
 function DetailChip({
   label,
   tone = "zinc",
@@ -2007,6 +2050,55 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
               </div>
             )}
 
+            {/* Best weapon (creatures) — MegaBug 20260621-133958-038e16fc */}
+            {(() => {
+              const advice = recommendWeapon(item);
+              if (!advice) return null;
+              const rankTone = (["red", "orange", "blue", "emerald"] as const)[advice.rank];
+              return (
+                <div className="glass rounded-xl p-5 border border-amber-500/20 bg-amber-500/[0.02]">
+                  <h2 className="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-2">
+                    <Sword className="w-4 h-4" />
+                    Best Weapon
+                  </h2>
+                  {advice.rank === 0 ? (
+                    <p className="text-xs text-zinc-300 leading-relaxed">
+                      Shrugs off every physical weapon — go elemental.
+                    </p>
+                  ) : advice.anyMelee ? (
+                    <p className="text-xs text-zinc-300 leading-relaxed">
+                      No physical weakness — <span className="text-zinc-100 font-medium">any melee weapon</span> does the job.
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {advice.types.map((t) => (
+                        <div key={t} className="flex items-start gap-2">
+                          <DetailChip label={t} tone={rankTone} />
+                          <span className="text-xs text-zinc-300 pt-0.5">{WEAPON_BY_PHYSICAL[t]}</span>
+                        </div>
+                      ))}
+                      <p className="text-[10px] text-zinc-500 pt-0.5">
+                        {advice.rank === 3
+                          ? "Weak point — hits extra hard."
+                          : advice.rank === 2
+                          ? "Takes full damage from these — the others are resisted."
+                          : "Best of a bad lot — even these are resisted, so chip away or go elemental."}
+                      </p>
+                    </div>
+                  )}
+                  {advice.elemental.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-zinc-800/40 space-y-1">
+                      {advice.elemental.map((e) => (
+                        <p key={e.type} className="text-xs text-zinc-400 leading-relaxed">
+                          <span className="text-emerald-400 font-medium">Weak to {e.type}</span> — {e.tip}.
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Resistances (creatures) */}
             {item.type === "Creature" && (item.immuneTo?.length || item.resistantTo?.length || item.weakTo?.length || item.neutralTo?.length || item.staggerLimit) && (() => {
               // Applies the Weak-To filter to a given damage type and returns to the list.
@@ -2246,6 +2338,42 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                         <span className="text-xs text-brand-400 hover:underline flex-1">{food.name}</span>
                         {food.biomes?.[0] && (
                           <BiomeBadge biome={food.biomes[0]} onClick={() => navigateToBiome(food.biomes[0])} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Fishing: bait ↔ fish (MegaBug 20260621-133714-0a3b7ee5) */}
+            {((item.baits?.length ?? 0) > 0 || (item.catches?.length ?? 0) > 0) && (
+              <div className="glass rounded-xl p-5 border border-sky-500/20 bg-sky-500/[0.02]">
+                <h2 className="text-sm font-semibold text-sky-400 mb-1 flex items-center gap-2">
+                  <Fish className="w-4 h-4" />
+                  {item.baits?.length ? "Caught With" : "Catches"}
+                </h2>
+                <p className="text-[10px] text-zinc-500 mb-3">
+                  {item.baits?.length
+                    ? "Load one of these baits on a fishing rod to reel this fish in."
+                    : "Load this bait on a fishing rod to attract these fish."}
+                </p>
+                <div className="space-y-1">
+                  {(item.baits ?? item.catches ?? []).map((ref) => {
+                    const target = itemMap.get(ref.id);
+                    return (
+                      <button
+                        key={ref.id}
+                        type="button"
+                        onClick={() => handleNavigate(ref.id)}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                      >
+                        <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                          <ItemIcon id={ref.id} type={target?.type} size={24} />
+                        </div>
+                        <span className="text-xs text-brand-400 hover:underline flex-1">{ref.name}</span>
+                        {target?.biomes?.[0] && (
+                          <BiomeBadge biome={target.biomes[0]} onClick={() => navigateToBiome(target.biomes[0])} />
                         )}
                       </button>
                     );

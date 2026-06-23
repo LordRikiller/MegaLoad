@@ -2840,6 +2840,41 @@ converted.sort((a, b) => {
   return a.name.localeCompare(b.name);
 });
 
+// ── Bait ↔ Fish (MegaBug 20260621-133714-0a3b7ee5) ──────────
+// Which bait catches which fish, both directions. Sourced from the wiki Bait
+// page (https://valheim.fandom.com/wiki/Bait) — each bait variant attracts a
+// fixed set of fish; fish prefab IDs per the BIOME_OVERRIDE comments above.
+// Wired post-build so display names resolve from the finished entry list.
+const BAIT_FISH = {
+  FishingBait:          ["Fish1", "Fish2"],       // Fishing Bait → Perch, Pike
+  FishingBaitCave:      ["Fish2", "Fish4_cave"],  // Cold Fishing Bait → Pike, Tetra
+  FishingBaitForest:    ["Fish5"],                // Mossy Fishing Bait → Trollfish
+  FishingBaitSwamp:     ["Fish6"],                // Sticky Fishing Bait → Giant Herring
+  FishingBaitPlains:    ["Fish7"],                // Stingy Fishing Bait → Grouper
+  FishingBaitOcean:     ["Fish3", "Fish8"],       // Heavy Fishing Bait → Tuna, Coral Cod
+  FishingBaitMistlands: ["Fish9", "Fish12"],      // Misty Fishing Bait → Anglerfish, Pufferfish
+  FishingBaitAshlands:  ["Fish11"],               // Hot Fishing Bait → Magmafish
+  FishingBaitDeepNorth: ["Fish10"],               // Frosty Fishing Bait → Northern Salmon
+};
+// Reverse index: fish prefab → baits that catch it.
+const FISH_BAIT = {};
+for (const [bait, fishes] of Object.entries(BAIT_FISH)) {
+  for (const f of fishes) (FISH_BAIT[f] = FISH_BAIT[f] || []).push(bait);
+}
+const baitFishNameById = new Map(converted.map((e) => [e.id, e.name]));
+const linkBaitFish = (ids) =>
+  ids.filter((id) => baitFishNameById.has(id)).map((id) => ({ id, name: baitFishNameById.get(id) }));
+for (const e of converted) {
+  if (BAIT_FISH[e.id]) e.catches = linkBaitFish(BAIT_FISH[e.id]);
+  if (FISH_BAIT[e.id]) e.baits = linkBaitFish(FISH_BAIT[e.id]);
+}
+// Loud check: every mapped prefab should resolve to a real entry, else a chip dead-links.
+{
+  const missing = [...new Set([...Object.keys(BAIT_FISH), ...Object.values(BAIT_FISH).flat()])]
+    .filter((id) => !baitFishNameById.has(id));
+  if (missing.length) console.warn(`⚠ bait/fish prefabs not found in data: ${missing.join(", ")}`);
+}
+
 // ── Generate TypeScript ──
 console.log(`\nConverted ${converted.length} entries`);
 const typeCounts = {};
@@ -2950,6 +2985,8 @@ export interface ValheimItem {
   resistantTo?: string[]; // Creatures only — resistant damage types
   weakTo?: string[];     // Creatures only — weak-to damage types
   neutralTo?: string[];  // Creatures only — normal-damage types
+  baits?: { id: string; name: string }[];   // Fish only — bait variants that catch this fish (MegaBug 20260621-133714)
+  catches?: { id: string; name: string }[]; // Fishing bait only — fish this bait attracts (reverse of baits)
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
   setEffect?: SetEffect | null; // Armor only — set bonus mechanics on the chest piece

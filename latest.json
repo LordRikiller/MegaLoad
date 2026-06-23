@@ -1,11 +1,11 @@
 {
-  "version": "1.10.55",
-  "notes": "Sync overhaul + ticket-number fix. (1) Cloud sync no longer freezes the window — the profile/config/mod sync now runs off the UI thread, so MegaLoad stays responsive while it works in the background. (2) Two synced devices no longer ping-pong: a quirk where the change-detector keyed off the machine ID made every 30s poll trigger a full pull and mod reinstall — that's gone, so sync is far less frequent and invasive. (3) Configs now reliably copy device-to-device (pulled files get their edit-time restamped so the next sync stops skipping them). Mods only reinstall when genuinely missing, idle polls do near-zero network, and the mod-set merge now favours the device that last edited it rather than the one that pushed last. (4) MegaBugs ticket numbers now use Australia/Sydney local time instead of UTC. Tickets 20260602-231641-9f315489 and 20260602-231314-56fe2afd.",
-  "pub_date": "2026-06-02T23:57:49Z",
+  "version": "1.10.56",
+  "notes": "Valheim Data browser learns two new tricks. (1) Best Weapon — every creature now shows which weapon type to use against it, read from its damage resistances (e.g. Bear → Slash: swords, axes or knives), with elemental soft-spots flagged too. (2) Bait & Fish — each fish lists the bait that catches it (\"Caught With\"), and each bait lists its fish (\"Catches\"), both clickable to jump between them. Tickets 20260621-133958-038e16fc and 20260621-133714-0a3b7ee5.",
+  "pub_date": "2026-06-23T00:02:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOURnekR5N2EwTnYwNjlTL0prdG5tbVlzSGtyUE9hTDhUalVOTFc1VXpaRjZuNWdnS3hsR25QY3FyeVhvT0M4RjBRdDdjQzgvL3NncE8vM0hQR2hxbEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNDQ0NjIwCWZpbGU6TWVnYUxvYWRfMS4xMC41NV94NjQtc2V0dXAubnNpcy56aXAKeVp2Y0pQcGJhVHlTcnU3Z3RZUEl6S25KSTl2eFdtK0JGWXBWK0hHZUtERXhvUzhqcGN6ZFgrWXExekhNZE4ydDBPL2xvU3BqOVBnOERoZ2lYV09yQlE9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.55/MegaLoad_1.10.55_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJOVTMvWDhSS1NFUzdxRmRDZnMxenpMbUJKZEQvZnBxam1VWjdmOWkxWHdKNWhKOGdzODUrbmVmajJzR0ZDS3JLbUxtNi9yc08vSVZtQnptNHJuQUFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyMTcyODExCWZpbGU6TWVnYUxvYWRfMS4xMC41Nl94NjQtc2V0dXAubnNpcy56aXAKdURnYzE4dGJtaWt2ODZYQjg0eTZHKzk3NTNZMFV1YWNwOXE4a2VtdDBZa2dEYURBSVgrbHJzUElhNFVEZFBNRCtJMlp0TVFNT2M5aGIrSEQydnRxQnc9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.56/MegaLoad_1.10.56_x64-setup.nsis.zip"
     }
   }
 }
