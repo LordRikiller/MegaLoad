@@ -1,11 +1,11 @@
 {
-  "version": "1.10.57",
-  "notes": "MegaBugs reliability fix. Tickets created via the API/automation that were missing schema fields — a message's images/timestamp/is_admin, or a partial system_info block — could no longer be opened (\"Ticket parse error: missing field `images`\"), and quick-closing one made it reappear instantly because the close path hit the same parse. The ticket deserialiser now tolerates those omissions and self-heals affected tickets on the next save; six existing in-progress tickets were repaired. Ticket 20260623-005327-31743efa.",
-  "pub_date": "2026-06-23T00:55:00Z",
+  "version": "1.10.58",
+  "notes": "Valheim Data: added a one-click copy button next to each item's Internal ID, and meads/potions now show an Effect panel explaining what they actually do (resistance levels, restore amounts, modifiers and durations).",
+  "pub_date": "2026-06-28T03:37:55Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUx5d05raUtCT05abGp4UlNjU2tpcXhqVDZMam9PaFN3akRwQ3UzWks5NW1XRDRyR1JPcTRzanpCa2UrWnF5cU40VHFNcVlTNEMxZ1dldzRqNW14SndZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyMTc1OTg3CWZpbGU6TWVnYUxvYWRfMS4xMC41N194NjQtc2V0dXAubnNpcy56aXAKdGZibGJQamZZVWpwRGhSbXFVaU55S1l5Z1RjUHV4YWpxeW9SMkczN0hUMmtjOEVPTTVrdHA1SUk1V2RkS29VSlNvNGZLZmlrNDdNdEpxNkNJNDYrREE9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.57/MegaLoad_1.10.57_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFLVVVXUWpaTWN3bWRwR3RFU1loQUVCQ3EySXRBSXVjbEwwQ29tSmhWYTU3U3BWRGY0cWpSVXdKMEdVdHo4RjJDQmhBNmFXRWdRK0Z1WVhSSzJQd2c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyNjE3ODQzCWZpbGU6TWVnYUxvYWRfMS4xMC41OF94NjQtc2V0dXAubnNpcy56aXAKT0xpRlJZVGhuNWZ3Y2dvVWRNb3BiRVhmR20wYjdxSENKWmVLQ1dTcHNEcmhzOTE2WXE1VjJSUk5PU2dPaUNXQWNRYzY5Tkw1Slh4MUhaZmtDMUhLREE9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.58/MegaLoad_1.10.58_x64-setup.nsis.zip"
     }
   }
 }

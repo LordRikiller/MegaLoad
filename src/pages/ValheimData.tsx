@@ -91,6 +91,7 @@ import {
   type TableSortKey,
 } from "../stores/valheimDataStore";
 import { VALHEIM_ITEMS, type ValheimItem, type ItemType, itemMap, tokenMap } from "../data/valheim-items";
+import { MEAD_EFFECTS } from "../data/mead-effects";
 import { usePlayerDataStore } from "../stores/playerDataStore";
 import { ItemIcon } from "../components/ui/ItemIcon";
 import { copyText } from "../lib/clipboard";
@@ -1759,9 +1760,21 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                 </button>
               )}
             </div>
-            <p className="text-xs text-zinc-500 font-mono mt-0.5">{item.id}</p>
+            <div className="flex items-center gap-1 mt-0.5">
+              <p className="text-xs text-zinc-500 font-mono">{item.id}</p>
+              <CopyTextButton text={item.id} size={12} title="Copy internal ID" className="-my-1" />
+            </div>
             {item.description && (
               <p className="text-sm text-zinc-400 mt-2 leading-relaxed">{item.description}</p>
+            )}
+            {MEAD_EFFECTS[item.id] && (
+              <div className="mt-2 flex items-start gap-2 rounded-lg bg-brand-500/10 border border-brand-500/20 px-3 py-2">
+                <FlaskConical className="w-4 h-4 text-brand-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-brand-400/80 leading-none mb-1">Effect</p>
+                  <p className="text-sm text-brand-100/90 leading-relaxed">{MEAD_EFFECTS[item.id]}</p>
+                </div>
+              </div>
             )}
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
