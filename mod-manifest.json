@@ -68,11 +68,11 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.5.2",
-      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.5.2/MegaFactory.dll",
+      "version": "1.5.3",
+      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.5.3/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
-      "description": "Smart factory: same-type stations sharing nearby chests form a cluster and auto-divide the work - drop 4 smelters next to Tin/Copper/Silver/Iron and they each pick one ore, blast furnaces split Black Metal/Flametal, no work orders needed (SmartDistribution config, default on - toggle off for manual work orders). Spare stations double up on the busiest stockpile; surplus stations are idled so output can't overfill storage. Manual work orders now alternate (round-robin) between multiple loaded orders so every metal progresses together instead of finishing one before the next (AlternateWorkOrders config, default on). Auto-feeds Kiln/Smelter/Blast Furnace/Windmill/Spinning Wheel/Eitr Refinery in the background regardless of player distance, leaves 1 of each item type per container. With MegaStuff pull-to-chest on, stations freeze when output storage is full and auto-resume when space frees."
+      "description": "Smart factory: same-type stations sharing nearby chests form a cluster and auto-divide the work - drop 4 smelters next to Tin/Copper/Silver/Iron and they each pick one ore, blast furnaces split Black Metal/Flametal, no work orders needed (SmartDistribution config, default on - toggle off for manual work orders). Spare stations double up on the busiest stockpile; surplus stations are idled so output can't overfill storage. Manual work orders now alternate (round-robin) between multiple loaded orders so every metal progresses together instead of finishing one before the next (AlternateWorkOrders config, default on). Smelter & Blast Furnace now show what's currently loaded per ore - on hover and in the Shift+E work-order panel. Auto-feeds Kiln/Smelter/Blast Furnace/Windmill/Spinning Wheel/Eitr Refinery in the background regardless of player distance, leaves 1 of each item type per container. With MegaStuff pull-to-chest on, stations freeze when output storage is full and auto-resume when space frees."
     },
     {
       "name": "MegaTrainer",
