@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-30T01:35:09Z",
+  "updated_at": "2026-06-30T01:37:59Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -100,8 +100,8 @@
     },
     {
       "name": "MegaDvergr",
-      "version": "1.3.0",
-      "download_url": "https://github.com/LordRikiller/MegaDvergr/releases/download/v1.3.0/MegaDvergr.dll",
+      "version": "1.3.1",
+      "download_url": "https://github.com/LordRikiller/MegaDvergr/releases/download/v1.3.1/MegaDvergr.dll",
       "dll_name": "MegaDvergr.dll",
       "plugin_folder": "MegaDvergr",
       "description": "Tameable Dvergr companions — wild-tame the five variants (Dvergr Rogue, DvergerAshlands, and the Ice/Fire/Support mages) by feeding cooked food only (Cauldron/Oven/Prep Table/Cooking stations); pairs with MegaStuff's Pet Feeder (FeedUntamed) to tame from a stocked chest. The Dead Raiser staff now summons a tamed dvergr warband instead of skeletons, one-of-each scaled by staff level (Ashlands → +Ice → +Fire → +Support, 2-star), topped up on each cast."
