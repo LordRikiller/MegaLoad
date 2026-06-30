@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-28T07:27:53Z",
+  "updated_at": "2026-06-30T00:39:11Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -44,11 +44,11 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.28",
-      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.28/MegaStuff.dll",
+      "version": "1.4.29",
+      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.29/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
-      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch. Chest deposit sparkle now fires once per chest (not once per item in a big dump), lingers longer (Speed config), and the sound is toggleable."
+      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch. Chest deposit sparkle now fires once per chest (not once per item in a big dump), lingers longer (Speed config), and the sound is toggleable. Pet Feeder can now also feed and tame UNTAMED creatures from chests (FeedUntamed toggle, default on)."
     },
     {
       "name": "MegaFarming",
@@ -97,6 +97,14 @@
       "dll_name": "MegaSkeletons.dll",
       "plugin_folder": "MegaSkeletons",
       "description": "Summoned skeleton buffs (health, speed, HoT, line-of-sight) + portal/dungeon persistence + remote skeleton detonator (AOE explosion + housefire damaging hostiles, trees, rocks and world structures — player builds & pickables spared)"
+    },
+    {
+      "name": "MegaDvergr",
+      "version": "1.0.0",
+      "download_url": "https://github.com/LordRikiller/MegaDvergr/releases/download/v1.0.0/MegaDvergr.dll",
+      "dll_name": "MegaDvergr.dll",
+      "plugin_folder": "MegaDvergr",
+      "description": "Tameable Dvergr companions — wild-tame the five variants (Dvergr Rogue, DvergerAshlands, and the Ice/Fire/Support mages) by feeding cooked food only (Cauldron/Oven/Prep Table/Cooking stations). Commandable follow. Pairs with MegaStuff's Pet Feeder (FeedUntamed) to tame passively from a stocked chest in range. WIP: portal persistence + Dead Raiser dvergr-summon swap."
     },
     {
       "name": "MegaPlanner",
