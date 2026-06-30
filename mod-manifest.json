@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-30T03:44:53Z",
+  "updated_at": "2026-06-30T03:52:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -117,8 +117,8 @@
     },
     {
       "name": "MegaDragons",
-      "version": "1.0.0",
-      "download_url": "https://github.com/LordRikiller/MegaDragons/releases/download/v1.0.0/MegaDragons.dll",
+      "version": "1.0.1",
+      "download_url": "https://github.com/LordRikiller/MegaDragons/releases/download/v1.0.1/MegaDragons.dll",
       "dll_name": "MegaDragons.dll",
       "plugin_folder": "MegaDragons",
       "description": "Tameable dragons — wild-tame Mountain Hatchlings (Drakes) by feeding raw meat (boar/deer/neck/lox/serpent/asksvin etc.) off the ground or via MegaStuff's Pet Feeder (FeedUntamed); tamed Hatchlings are commandable (follow/stay). Section 1 of a multi-section rollout: companion/recall/naming, a Dragon Saddle, rideable flight, ranged + frost-breath air combat, and raising a Hatchling into a rideable Moder are on the way."
