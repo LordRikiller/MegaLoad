@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-30T13:45:00Z",
+  "updated_at": "2026-06-30T13:30:45Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -28,8 +28,8 @@
     },
     {
       "name": "MegaShot",
-      "version": "2.6.110",
-      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.110/MegaShot.dll",
+      "version": "2.6.111",
+      "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.111/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
       "description": "Crossbow & firearms overhaul — scope w/ Night/Heat/NightToDay vision modes (N) + creature labels, Armageddon OneShot meteor-slam"
