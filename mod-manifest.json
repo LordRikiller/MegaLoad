@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-30T05:53:00Z",
+  "updated_at": "2026-06-30T06:06:37Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -44,11 +44,11 @@
     },
     {
       "name": "MegaStuff",
-      "version": "1.4.29",
-      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.29/MegaStuff.dll",
+      "version": "1.4.30",
+      "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.30/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
-      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch. Chest deposit sparkle now fires once per chest (not once per item in a big dump), lingers longer (Speed config), and the sound is toggleable. Pet Feeder can now also feed and tame UNTAMED creatures from chests (FeedUntamed toggle, default on)."
+      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch. Chest deposit sparkle now fires once per chest (not once per item in a big dump), lingers longer (Speed config), and the sound is toggleable. Pet Feeder can now also feed and tame UNTAMED creatures from chests (FeedUntamed toggle, default on). Leave-1 rule: crafting, requireOnlyOne crafting, and the Pet Feeder always keep at least 1 of each item type in a chest so it stays a valid auto-deposit target — no more draining the last wood to craft or pets emptying a food chest."
     },
     {
       "name": "MegaFarming",
