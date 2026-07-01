@@ -1,11 +1,11 @@
 {
-  "version": "1.10.59",
-  "notes": "Log Viewer: added a Player.log tab that reads Valheim's Unity output log (in LocalLow), with the same live view, search, level filters, export, copy, and download options as the BepInEx log.",
-  "pub_date": "2026-07-01T00:07:38Z",
+  "version": "1.10.60",
+  "notes": "Fix: mod manifest served with a UTF-8 BOM crashed the update check with 'Manifest parse error: expected value at line 1 column 1'. The manifest parser now strips a leading BOM before parsing, so mod update checks and cloud-sync manifest pulls are BOM-proof.",
+  "pub_date": "2026-07-01T05:39:26Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJUK3VkWVkxREpYdHVJcmxrbVFvcmVKYy9VS1NhTitZWW01Q3I0czhtUWJLdWNUK2t6OTYxMEVyN2U4Vk1QK0NOTWwyamNORFlRMzNBZDcrdGRMVkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyODY0NDEyCWZpbGU6TWVnYUxvYWRfMS4xMC41OV94NjQtc2V0dXAubnNpcy56aXAKMTRvYXUvcGdacGtkcHYxa1JnM2QvelhXcXA3OGtQWTNweFBiTEI2bXhkSCs1T3VKOUo1YW1sa3llY1N4eWU1R213UThuVEd3THdEaGtqb2pJbTNjRFE9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.59/MegaLoad_1.10.59_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUk3UlMyd3ZMQS9FSk5kQjY4SlY4R21jakQyM2l1cVBSOFdkRnc3U2taQ05oekVuWnpFRmxtN1lzdGkvb2pRSHA2dkxlN0lSM2dSR3FtVUhyeVZRK2c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyODg0MDgwCWZpbGU6TWVnYUxvYWRfMS4xMC42MF94NjQtc2V0dXAubnNpcy56aXAKNlovU1JVTlE1S2JGckZyM0h0eDFCaTl3N1B6Y2lNREx0REt0ZnozRXQ3cGdiZGoyQTkrY2ZaeVF4cHRRRTlEMGRpL0pXdFh4M3cvOFJtaUJyTnNLQkE9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.60/MegaLoad_1.10.60_x64-setup.nsis.zip"
     }
   }
 }

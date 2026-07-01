@@ -197,8 +197,12 @@ fn fetch_manifest() -> Result<ModManifest, String> {
     let body = resp
         .into_string()
         .map_err(|e| format!("Read error: {}", e))?;
+    // Strip a leading UTF-8 BOM (U+FEFF) before parsing — Windows tooling can
+    // save the master manifest with one, and serde_json rejects it with
+    // "expected value at line 1 column 1". No-op when no BOM is present.
     let mut manifest: ModManifest =
-        serde_json::from_str(&body).map_err(|e| format!("Manifest parse error: {}", e))?;
+        serde_json::from_str(body.trim_start_matches('\u{feff}'))
+            .map_err(|e| format!("Manifest parse error: {}", e))?;
     for m in manifest.mods.iter_mut() {
         m.download_url = rewrite_to_worker_url(&m.download_url);
     }

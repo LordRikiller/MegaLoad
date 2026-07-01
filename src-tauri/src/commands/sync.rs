@@ -1053,7 +1053,10 @@ fn sync_pull_manifest_impl() -> Result<SyncManifest, String> {
 
     match github_get_file(&path) {
         Ok((content, _)) => {
-            serde_json::from_str(&content).map_err(|e| format!("Manifest parse error: {}", e))
+            // Strip a leading UTF-8 BOM (U+FEFF) — serde_json otherwise rejects
+            // it with "expected value at line 1 column 1". No-op when absent.
+            serde_json::from_str(content.trim_start_matches('\u{feff}'))
+                .map_err(|e| format!("Manifest parse error: {}", e))
         }
         Err(_) => Ok(SyncManifest {
             user_id: identity.user_id,
