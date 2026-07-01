@@ -146,6 +146,17 @@ export const saveLogFile = (bepinexPath: string, destPath: string) =>
 export const saveTextFile = (destPath: string, content: string) =>
   invoke<void>("save_text_file", { destPath, content });
 
+// Valheim's Unity output log (Player.log in LocalLow) — path resolved
+// backend-side, so these take no bepinex path.
+export const getPlayerLogPath = () =>
+  invoke<string | null>("get_player_log_path");
+export const readPlayerLogTail = (tailBytes?: number) =>
+  invoke<LogLine[]>("read_player_log_tail", { tailBytes });
+export const getPlayerLogSize = () =>
+  invoke<number>("get_player_log_size");
+export const savePlayerLogFile = (destPath: string) =>
+  invoke<void>("save_player_log_file", { destPath });
+
 // --- Sync event log (structured per-action audit trail) ---
 
 export interface SyncEvent {

@@ -7,6 +7,10 @@ import {
   getLogSize,
   saveLogFile,
   saveTextFile,
+  getPlayerLogPath,
+  readPlayerLogTail,
+  getPlayerLogSize,
+  savePlayerLogFile,
   getUpdateLog,
   getDiagnosticLogsPath,
   readSyncEvents,
@@ -31,11 +35,12 @@ import {
   CheckCircle2,
   CircleSlash,
   Upload,
+  Terminal,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 type LogLevel = "all" | "error" | "warning" | "info" | "debug";
-type LogTab = "bepinex" | "updates" | "sync";
+type LogTab = "bepinex" | "player" | "updates" | "sync";
 
 // Format: LogOutput_YYYY-MM-DD_HH-MM-SS_{player_id}.log
 // Timestamp and player_id make each export uniquely identifiable per-user,
@@ -45,9 +50,11 @@ function stampFor(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
 }
 
-function buildLogFilename(playerId: string | undefined): string {
+// BepInEx keeps the stable `LogOutput_` prefix that Milord's log-attachment
+// workflow relies on; the Unity log gets its own `PlayerLog_` prefix.
+function buildLogFilename(playerId: string | undefined, prefix = "LogOutput"): string {
   const idSegment = playerId ? `_${playerId}` : "";
-  return `LogOutput_${stampFor(new Date())}${idSegment}.log`;
+  return `${prefix}_${stampFor(new Date())}${idSegment}.log`;
 }
 
 export function LogViewer() {
@@ -66,20 +73,41 @@ export function LogViewer() {
   const [updateEntries, setUpdateEntries] = useState<UpdateLogEntry[]>([]);
   const [syncEvents, setSyncEvents] = useState<SyncEvent[]>([]);
   const [syncLoading, setSyncLoading] = useState(false);
+  // Non-null once Valheim's Unity log exists; null keeps the Player.log tab
+  // showing a "launch the game once" hint instead of an empty pane.
+  const [playerLogPath, setPlayerLogPath] = useState<string | null>(null);
 
+  // Both file-log tabs (BepInEx + Player.log) share the lines/logSize state
+  // and the whole filter+content pane; fetchLog just switches its source.
   const fetchLog = useCallback(async () => {
-    if (!profile?.bepinex_path) return;
     try {
-      const [data, size] = await Promise.all([
-        readLogTail(profile.bepinex_path, 131072),
-        getLogSize(profile.bepinex_path),
-      ]);
-      setLines(data);
-      setLogSize(size);
+      if (activeTab === "player") {
+        const path = await getPlayerLogPath();
+        setPlayerLogPath(path);
+        if (!path) {
+          setLines([]);
+          setLogSize(0);
+          return;
+        }
+        const [data, size] = await Promise.all([
+          readPlayerLogTail(131072),
+          getPlayerLogSize(),
+        ]);
+        setLines(data);
+        setLogSize(size);
+      } else if (activeTab === "bepinex") {
+        if (!profile?.bepinex_path) return;
+        const [data, size] = await Promise.all([
+          readLogTail(profile.bepinex_path, 131072),
+          getLogSize(profile.bepinex_path),
+        ]);
+        setLines(data);
+        setLogSize(size);
+      }
     } catch {
       // silently fail
     }
-  }, [profile?.bepinex_path]);
+  }, [activeTab, profile?.bepinex_path]);
 
   // Initial load
   useEffect(() => {
@@ -174,12 +202,13 @@ export function LogViewer() {
     await navigator.clipboard.writeText(formatUpdatesText());
   };
 
-  // Auto-refresh
+  // Auto-refresh (file-log tabs only)
   useEffect(() => {
     if (!refreshInterval) return;
+    if (activeTab !== "bepinex" && activeTab !== "player") return;
     const timer = setInterval(fetchLog, refreshInterval);
     return () => clearInterval(timer);
-  }, [fetchLog, refreshInterval]);
+  }, [fetchLog, refreshInterval, activeTab]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -198,7 +227,8 @@ export function LogViewer() {
 
   const handleExport = async () => {
     const text = filteredLines.map((l) => l.text).join("\n");
-    const filename = buildLogFilename(identity?.user_id);
+    const prefix = activeTab === "player" ? "PlayerLog" : "LogOutput";
+    const filename = buildLogFilename(identity?.user_id, prefix);
     const dir = await getDiagnosticLogsPath().catch(() => null);
     const defaultPath = dir ? `${dir}${dir.includes("\\") ? "\\" : "/"}${filename}` : filename;
     const dest = await save({
@@ -215,8 +245,10 @@ export function LogViewer() {
   };
 
   const handleDownload = async () => {
-    if (!profile?.bepinex_path) return;
-    const filename = buildLogFilename(identity?.user_id);
+    const isPlayer = activeTab === "player";
+    if (isPlayer ? !playerLogPath : !profile?.bepinex_path) return;
+    const prefix = isPlayer ? "PlayerLog" : "LogOutput";
+    const filename = buildLogFilename(identity?.user_id, prefix);
     const dir = await getDiagnosticLogsPath().catch(() => null);
     const defaultPath = dir ? `${dir}${dir.includes("\\") ? "\\" : "/"}${filename}` : filename;
     const dest = await save({
@@ -224,7 +256,11 @@ export function LogViewer() {
       filters: [{ name: "Log Files", extensions: ["log", "txt"] }],
     });
     if (!dest) return;
-    await saveLogFile(profile.bepinex_path, dest);
+    if (isPlayer) {
+      await savePlayerLogFile(dest);
+    } else {
+      await saveLogFile(profile!.bepinex_path, dest);
+    }
   };
 
   // Filter lines
@@ -284,6 +320,18 @@ export function LogViewer() {
           BepInEx Log
         </button>
         <button
+          onClick={() => setActiveTab("player")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            activeTab === "player"
+              ? "bg-brand-500/15 text-brand-400"
+              : "text-zinc-500 hover:text-zinc-300"
+          )}
+        >
+          <Terminal className="w-3.5 h-3.5" />
+          Player.log
+        </button>
+        <button
           onClick={() => setActiveTab("updates")}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
@@ -318,7 +366,7 @@ export function LogViewer() {
       {/* Action buttons row — sits below the tabs so the chrome reads
           top-to-bottom: title, tabs, actions, content. */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
-        {activeTab === "bepinex" && (
+        {(activeTab === "bepinex" || activeTab === "player") && (
           <>
             <button
               onClick={() => setRefreshInterval((prev) => (prev ? null : 3000))}
@@ -351,10 +399,12 @@ export function LogViewer() {
               <FileText className="w-3.5 h-3.5" />
               Download Full Log
             </button>
-            <button onClick={handleClear} className={dangerBtn}>
-              <Trash2 className="w-3.5 h-3.5" />
-              Clear
-            </button>
+            {activeTab === "bepinex" && (
+              <button onClick={handleClear} className={dangerBtn}>
+                <Trash2 className="w-3.5 h-3.5" />
+                Clear
+              </button>
+            )}
           </>
         )}
         {activeTab === "updates" && (
@@ -453,8 +503,8 @@ export function LogViewer() {
         </div>
       )}
 
-      {/* ─── BepInEx Log Tab ─── */}
-      {activeTab === "bepinex" && <>
+      {/* ─── File Log Tabs (BepInEx + Player.log) ─── */}
+      {(activeTab === "bepinex" || activeTab === "player") && <>
       {/* Filter Bar */}
       <div className="flex items-center gap-3 mb-3">
         {/* Search */}
@@ -553,7 +603,11 @@ export function LogViewer() {
           <div className="flex flex-col items-center justify-center h-32 text-center">
             <FileText className="w-8 h-8 text-zinc-700 mb-2" />
             <p className="text-zinc-500 text-sm">
-              {lines.length === 0 ? "No log data" : "No matching lines"}
+              {lines.length > 0
+                ? "No matching lines"
+                : activeTab === "player" && !playerLogPath
+                  ? "Player.log not found — launch Valheim once to generate it"
+                  : "No log data"}
             </p>
           </div>
         ) : (

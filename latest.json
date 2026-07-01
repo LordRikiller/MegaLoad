@@ -1,11 +1,11 @@
 {
-  "version": "1.10.58",
-  "notes": "Valheim Data: added a one-click copy button next to each item's Internal ID, and meads/potions now show an Effect panel explaining what they actually do (resistance levels, restore amounts, modifiers and durations).",
-  "pub_date": "2026-06-28T03:37:55Z",
+  "version": "1.10.59",
+  "notes": "Log Viewer: added a Player.log tab that reads Valheim's Unity output log (in LocalLow), with the same live view, search, level filters, export, copy, and download options as the BepInEx log.",
+  "pub_date": "2026-07-01T00:07:38Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFLVVVXUWpaTWN3bWRwR3RFU1loQUVCQ3EySXRBSXVjbEwwQ29tSmhWYTU3U3BWRGY0cWpSVXdKMEdVdHo4RjJDQmhBNmFXRWdRK0Z1WVhSSzJQd2c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyNjE3ODQzCWZpbGU6TWVnYUxvYWRfMS4xMC41OF94NjQtc2V0dXAubnNpcy56aXAKT0xpRlJZVGhuNWZ3Y2dvVWRNb3BiRVhmR20wYjdxSENKWmVLQ1dTcHNEcmhzOTE2WXE1VjJSUk5PU2dPaUNXQWNRYzY5Tkw1Slh4MUhaZmtDMUhLREE9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.58/MegaLoad_1.10.58_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJUK3VkWVkxREpYdHVJcmxrbVFvcmVKYy9VS1NhTitZWW01Q3I0czhtUWJLdWNUK2t6OTYxMEVyN2U4Vk1QK0NOTWwyamNORFlRMzNBZDcrdGRMVkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyODY0NDEyCWZpbGU6TWVnYUxvYWRfMS4xMC41OV94NjQtc2V0dXAubnNpcy56aXAKMTRvYXUvcGdacGtkcHYxa1JnM2QvelhXcXA3OGtQWTNweFBiTEI2bXhkSCs1T3VKOUo1YW1sa3llY1N4eWU1R213UThuVEd3THdEaGtqb2pJbTNjRFE9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.59/MegaLoad_1.10.59_x64-setup.nsis.zip"
     }
   }
 }
