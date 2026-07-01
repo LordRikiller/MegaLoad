@@ -1,6 +1,6 @@
-{
+﻿{
   "schema_version": 1,
-  "updated_at": "2026-07-01T00:20:00Z",
+  "updated_at": "2026-07-01T00:17:56Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -16,7 +16,7 @@
       "download_url": "https://github.com/LordRikiller/MegaMegingjord/releases/download/v1.8.3/MegaMegingjord.dll",
       "dll_name": "MegaMegingjord.dll",
       "plugin_folder": "MegaMegingjord",
-      "description": "Megingjord belt powers — carry weight, headlamp, swamp key, sealbreaker, wishbone, seafloor walk"
+      "description": "Megingjord belt powers \u2014 carry weight, headlamp, swamp key, sealbreaker, wishbone, seafloor walk"
     },
     {
       "name": "MegaFood",
@@ -24,7 +24,7 @@
       "download_url": "https://github.com/LordRikiller/MegaFood/releases/download/v1.4.6/MegaFood.dll",
       "dll_name": "MegaFood.dll",
       "plugin_folder": "MegaFood",
-      "description": "MegaFood + MegaMead — 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration. MegaMead Base is brewed at the Mead Ketil."
+      "description": "MegaFood + MegaMead \u2014 150 HP/Stam/Eitr food, 14 toggleable mead effects, configurable duration. MegaMead Base is brewed at the Mead Ketil."
     },
     {
       "name": "MegaShot",
@@ -32,7 +32,7 @@
       "download_url": "https://github.com/LordRikiller/MegaShot/releases/download/v2.6.111/MegaShot.dll",
       "dll_name": "MegaShot.dll",
       "plugin_folder": "MegaShot",
-      "description": "Crossbow & firearms overhaul — scope w/ Night/Heat/NightToDay vision modes (N) + creature labels, Armageddon OneShot meteor-slam"
+      "description": "Crossbow & firearms overhaul \u2014 scope w/ Night/Heat/NightToDay vision modes (N) + creature labels, Armageddon OneShot meteor-slam"
     },
     {
       "name": "MegaQoL",
@@ -40,7 +40,7 @@
       "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.16.17/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage), and Tamed Spike Immunity (your own Sharp Stakes, Ashwood Stakewall and Dvergr Sharp Stakes no longer skewer your tamed animals; wild mobs still cop it). New Tamed Range (16, default off): widens Valheim's active-zone radius so your tamed creatures stay simulated and interactive (follow/react/move) much further from you instead of freezing once you wander off — ActiveZoneRadius 2-4 (~128/192/256m). Global setting that keeps other nearby objects and creatures simulated further too, so it carries a CPU/RAM cost near busy bases. Ballista now holds fire without a clear line of sight to its target, plus optional infinite Flametal-Bolt ammo and an optional MegaShot-Armageddon firing animation (Staff-of-Lightning bolt + meteor-crash on impact). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
+      "description": "Quality of life \u2014 auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage), and Tamed Spike Immunity (your own Sharp Stakes, Ashwood Stakewall and Dvergr Sharp Stakes no longer skewer your tamed animals; wild mobs still cop it). New Tamed Range (16, default off): widens Valheim's active-zone radius so your tamed creatures stay simulated and interactive (follow/react/move) much further from you instead of freezing once you wander off \u2014 ActiveZoneRadius 2-4 (~128/192/256m). Global setting that keeps other nearby objects and creatures simulated further too, so it carries a CPU/RAM cost near busy bases. Ballista now holds fire without a clear line of sight to its target, plus optional infinite Flametal-Bolt ammo and an optional MegaShot-Armageddon firing animation (Staff-of-Lightning bolt + meteor-crash on impact). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
     },
     {
       "name": "MegaStuff",
@@ -48,7 +48,7 @@
       "download_url": "https://github.com/LordRikiller/MegaStuff/releases/download/v1.4.31/MegaStuff.dll",
       "dll_name": "MegaStuff.dll",
       "plugin_folder": "MegaStuff",
-      "description": "Storage — quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5→8, auto-prunes orphan config sections on launch. Chest deposit sparkle now fires once per chest (not once per item in a big dump), lingers longer (Speed config), and the sound is toggleable. Pet Feeder can now also feed and tame UNTAMED creatures from chests (FeedUntamed toggle, default on). Leave-1 rule: crafting, requireOnlyOne crafting, and the Pet Feeder always keep at least 1 of each item type in a chest so it stays a valid auto-deposit target — no more draining the last wood to craft or pets emptying a food chest."
+      "description": "Storage \u2014 quick deposit (respects AzuEPI extra rows), chest auto-pickup (loose food pulled, items on stands/Serving Tray spared), configurable chest sizes (up to 8 rows), Cart + Boat storage (Raft/Karve/Longship/Drakkar) configurable too, craft from containers, pet feeder, ALT+click ignore-from-deposit with visible lock badge (bottom-right), blocks Place Stacks too, SHIFT+drag chest windows, AzuEPI Extra Rows cap bumped 5\u21928, auto-prunes orphan config sections on launch. Chest deposit sparkle now fires once per chest (not once per item in a big dump), lingers longer (Speed config), and the sound is toggleable. Pet Feeder can now also feed and tame UNTAMED creatures from chests (FeedUntamed toggle, default on). Leave-1 rule: crafting, requireOnlyOne crafting, and the Pet Feeder always keep at least 1 of each item type in a chest so it stays a valid auto-deposit target \u2014 no more draining the last wood to craft or pets emptying a food chest."
     },
     {
       "name": "MegaFarming",
@@ -56,7 +56,7 @@
       "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.4.5/MegaFarming.dll",
       "dll_name": "MegaFarming.dll",
       "plugin_folder": "MegaFarming",
-      "description": "Mass farming — hold-key mass harvest pickables/beehives, grid plant any cultivator plant (smart spacing so big bushes don't overlap), plant anywhere (any biome), plus custom plantables (bushes, mushrooms, thistle, fiddleheads, royal jelly) added to the Cultivator. Middle-click a crop while holding the Cultivator to remove it, growth + respawn timer hover (saplings AND picked berry bushes / mushrooms etc.), stump markers on picked renewables."
+      "description": "Mass farming \u2014 hold-key mass harvest pickables/beehives, grid plant any cultivator plant (smart spacing so big bushes don't overlap), plant anywhere (any biome), plus custom plantables (bushes, mushrooms, thistle, fiddleheads, royal jelly) added to the Cultivator. Middle-click a crop while holding the Cultivator to remove it, growth + respawn timer hover (saplings AND picked berry bushes / mushrooms etc.), stump markers on picked renewables."
     },
     {
       "name": "MegaFishing",
@@ -80,15 +80,15 @@
       "download_url": "https://github.com/LordRikiller/MegaTrainer/releases/download/v1.6.5/MegaTrainer.dll",
       "dll_name": "MegaTrainer.dll",
       "plugin_folder": "MegaTrainer",
-      "description": "In-game cheat trainer — god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
+      "description": "In-game cheat trainer \u2014 god mode, fly, no cost, explore map, always rested, infinite eitr, tame all, no structure damage, fast skill up, speed/jump controls"
     },
     {
       "name": "MegaBuilder",
-      "version": "1.7.0",
-      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.7.0/MegaBuilder.dll",
+      "version": "1.8.0",
+      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.8.0/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
-      "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.25/0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m), plus new no-collision placement (clip pieces into terrain/other pieces/players, off by default) and dungeon build (place inside dungeons/interiors, off by default); auto-prunes orphan config sections on launch"
+      "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.25/0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m), plus new no-collision placement (clip pieces into terrain/other pieces/players, off by default) and dungeon build (place inside dungeons/interiors, off by default); auto-prunes orphan config sections on launch; plus a buildable Swamp Statue in the Hammer\u2019s Misc tab (50 Ancient Bark, 10 Ooze, 10 Guck; needs a workbench nearby unless free build is on)"
     },
     {
       "name": "MegaSkeletons",
@@ -96,7 +96,7 @@
       "download_url": "https://github.com/LordRikiller/MegaSkeletons/releases/download/v1.4.1/MegaSkeletons.dll",
       "dll_name": "MegaSkeletons.dll",
       "plugin_folder": "MegaSkeletons",
-      "description": "Summoned skeleton buffs (health, speed, HoT, line-of-sight) + portal/dungeon persistence + remote skeleton detonator (AOE explosion + housefire damaging hostiles, trees, rocks and world structures — player builds & pickables spared)"
+      "description": "Summoned skeleton buffs (health, speed, HoT, line-of-sight) + portal/dungeon persistence + remote skeleton detonator (AOE explosion + housefire damaging hostiles, trees, rocks and world structures \u2014 player builds & pickables spared)"
     },
     {
       "name": "MegaDvergr",
@@ -104,7 +104,7 @@
       "download_url": "https://github.com/LordRikiller/MegaDvergr/releases/download/v1.9.0/MegaDvergr.dll",
       "dll_name": "MegaDvergr.dll",
       "plugin_folder": "MegaDvergr",
-      "description": "Tameable Dvergr companions — wild-tame the five variants (Dvergr Rogue, DvergerAshlands, and the Ice/Fire/Support mages) by feeding cooked food only (Cauldron/Oven/Prep Table/Cooking stations); pairs with MegaStuff's Pet Feeder (FeedUntamed) to tame from a stocked chest. The Dead Raiser staff now summons a tamed dvergr warband instead of skeletons, one-of-each scaled by staff level (Ashlands → +Ice → +Fire → +Support, 2-star), topped up on each cast."
+      "description": "Tameable Dvergr companions \u2014 wild-tame the five variants (Dvergr Rogue, DvergerAshlands, and the Ice/Fire/Support mages) by feeding cooked food only (Cauldron/Oven/Prep Table/Cooking stations); pairs with MegaStuff's Pet Feeder (FeedUntamed) to tame from a stocked chest. The Dead Raiser staff now summons a tamed dvergr warband instead of skeletons, one-of-each scaled by staff level (Ashlands \u2192 +Ice \u2192 +Fire \u2192 +Support, 2-star), topped up on each cast."
     },
     {
       "name": "MegaPlanner",
@@ -112,7 +112,7 @@
       "download_url": "https://github.com/LordRikiller/MegaPlanner/releases/download/v1.5.4/MegaPlanner.dll",
       "dll_name": "MegaPlanner.dll",
       "plugin_folder": "MegaPlanner",
-      "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Replay HUD shows the full running material budget with proper localised names (have/need per material). Free Build option (config + auto-engages with MegaTrainer's no_placement_cost cheat) skips materials entirely. Ghost is independent of the player — walk freely with WASD/mouse, manipulate the ghost with arrow keys: Left/Right rotate, Up/Down raise/lower (Shift = fast), Alt+arrows nudge XZ in your view direction. Mousewheel-zoom placement camera (close third-person <-> godview), R resets zoom, Home resets ghost offsets. Terrain-aware foundation extension (perimeter-only, snap-point-based stacking, strict whitelist of Building-category walls/floors/foundations/beams). Live 3D preview in the menu, paced placement, pulls materials from inventory + nearby chests.",
+      "description": "Capture every built piece within a configurable radius into a JSON blueprint (F9 default), then re-place the entire structure later from a menu (F10 default). Replay HUD shows the full running material budget with proper localised names (have/need per material). Free Build option (config + auto-engages with MegaTrainer's no_placement_cost cheat) skips materials entirely. Ghost is independent of the player \u2014 walk freely with WASD/mouse, manipulate the ghost with arrow keys: Left/Right rotate, Up/Down raise/lower (Shift = fast), Alt+arrows nudge XZ in your view direction. Mousewheel-zoom placement camera (close third-person <-> godview), R resets zoom, Home resets ghost offsets. Terrain-aware foundation extension (perimeter-only, snap-point-based stacking, strict whitelist of Building-category walls/floors/foundations/beams). Live 3D preview in the menu, paced placement, pulls materials from inventory + nearby chests.",
       "hidden": false
     },
     {
@@ -121,7 +121,7 @@
       "download_url": "https://github.com/LordRikiller/MegaDragons/releases/download/v1.3.10/MegaDragons.dll",
       "dll_name": "MegaDragons.dll",
       "plugin_folder": "MegaDragons",
-      "description": "Tameable, near-unkillable companion dragons. Wild-tame Mountain Hatchlings (Drakes) with raw meat (ground or MegaStuff Pet Feeder); tamed Drakes follow/stay, keep up with you at a sprint or in the air, spot threats from afar, pack 10,000 HP + elemental immunity, heal when they eat, and auto-defend you. Crouch + interact to name your dragon (each starts with a random dragon name). One dragon at a time. Craft a Dragon Whistle to call a perched dragon down beside you (G, or equip + click), or release it to raise a new one. RIDE & FLY: craft a Dragon Saddle (Workbench lvl 4), fit it, and mount up — look-to-fly controls with sprint, auto-hover and altitude control. Coming next: ranged + frost-breath air combat, and raising a Hatchling into a rideable Moder."
+      "description": "Tameable, near-unkillable companion dragons. Wild-tame Mountain Hatchlings (Drakes) with raw meat (ground or MegaStuff Pet Feeder); tamed Drakes follow/stay, keep up with you at a sprint or in the air, spot threats from afar, pack 10,000 HP + elemental immunity, heal when they eat, and auto-defend you. Crouch + interact to name your dragon (each starts with a random dragon name). One dragon at a time. Craft a Dragon Whistle to call a perched dragon down beside you (G, or equip + click), or release it to raise a new one. RIDE & FLY: craft a Dragon Saddle (Workbench lvl 4), fit it, and mount up \u2014 look-to-fly controls with sprint, auto-hover and altitude control. Coming next: ranged + frost-breath air combat, and raising a Hatchling into a rideable Moder."
     }
   ]
 }
