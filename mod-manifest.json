@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-01T22:35:00Z",
+  "updated_at": "2026-07-14T00:00:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -84,11 +84,11 @@
     },
     {
       "name": "MegaBuilder",
-      "version": "1.8.3",
-      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.8.3/MegaBuilder.dll",
+      "version": "1.8.4",
+      "download_url": "https://github.com/LordRikiller/MegaBuilder/releases/download/v1.8.4/MegaBuilder.dll",
       "dll_name": "MegaBuilder.dll",
       "plugin_folder": "MegaBuilder",
-      "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.25/0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m), plus new no-collision placement (clip pieces into terrain/other pieces/players, off by default) and dungeon build (place inside dungeons/interiors, off by default); auto-prunes orphan config sections on launch; plus a buildable Swamp Statue in the Hammer’s Misc tab (50 Ancient Bark, 10 Ooze, 10 Guck; needs a workbench nearby unless free build is on)"
+      "description": "Rotation-aware decorative snap (sconces/torches/signs centre on rotated walls), grid-align respects vanilla snap on structural pieces (rotated floors line up cleanly), 0.25/0.5/1/2/4m grid sizes for open-ground placement, build-dust removal, rune-build (bypass no-build zones), ALT+click hammer radius-repair (1-100m, default 10m), plus new no-collision placement (clip pieces into terrain/other pieces/players, off by default) and dungeon build (place inside dungeons/interiors, off by default); auto-prunes orphan config sections on launch"
     },
     {
       "name": "MegaSkeletons",
