@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-14T00:00:00Z",
+  "updated_at": "2026-07-14T07:42:07Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -131,6 +131,14 @@
       "plugin_folder": "MegaDebug",
       "description": "Floating diagnostic mod — on-demand probes (managed-heap/ZDO/object counters + ZDO census) for debugging game issues. Install to diagnose, remove when done. All output gated by [99. Debug] DebugMode.",
       "hidden": false
+    },
+    {
+      "name": "FarmBuild",
+      "version": "1.0.0",
+      "download_url": "https://github.com/LordRikiller/FarmBuild/releases/download/v1.0.0/FarmBuild.dll",
+      "dll_name": "FarmBuild.dll",
+      "plugin_folder": "FarmBuild",
+      "description": "Standalone (not Mega series): MegaBuilder-style build-piece grid snap (F7 toggle on/off, F6 cycles 0.25/0.5/1/2/4m) plus MegaFarming mass farming (hold hotkey to mass-harvest pickables, pickable-items and beehives within radius, or grid-plant a configurable WxL block). Farm grid obeys the F7 snap toggle; FarmGridSize (0 = follow the build grid F6 size) sets the plant cell size, auto-widening so bushes never overlap. No MegaBuilder/MegaFarming dependency."
     }
   ]
 }
