@@ -354,7 +354,8 @@ export function ConfigEditor() {
         <div>
           <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">Config Editor</h1>
           <p className="text-zinc-500 mt-1">
-            Edit BepInEx mod configurations
+            Editing <span className="text-zinc-300 font-medium">{profile.name}</span>
+            <span className="text-zinc-600"> &middot; BepInEx mod configurations</span>
             {changeCount > 0 && (
               <span className="ml-2 text-brand-400">
                 &middot; {changeCount} change{changeCount > 1 ? "s" : ""} saved
