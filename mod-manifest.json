@@ -4,8 +4,8 @@
   "mods": [
     {
       "name": "MegaHoe",
-      "version": "4.10.3",
-      "download_url": "https://github.com/LordRikiller/MegaHoe/releases/download/v4.10.3/MegaHoe.dll",
+      "version": "4.10.4",
+      "download_url": "https://github.com/LordRikiller/MegaHoe/releases/download/v4.10.4/MegaHoe.dll",
       "dll_name": "MegaHoe.dll",
       "plugin_folder": "MegaHoe",
       "description": "Hoe tool overhaul with biome painter, extended terrain editing, and configurable radius"
