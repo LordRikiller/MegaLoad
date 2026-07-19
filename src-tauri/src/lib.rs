@@ -209,6 +209,9 @@ pub fn run() {
             sync_push_mega_lists,
             sync_pull_mega_lists,
             sync_reconcile_mega_lists,
+            // Theme sync (opt-in, blob LWW)
+            sync_pull_theme,
+            sync_push_theme,
             // Sync event log
             read_sync_events,
             clear_sync_events,

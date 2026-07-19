@@ -1,11 +1,11 @@
 {
-  "version": "1.10.65",
-  "notes": "Profile deletion now syncs. Deleting a profile on one device removes it on your other devices too (per-profile tombstones + last-writer-wins in the sync manifest), instead of being silently re-added by the other device. The orphaned cloud copy is cleaned up. Guards: never removes the last profile on a device, and won't delete one you just created locally. Completes the v1.10.61-64 sync rework.",
-  "pub_date": "2026-07-19T07:58:21Z",
+  "version": "1.11.0",
+  "notes": "Biome Themes & Living Backgrounds. Settings → Appearance now lets you skin MegaLoad in any of Valheim's ten biomes (Default plus Meadows, Black Forest, Swamp, Mountain, Plains, Mistlands, Ashlands, Deep North and Ocean), each with three palette variants and an optional ambient animated background — swaying trees, rain, blizzards, drifting fog, rising embers, aurora curtains, underwater ripples and more — at Subtle/Medium/Lively intensity with a master on/off. Motion pauses when the window is minimised and respects your system reduced-motion setting. New optional toggle to sync your theme across devices (off by default). The default look is unchanged out of the box — biomes are opt-in.",
+  "pub_date": "2026-07-19T09:47:58.437Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU9JZjQ3cytYMzhhcURBQXA0RWE4b25TcExaSWp3cExxdzljMkYrNG5EUE5MS2ZjZUswSjZKSTNQTWMwMVVNQWRvMDFud24zc3pKUEQ2WkNpL1VuNUFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDQ3ODkzCWZpbGU6TWVnYUxvYWRfMS4xMC42NV94NjQtc2V0dXAubnNpcy56aXAKZjVReGpUdDNrOHRUMEFwZFJGQUc5V3k1WkZFQ1I5dkxzUml3VEZpL3lsd0dJOW9UVVhlbGFCMDZ0UVgzUGtaNy9UdGdacmtjaDUxYTk3akRDTXFtQmc9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.65/MegaLoad_1.10.65_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUk4bGtIdWwvM1FpRkhQQnc5aXMzVWVCcStGQ1pnNXhvRWVJSFQ5TXJDSkVwZExsY3FmREhNMXZIV2RjeVBqOHVmWmhYUzdIbkpFWTA5NFNlYlZXSGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDU0Mjk2CWZpbGU6TWVnYUxvYWRfMS4xMS4wX3g2NC1zZXR1cC5uc2lzLnppcAplZUFZWEJqYzZaTStjcFBvU2gyeCtFbWpXb05ZcFFlMFhVVjJpOSs2dGF5RkZ6V0R5a0VhSnZLd3pIK1plNTlMcGlxNjJYT0NUNHlyc2ZuWXhucGREUT09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.11.0/MegaLoad_1.11.0_x64-setup.nsis.zip"
     }
   }
 }

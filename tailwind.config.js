@@ -5,21 +5,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Norse gold/bronze — Valheim accent palette
+        // Norse gold/bronze accent — the whole `brand` ramp is CSS-variable
+        // backed so the biome theme system can re-tint it at runtime
+        // (see src/theme/apply.ts). Defaults live in src/index.css.
         brand: {
-          50: "#fbf7eb",
-          100: "#f5eacc",
-          200: "#ecd49b",
-          300: "#dfb860",
-          400: "#d4a03a",
-          500: "#c08a26",
-          600: "#a56e1e",
-          700: "#87531c",
-          800: "#71431e",
-          900: "#5f381d",
-          950: "#371c0d",
+          50: "rgb(var(--ml-brand-50) / <alpha-value>)",
+          100: "rgb(var(--ml-brand-100) / <alpha-value>)",
+          200: "rgb(var(--ml-brand-200) / <alpha-value>)",
+          300: "rgb(var(--ml-brand-300) / <alpha-value>)",
+          400: "rgb(var(--ml-brand-400) / <alpha-value>)",
+          500: "rgb(var(--ml-brand-500) / <alpha-value>)",
+          600: "rgb(var(--ml-brand-600) / <alpha-value>)",
+          700: "rgb(var(--ml-brand-700) / <alpha-value>)",
+          800: "rgb(var(--ml-brand-800) / <alpha-value>)",
+          900: "rgb(var(--ml-brand-900) / <alpha-value>)",
+          950: "rgb(var(--ml-brand-950) / <alpha-value>)",
         },
-        // Blue-shifted Nordic darks (overrides default zinc)
+        // Blue-shifted Nordic darks (overrides default zinc). Only the three
+        // deep surface stops (base/panel/border) are variable-backed so the
+        // biome themes can tint them; the text-tier stops stay neutral so
+        // contrast never regresses across biomes.
         zinc: {
           50: "#f4f6fa",
           100: "#e4e8f0",
@@ -29,9 +34,9 @@ export default {
           500: "#566585",
           600: "#45516d",
           700: "#38425a",
-          800: "#1e2740",
-          900: "#131a2c",
-          950: "#0a0f1a",
+          800: "rgb(var(--ml-zinc-800) / <alpha-value>)",
+          900: "rgb(var(--ml-zinc-900) / <alpha-value>)",
+          950: "rgb(var(--ml-zinc-950) / <alpha-value>)",
         },
       },
       fontFamily: {

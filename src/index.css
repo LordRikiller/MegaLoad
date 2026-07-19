@@ -20,6 +20,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Biome theme tokens. These are the default (Default · Norse Gold) values;
+   src/theme/apply.ts overrides them at runtime per selected biome. The
+   `brand`/`zinc` tailwind ramps read these (see tailwind.config.js). Values
+   are space-separated RGB triplets so tailwind's `/ <alpha-value>` works. */
+:root {
+  --ml-brand-50: 251 247 235;
+  --ml-brand-100: 245 234 204;
+  --ml-brand-200: 236 212 155;
+  --ml-brand-300: 223 184 96;
+  --ml-brand-400: 212 160 58;
+  --ml-brand-500: 192 138 38;
+  --ml-brand-600: 165 110 30;
+  --ml-brand-700: 135 83 28;
+  --ml-brand-800: 113 67 30;
+  --ml-brand-900: 95 56 29;
+  --ml-brand-950: 55 28 13;
+  --ml-zinc-950: 10 15 26;
+  --ml-zinc-900: 19 26 44;
+  --ml-zinc-800: 30 39 64;
+  --ml-glow: rgba(192, 138, 38, 0.2);
+}
+
 @layer base {
   * {
     @apply border-zinc-800;
@@ -58,7 +80,7 @@
   }
 
   .glow-brand {
-    box-shadow: 0 0 20px rgba(192, 138, 38, 0.2);
+    box-shadow: 0 0 20px var(--ml-glow);
   }
 }
 

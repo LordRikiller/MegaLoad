@@ -3011,6 +3011,79 @@ pub async fn sync_reconcile_mega_lists(local_blob_json: String) -> Result<String
     .map_err(|e| format!("MegaList reconcile task panicked: {}", e))?
 }
 
+// ---------------------------------------------------------------------------
+// Theme sync — opt-in, blob-level last-writer-wins. The theme prefs are a tiny
+// JSON object; the device that most recently changed the theme wins. Stored at
+// sync/{user_id}/theme.json. Requires cloud sync to be enabled.
+// ---------------------------------------------------------------------------
+
+fn sync_theme_path(user_id: &str) -> String {
+    format!("sync/{}/theme.json", user_id)
+}
+
+/// Pull the remote theme blob. Returns the raw JSON string, or the literal
+/// "null" when no remote theme exists yet.
+#[command]
+pub async fn sync_pull_theme() -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(|| -> Result<String, String> {
+        let settings = load_sync_settings();
+        if !settings.enabled {
+            return Err("Cloud sync is not enabled".to_string());
+        }
+        let identity = get_megaload_identity()?;
+        let remote_path = sync_theme_path(&identity.user_id);
+        match github_get_file(&remote_path) {
+            Ok((content, _)) => Ok(content),
+            Err(e) if e.contains("404") => Ok("null".to_string()),
+            Err(e) => Err(e),
+        }
+    })
+    .await
+    .map_err(|e| format!("Theme pull task panicked: {}", e))?
+}
+
+/// Push the local theme blob (overwrite remote, 409-retry). Last writer wins,
+/// which matches "the device you just changed the theme on".
+#[command]
+pub async fn sync_push_theme(blob_json: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
+        let settings = load_sync_settings();
+        if !settings.enabled {
+            return Err("Cloud sync is not enabled".to_string());
+        }
+        // Validate it's well-formed JSON before writing.
+        let _: serde_json::Value = serde_json::from_str(&blob_json)
+            .map_err(|e| format!("Invalid theme blob JSON: {}", e))?;
+        let identity = get_megaload_identity()?;
+        let remote_path = sync_theme_path(&identity.user_id);
+
+        let mut attempt = 0u32;
+        loop {
+            attempt += 1;
+            let remote_sha = match github_get_file(&remote_path) {
+                Ok((_, sha)) => Some(sha),
+                Err(e) if e.contains("404") => None,
+                Err(e) => return Err(e),
+            };
+            match github_put_file(
+                &remote_path,
+                blob_json.as_bytes(),
+                &format!("Theme sync — {}", identity.display_name),
+                remote_sha.as_deref(),
+            ) {
+                Ok(_) => {
+                    app_log("Theme sync: pushed theme blob");
+                    return Ok(());
+                }
+                Err(e) if e.contains("409") && attempt < MAX_PUSH_RETRIES => continue,
+                Err(e) => return Err(e),
+            }
+        }
+    })
+    .await
+    .map_err(|e| format!("Theme push task panicked: {}", e))?
+}
+
 #[cfg(test)]
 mod megalist_merge_tests {
     use super::*;

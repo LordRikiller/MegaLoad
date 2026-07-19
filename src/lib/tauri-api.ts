@@ -1042,3 +1042,14 @@ export const syncPullMegaLists = () =>
  *  The caller MUST overwrite its local state with the returned blob. */
 export const syncReconcileMegaLists = (localBlobJson: string) =>
   invoke<string>("sync_reconcile_mega_lists", { localBlobJson });
+
+// ── Theme sync ────────────────────────────────────────────────────────────
+// Opt-in, blob-level last-writer-wins. The theme prefs are a tiny JSON object
+// stored at sync/{user_id}/theme.json. Pull returns "null" when no remote
+// exists. Both require cloud sync to be enabled (else they error).
+
+export const syncPullTheme = () =>
+  invoke<string>("sync_pull_theme");
+
+export const syncPushTheme = (blobJson: string) =>
+  invoke<void>("sync_push_theme", { blobJson });

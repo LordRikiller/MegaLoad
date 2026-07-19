@@ -53,6 +53,7 @@ import {
   Bug,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { AppearanceCard } from "../components/settings/AppearanceCard";
 
 export function Settings() {
   const { fetchProfiles } = useProfileStore();
@@ -334,6 +335,9 @@ export function Settings() {
         <h1 className="font-norse font-bold text-4xl text-zinc-100 tracking-wide">Settings</h1>
         <p className="text-zinc-500 mt-1">Configure MegaLoad</p>
       </div>
+
+      {/* Appearance — biome themes + animated backgrounds */}
+      <AppearanceCard />
 
       {/* Account */}
       {identity && (
