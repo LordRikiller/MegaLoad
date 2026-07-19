@@ -36,8 +36,8 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.17.7",
-      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.17.7/MegaQoL.dll",
+      "version": "1.17.8",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.17.8/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
       "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage), and Tamed Spike Immunity (your own Sharp Stakes, Ashwood Stakewall and Dvergr Sharp Stakes no longer skewer your tamed animals; wild mobs still cop it). New Tamed Range (16, default off): widens Valheim's active-zone radius so your tamed creatures stay simulated and interactive (follow/react/move) much further from you instead of freezing once you wander off — ActiveZoneRadius 2-4 (~128/192/256m). Global setting that keeps other nearby objects and creatures simulated further too, so it carries a CPU/RAM cost near busy bases. Ballista now holds fire without a clear line of sight to its target, plus optional infinite Flametal-Bolt ammo and an optional MegaShot-Armageddon firing animation (Staff-of-Lightning bolt + meteor-crash on impact). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). New Boat Map Reveal (17, on by default): while you're aboard a Raft, Karve, Longship or Drakkar, the map's fog-of-war uncovers a much larger area around you so sailing scouts the world (RevealMultiplier, ~8x by default). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
@@ -117,8 +117,8 @@
     },
     {
       "name": "MegaDragons",
-      "version": "1.5.17",
-      "download_url": "https://github.com/LordRikiller/MegaDragons/releases/download/v1.5.17/MegaDragons.dll",
+      "version": "1.5.18",
+      "download_url": "https://github.com/LordRikiller/MegaDragons/releases/download/v1.5.18/MegaDragons.dll",
       "dll_name": "MegaDragons.dll",
       "plugin_folder": "MegaDragons",
       "description": "Tameable, near-unkillable companion dragons. Wild-tame Mountain Hatchlings (Drakes) with raw meat (ground or MegaStuff Pet Feeder); tamed Drakes follow/stay, keep up with you at a sprint or in the air, spot threats from afar, pack 10,000 HP + elemental immunity, heal when they eat, and auto-defend you. Crouch + interact to name your dragon (each starts with a random dragon name). One dragon at a time. Craft a Dragon Whistle to call your dragon down beside you from anywhere in the world (G, or equip + click), or release it to raise a new one. RIDE & FLY: craft a Dragon Saddle (Workbench lvl 4), fit it, and mount up — a visible saddle appears on the dragon's back, and you get true 360-degree look-to-fly (aim anywhere, even straight up or down), sprint, altitude control and auto-hover. While mounted, the map's fog-of-war reveals a huge area around you as you fly. DRAGON BREATH: while mounted the dragon auto-breathes fire at nearby threats, and Left Click fires its breath when you're unarmed. GROW A MODER: build Dragon Food at a Food Preparation Table with the Feaster and place it beside your tamed Hatchling — it feasts serving-by-serving and matures into a tamed, rideable Moder that keeps its name, owner, level and saddle."
