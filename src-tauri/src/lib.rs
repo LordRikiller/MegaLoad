@@ -199,6 +199,7 @@ pub fn run() {
             sync_pull_profile,
             sync_pull_bundle,
             sync_check_remote_changed,
+            sync_mark_remote_seen,
             sync_push_player_data,
             sync_pull_player_data,
             sync_reconcile_player_data,

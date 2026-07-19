@@ -54,6 +54,7 @@ fn load_sync_settings() -> SyncSettings {
         last_push: None,
         last_pull: None,
         machine_id: generate_machine_id(),
+        last_seen_remote_sync: None,
     }
 }
 
@@ -140,9 +141,9 @@ pub struct SyncProfileBundle {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trainer_state: Option<ConfigEntry>,
     /// Watermark for the mod set specifically — bumps only when mods/ts_mods
-    /// actually change (see `mods_watermark`). Lets the merge pick the device
-    /// that last *edited* the mod set rather than the one that pushed last.
-    /// Defaults to empty on legacy bundles (treated as oldest).
+    /// actually change (assigned by the persisted ledger in `snapshot_bundle`).
+    /// Lets the merge pick the device that last *edited* the mod set rather than
+    /// the one that pushed last. Defaults to empty on legacy bundles (oldest).
     #[serde(default)]
     pub mods_updated_at: String,
 }
@@ -257,48 +258,10 @@ fn secs_to_iso(now: i64) -> String {
     format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", y, m + 1, d, hours, minutes, seconds)
 }
 
-/// Days since 1970-01-01 for a civil date (Howard Hinnant's algorithm).
-/// Inverse companion to `secs_to_iso` so we can turn a watermark back into a
-/// Unix instant for mtime restamping.
-fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
-    let y = if m <= 2 { y - 1 } else { y };
-    let era = (if y >= 0 { y } else { y - 399 }) / 400;
-    let yoe = y - era * 400;
-    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    era * 146097 + doe - 719468
-}
-
-/// Parse an ISO-8601 "YYYY-MM-DDTHH:MM:SSZ" stamp (the shape `iso_now`/
-/// `mtime_iso` emit) back into Unix seconds. Lenient on the trailing zone.
-fn iso_to_unix_secs(s: &str) -> Option<i64> {
-    if s.len() < 19 {
-        return None;
-    }
-    let num = |a: usize, n: usize| -> Option<i64> { s.get(a..a + n)?.trim().parse::<i64>().ok() };
-    let y = num(0, 4)?;
-    let mo = num(5, 2)?;
-    let d = num(8, 2)?;
-    let hh = num(11, 2)?;
-    let mm = num(14, 2)?;
-    let ss = num(17, 2)?;
-    if !(1..=12).contains(&mo) {
-        return None;
-    }
-    Some(days_from_civil(y, mo, d) * 86400 + hh * 3600 + mm * 60 + ss)
-}
-
-/// Set a file's mtime to match an ISO watermark. Used after a pull writes a
-/// config so the freshly-written file no longer looks "newer" than its true
-/// edit time — the same restamp trick the player-data path already uses.
-fn restamp_file_mtime(path: &Path, iso: &str) {
-    if let Some(secs) = iso_to_unix_secs(iso) {
-        if secs >= 0 {
-            let when = std::time::UNIX_EPOCH + std::time::Duration::from_secs(secs as u64);
-            let _ = filetime::set_file_mtime(path, filetime::FileTime::from_system_time(when));
-        }
-    }
-}
+// NOTE: the former mtime-restamp helpers (days_from_civil / iso_to_unix_secs /
+// restamp_file_mtime) were removed with the mtime-based config merge. Config
+// versioning no longer derives from filesystem mtime at all — see the
+// persistent sync-state ledger below.
 
 // ---------------------------------------------------------------------------
 // Push dirty-tracking — in-memory, per run
@@ -319,10 +282,6 @@ struct PushCache {
     bundle_sig: HashMap<String, String>,
     /// Manifest profile-list signature last confirmed in-sync with cloud.
     manifest_sig: Option<String>,
-    /// profile_id → (mods fingerprint, ISO timestamp it last changed). Backs the
-    /// honest mods watermark so "who edited the mod set last" wins the merge
-    /// instead of "whoever pushed most recently".
-    mods_rev: HashMap<String, (String, String)>,
 }
 
 fn push_cache() -> &'static std::sync::Mutex<PushCache> {
@@ -353,56 +312,193 @@ fn mods_fingerprint(mods: &[SyncModEntry], ts_mods: &[SyncThunderstoreMod]) -> S
     format!("{:016x}", fnv1a_hash(parts.join("|").as_bytes()))
 }
 
-/// Resolve the mods watermark for a profile: reuse the cached timestamp while
-/// the fingerprint is unchanged, bump to now the moment the set changes.
-fn mods_watermark(profile_id: &str, mods: &[SyncModEntry], ts_mods: &[SyncThunderstoreMod]) -> String {
-    let fp = mods_fingerprint(mods, ts_mods);
-    let mut c = match push_cache().lock() {
-        Ok(c) => c,
-        Err(_) => return iso_now(),
-    };
-    match c.mods_rev.get(profile_id) {
-        Some((cached_fp, ts)) if *cached_fp == fp => ts.clone(),
-        _ => {
-            let now = iso_now();
-            c.mods_rev.insert(profile_id.to_string(), (fp, now.clone()));
-            now
+// ---------------------------------------------------------------------------
+// Persistent per-profile sync-state ledger — the honest content watermark
+// ---------------------------------------------------------------------------
+//
+// The old design derived a config's "edit time" from its filesystem mtime.
+// mtime is bumped wholesale whenever BepInEx rewrites a `.cfg` on game launch
+// (the ConfigPruner sweep, default-binding, format tidy-ups) or the file is
+// copied — so the device that launched Valheim most recently owned the freshest
+// mtimes and won EVERY per-file merge, pushing its *stale* configs over the
+// other device's real edits (and rejecting inbound edits on pull). That is the
+// root cause of "config changes don't sync PC-to-PC".
+//
+// This ledger records, per file, the hash of the content we last saw and the
+// timestamp that content *actually* changed. `refresh_local_state`
+// (folded into `snapshot_bundle`) bumps `updated_at` only when the hash
+// genuinely changes, so a no-op BepInEx rewrite no longer moves the watermark.
+// It is persisted to disk so it survives restarts — the mod watermark used to
+// live in-memory and reset to `now` on every launch, which is the same class
+// of bug for enabled/disabled state (whoever restarted last won the mod set).
+//
+// The on-wire bundle format is unchanged; only HOW `updated_at` is computed
+// (and how the pull decides a winner) changes. Existing cloud bundles remain
+// readable.
+
+/// Per-file content revision: the hash we last saw + when that content changed.
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+struct FileRev {
+    hash: String,
+    updated_at: String,
+}
+
+/// Mod-set revision: order-independent fingerprint + when the set last changed.
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+struct ModRev {
+    fingerprint: String,
+    updated_at: String,
+}
+
+/// Persistent honest-watermark ledger for one profile. Stored at
+/// `%APPDATA%/MegaLoad/sync_state/<profile_id>.json`.
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+struct ProfileSyncState {
+    #[serde(default)]
+    configs: HashMap<String, FileRev>,
+    #[serde(default)]
+    trainer_state: Option<FileRev>,
+    #[serde(default)]
+    mods: Option<ModRev>,
+}
+
+fn sync_state_dir() -> PathBuf {
+    megaload_data_dir().join("sync_state")
+}
+
+fn sync_state_path(profile_id: &str) -> PathBuf {
+    // profile_id is normally a UUID; sanitise defensively for filesystem use.
+    let safe: String = profile_id
+        .chars()
+        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .collect();
+    sync_state_dir().join(format!("{}.json", safe))
+}
+
+fn load_profile_state(profile_id: &str) -> ProfileSyncState {
+    let path = sync_state_path(profile_id);
+    if let Ok(data) = fs::read_to_string(&path) {
+        if let Ok(s) = serde_json::from_str::<ProfileSyncState>(&data) {
+            return s;
         }
     }
+    ProfileSyncState::default()
+}
+
+fn save_profile_state(profile_id: &str, state: &ProfileSyncState) {
+    let dir = sync_state_dir();
+    if fs::create_dir_all(&dir).is_ok() {
+        if let Ok(json) = serde_json::to_string_pretty(state) {
+            let _ = fs::write(sync_state_path(profile_id), json);
+        }
+    }
+}
+
+/// Stable content hash of a string (FNV-1a). Used as the ledger's change key.
+fn content_hash(s: &str) -> String {
+    format!("{:016x}", fnv1a_hash(s.as_bytes()))
 }
 
 // ---------------------------------------------------------------------------
 // Profile snapshot — reads current local state into a bundle
 // ---------------------------------------------------------------------------
 
+/// Read current local state into a bundle, deriving each per-file `updated_at`
+/// from the persistent ledger rather than filesystem mtime. This is the single
+/// place the ledger is reconciled with disk: a file whose content hash is
+/// unchanged keeps its stored watermark (immune to BepInEx-relaunch churn); a
+/// genuinely changed file gets `updated_at = now`; a never-before-seen file is
+/// seeded from its mtime (best-effort bootstrap for pre-existing files on the
+/// first run after upgrade — from then on it tracks honestly).
 fn snapshot_bundle(profile_id: &str, profile_name: &str, bepinex_path: &str) -> Result<SyncProfileBundle, String> {
     let bep = Path::new(bepinex_path);
-    let plugins_dir = bep.join("plugins");
-    let disabled_dir = bep.join("disabled_plugins");
-
-    let mut mods = Vec::new();
-    if plugins_dir.exists() {
-        scan_mods_for_sync(&plugins_dir, true, &mut mods)?;
-    }
-    if disabled_dir.exists() {
-        scan_mods_for_sync(&disabled_dir, false, &mut mods)?;
-    }
+    let mods = scan_profile_mods(bepinex_path)?;
 
     let ts_mods = read_thunderstore_tracking(bepinex_path);
-    let configs = read_all_configs(bepinex_path);
-    let trainer_state = read_trainer_state(bepinex_path);
-    let mods_updated_at = mods_watermark(profile_id, &mods, &ts_mods);
+    let now = iso_now();
+    let mut state = load_profile_state(profile_id);
+
+    // --- Configs: reconcile the ledger; honest watermark per file ---
+    let config_dir = bep.join("config");
+    let raw_configs = read_all_config_contents(bepinex_path);
+    let mut configs: HashMap<String, ConfigEntry> = HashMap::new();
+    for (name, content) in &raw_configs {
+        let h = content_hash(content);
+        let updated_at = match state.configs.get(name) {
+            Some(rev) if rev.hash == h => rev.updated_at.clone(), // unchanged — keep watermark
+            Some(_) => now.clone(),                               // content changed — bump
+            None => mtime_iso(&config_dir.join(name)),            // first sight — seed from mtime
+        };
+        state
+            .configs
+            .insert(name.clone(), FileRev { hash: h, updated_at: updated_at.clone() });
+        configs.insert(name.clone(), ConfigEntry { content: content.clone(), updated_at });
+    }
+    // Forget ledger entries for configs that no longer exist locally.
+    state.configs.retain(|k, _| raw_configs.contains_key(k));
+
+    // --- Trainer state: same treatment, single entry ---
+    let trainer_state = match read_trainer_content(bepinex_path) {
+        Some(content) => {
+            let h = content_hash(&content);
+            let updated_at = match &state.trainer_state {
+                Some(rev) if rev.hash == h => rev.updated_at.clone(),
+                Some(_) => now.clone(),
+                None => {
+                    let p = bep
+                        .parent()
+                        .unwrap_or_else(|| Path::new("."))
+                        .join("trainer_state.json");
+                    mtime_iso(&p)
+                }
+            };
+            state.trainer_state = Some(FileRev { hash: h, updated_at: updated_at.clone() });
+            Some(ConfigEntry { content, updated_at })
+        }
+        None => {
+            state.trainer_state = None;
+            None
+        }
+    };
+
+    // --- Mods: honest fingerprint watermark (persisted, so it no longer
+    //     resets to `now` on restart the way the old in-memory cache did) ---
+    let fp = mods_fingerprint(&mods, &ts_mods);
+    let mods_updated_at = match &state.mods {
+        Some(m) if m.fingerprint == fp => m.updated_at.clone(),
+        _ => now.clone(),
+    };
+    state.mods = Some(ModRev { fingerprint: fp, updated_at: mods_updated_at.clone() });
+
+    save_profile_state(profile_id, &state);
 
     Ok(SyncProfileBundle {
         profile_id: profile_id.to_string(),
         profile_name: profile_name.to_string(),
-        last_updated: iso_now(),
+        last_updated: now,
         mods,
         thunderstore_mods: ts_mods,
         configs,
         trainer_state,
         mods_updated_at,
     })
+}
+
+/// Scan a profile's plugins/ + disabled_plugins/ into a mod list (enabled flag
+/// set per directory). Shared by `snapshot_bundle` and the pull's post-toggle
+/// fingerprint recompute.
+fn scan_profile_mods(bepinex_path: &str) -> Result<Vec<SyncModEntry>, String> {
+    let bep = Path::new(bepinex_path);
+    let mut mods = Vec::new();
+    let plugins_dir = bep.join("plugins");
+    if plugins_dir.exists() {
+        scan_mods_for_sync(&plugins_dir, true, &mut mods)?;
+    }
+    let disabled_dir = bep.join("disabled_plugins");
+    if disabled_dir.exists() {
+        scan_mods_for_sync(&disabled_dir, false, &mut mods)?;
+    }
+    Ok(mods)
 }
 
 fn scan_mods_for_sync(dir: &Path, enabled: bool, mods: &mut Vec<SyncModEntry>) -> Result<(), String> {
@@ -466,13 +562,13 @@ struct TsWrappedState { mods: Vec<TsModEntry> }
 #[derive(Deserialize)]
 struct TsModEntry { full_name: String, version: String, folder_name: String }
 
-/// Read ALL .cfg files from config/ into a HashMap<filename, ConfigEntry>.
-/// Each entry's `updated_at` reflects the file's mtime, so per-config merge
-/// can pick the latest writer when two devices edit different .cfg files in
-/// the same profile concurrently.
-fn read_all_configs(bepinex_path: &str) -> HashMap<String, ConfigEntry> {
+/// Read ALL .cfg files from config/ into a HashMap<filename, content>. The
+/// per-file `updated_at` watermark is assigned by the ledger in
+/// `snapshot_bundle`, not derived here — this just returns raw content keyed
+/// by filename.
+fn read_all_config_contents(bepinex_path: &str) -> HashMap<String, String> {
     let config_dir = Path::new(bepinex_path).join("config");
-    let mut configs = HashMap::new();
+    let mut out = HashMap::new();
     if let Ok(entries) = fs::read_dir(&config_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
@@ -480,32 +576,23 @@ fn read_all_configs(bepinex_path: &str) -> HashMap<String, ConfigEntry> {
                 let file_name = entry.file_name().to_string_lossy().to_string();
                 if file_name.to_lowercase().ends_with(".cfg") {
                     if let Ok(content) = fs::read_to_string(&path) {
-                        configs.insert(
-                            file_name,
-                            ConfigEntry {
-                                content,
-                                updated_at: mtime_iso(&path),
-                            },
-                        );
+                        out.insert(file_name, content);
                     }
                 }
             }
         }
     }
-    configs
+    out
 }
 
-/// Read trainer_state.json from the profile directory (parent of BepInEx path),
-/// returning a `ConfigEntry` so it slots into the same per-file merge logic.
-fn read_trainer_state(bepinex_path: &str) -> Option<ConfigEntry> {
+/// Read trainer_state.json content from the profile directory (parent of the
+/// BepInEx path). Watermarking is handled by the ledger in `snapshot_bundle`.
+fn read_trainer_content(bepinex_path: &str) -> Option<String> {
     let path = Path::new(bepinex_path)
         .parent()
         .unwrap_or_else(|| Path::new("."))
         .join("trainer_state.json");
-    fs::read_to_string(&path).ok().map(|content| ConfigEntry {
-        content,
-        updated_at: mtime_iso(&path),
-    })
+    fs::read_to_string(&path).ok()
 }
 
 /// Write trainer_state.json to the profile directory (parent of BepInEx path).
@@ -517,27 +604,44 @@ fn write_trainer_state(bepinex_path: &str, content: &str) {
     let _ = fs::write(&path, content);
 }
 
-/// Compute a single content hash of the entire bundle for quick change detection.
-fn bundle_content_hash(bundle: &SyncProfileBundle) -> String {
-    // Hash mods + configs together — if anything changed, hash changes
-    let json = serde_json::to_string(bundle).unwrap_or_default();
-    format!("{:016x}", fnv1a_hash(json.as_bytes()))
-}
-
-/// Bundle signature with watermark fields zeroed and mod arrays sorted so the
-/// hash is stable across snapshot orderings. Used by the push short-circuit
-/// to detect "merged matches remote" and skip the redundant PUT — this is what
-/// makes the 30s poll-push loop cheap when nothing has changed. Both
-/// `last_updated` and `mods_updated_at` are excluded: they are metadata that
-/// can differ between devices with identical content, so including them would
-/// trigger spurious pushes.
+/// Content-only signature of a bundle: hashes the CONFIG CONTENT + mod set and
+/// excludes every watermark (`last_updated`, `mods_updated_at`, and the per-file
+/// `updated_at`). Two snapshots with identical content but different edit-time
+/// watermarks therefore hash the same, so:
+///   * the push dirty-cache treats a BepInEx relaunch (which can reshuffle
+///     watermarks but not content) as a no-op, and
+///   * the "merged matches remote" short-circuit skips the PUT whenever the
+///     content already agrees, regardless of whose watermark is newer.
+/// Order-independent — configs and mods are sorted before hashing.
 fn bundle_content_signature(bundle: &SyncProfileBundle) -> String {
-    let mut b = bundle.clone();
-    b.last_updated = String::new();
-    b.mods_updated_at = String::new();
-    b.mods.sort_by(|x, y| x.name.cmp(&y.name).then(x.file_name.cmp(&y.file_name)));
-    b.thunderstore_mods.sort_by(|x, y| x.full_name.cmp(&y.full_name));
-    bundle_content_hash(&b)
+    let mut parts: Vec<String> = Vec::new();
+
+    let mut cfg: Vec<(&String, &ConfigEntry)> = bundle.configs.iter().collect();
+    cfg.sort_by(|a, b| a.0.cmp(b.0));
+    for (name, entry) in cfg {
+        parts.push(format!("cfg:{}={}", name, content_hash(&entry.content)));
+    }
+    if let Some(t) = &bundle.trainer_state {
+        parts.push(format!("trainer={}", content_hash(&t.content)));
+    }
+
+    let mut mods: Vec<String> = bundle
+        .mods
+        .iter()
+        .map(|m| format!("mod:{}:{}:{}", m.name, m.file_name, m.enabled))
+        .collect();
+    mods.sort();
+    parts.extend(mods);
+
+    let mut ts: Vec<String> = bundle
+        .thunderstore_mods
+        .iter()
+        .map(|t| format!("ts:{}:{}", t.full_name, t.version))
+        .collect();
+    ts.sort();
+    parts.extend(ts);
+
+    format!("{:016x}", fnv1a_hash(parts.join("|").as_bytes()))
 }
 
 /// Stable signature of the profile list inside a manifest. Used by the
@@ -1093,85 +1197,135 @@ fn sync_pull_bundle_impl(profile_id: String, bepinex_path: String) -> Result<Syn
         .map_err(|_| format!("No cloud bundle found for profile {}", profile_id))?;
     let remote: SyncProfileBundle = parse_bundle(&content)?;
 
-    // 2. Apply configs — only overwrite local when remote's per-file
-    //    `updated_at` is newer (or equal) than local's mtime, OR the local
-    //    file doesn't exist. A local edit made between push and pull is
-    //    strictly newer than remote and must not be clobbered; the next push
-    //    will then propagate it via per-config merge.
+    // Reconcile the ledger with disk FIRST. This assigns every local file an
+    // honest watermark and, crucially, bumps any un-pushed local edit to `now`
+    // — so a stale remote value cannot clobber a fresh local edit below. It
+    // also gives us the current local mod set for the toggle pass.
+    let local_bundle = snapshot_bundle(&profile_id, &remote.profile_name, &bepinex_path)?;
+    let mut state = load_profile_state(&profile_id);
+
+    // 2. Apply configs — remote wins a file only when its watermark is strictly
+    //    newer than the honest local watermark recorded in the ledger. No
+    //    filesystem mtime is consulted, so a BepInEx relaunch that merely
+    //    re-touched the local .cfg can no longer reject an inbound edit (the
+    //    root-cause bug), and a stale device can no longer push its old config
+    //    back over a real edit.
     let config_dir = Path::new(&bepinex_path).join("config");
     fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
 
     let mut configs_updated: u32 = 0;
     for (file_name, remote_entry) in &remote.configs {
         let local_path = config_dir.join(file_name);
-        let local_exists = local_path.exists();
         let local_content = fs::read_to_string(&local_path).unwrap_or_default();
+        let remote_hash = content_hash(&remote_entry.content);
+
         if local_content == remote_entry.content {
+            // Already in agreement — record it in the ledger (adopt the higher
+            // watermark) so we don't try to push the same content back.
+            let entry = state.configs.entry(file_name.clone()).or_default();
+            entry.hash = remote_hash;
+            if remote_entry.updated_at > entry.updated_at {
+                entry.updated_at = remote_entry.updated_at.clone();
+            }
             continue;
         }
-        if local_exists {
-            let local_mtime = mtime_iso(&local_path);
-            if local_mtime > remote_entry.updated_at {
-                app_log(&format!(
-                    "Sync pull: skip {} — local mtime {} > remote {}",
-                    file_name, local_mtime, remote_entry.updated_at
-                ));
-                continue;
-            }
+
+        let local_wm = state
+            .configs
+            .get(file_name)
+            .map(|r| r.updated_at.clone())
+            .unwrap_or_default();
+        // Keep local when its watermark is newer or equal (equal ⇒ same instant,
+        // prefer the copy already on disk). An empty local_wm means we have
+        // never tracked this file, so let the genuine inbound copy land.
+        if !local_wm.is_empty() && remote_entry.updated_at <= local_wm {
+            app_log(&format!(
+                "Sync pull: keep local {} (local wm {} >= remote {})",
+                file_name, local_wm, remote_entry.updated_at
+            ));
+            continue;
         }
+
         fs::write(&local_path, &remote_entry.content).map_err(|e| e.to_string())?;
-        // Restamp the freshly-written file to the remote's edit time. Without
-        // this, fs::write sets mtime = now, so the pulled file looks "newer"
-        // than its true edit time and the NEXT pull's `local_mtime > remote`
-        // guard wrongly skips a genuine remote update — the reason configs
-        // stopped propagating device-to-device.
-        restamp_file_mtime(&local_path, &remote_entry.updated_at);
+        state.configs.insert(
+            file_name.clone(),
+            FileRev { hash: remote_hash, updated_at: remote_entry.updated_at.clone() },
+        );
         configs_updated += 1;
-        app_log(&format!("Sync pull config: {}", file_name));
+        app_log(&format!(
+            "Sync pull config: {} (remote wm {})",
+            file_name, remote_entry.updated_at
+        ));
     }
 
-    // 2b. Apply trainer state with the same per-entry watermark guard.
+    // 2b. Apply trainer state with the same ledger-watermark guard.
     if let Some(ref remote_trainer) = remote.trainer_state {
-        let local_trainer = read_trainer_state(&bepinex_path);
-        let local_content = local_trainer
-            .as_ref()
-            .map(|t| t.content.as_str())
-            .unwrap_or("");
-        let local_mtime = local_trainer
-            .as_ref()
-            .map(|t| t.updated_at.as_str())
-            .unwrap_or("");
-        if local_content != remote_trainer.content
-            && (local_trainer.is_none() || local_mtime <= remote_trainer.updated_at.as_str())
-        {
-            write_trainer_state(&bepinex_path, &remote_trainer.content);
-            let trainer_path = Path::new(&bepinex_path)
-                .parent()
-                .unwrap_or_else(|| Path::new("."))
-                .join("trainer_state.json");
-            restamp_file_mtime(&trainer_path, &remote_trainer.updated_at);
-            configs_updated += 1;
-            app_log("Sync pull: trainer_state.json");
-        }
-    }
-
-    // 3. Toggle mods (enabled/disabled)
-    let local_bundle = snapshot_bundle(&profile_id, &remote.profile_name, &bepinex_path)?;
-    let mut toggled_mods = Vec::new();
-    for remote_mod in &remote.mods {
-        if let Some(local_mod) = local_bundle.mods.iter().find(|m| m.name == remote_mod.name) {
-            if local_mod.enabled != remote_mod.enabled {
-                toggle_mod_sync(&bepinex_path, &remote_mod.file_name, remote_mod.enabled)?;
-                toggled_mods.push(remote_mod.name.clone());
+        let local_content = read_trainer_content(&bepinex_path).unwrap_or_default();
+        let remote_hash = content_hash(&remote_trainer.content);
+        if local_content == remote_trainer.content {
+            let entry = state.trainer_state.get_or_insert_with(FileRev::default);
+            entry.hash = remote_hash;
+            if remote_trainer.updated_at > entry.updated_at {
+                entry.updated_at = remote_trainer.updated_at.clone();
+            }
+        } else {
+            let local_wm = state
+                .trainer_state
+                .as_ref()
+                .map(|r| r.updated_at.clone())
+                .unwrap_or_default();
+            if local_wm.is_empty() || remote_trainer.updated_at > local_wm {
+                write_trainer_state(&bepinex_path, &remote_trainer.content);
+                state.trainer_state = Some(FileRev {
+                    hash: remote_hash,
+                    updated_at: remote_trainer.updated_at.clone(),
+                });
+                configs_updated += 1;
+                app_log("Sync pull: trainer_state.json");
             }
         }
     }
 
-    // 4. Find missing mods
+    // 3. Toggle mods (enabled/disabled) — only when the remote mod set changed
+    //    more recently than ours (honest, persisted watermark). Otherwise our
+    //    local toggles are the fresher truth and the push will propagate them.
+    let local_mods_wm = state
+        .mods
+        .as_ref()
+        .map(|m| m.updated_at.clone())
+        .unwrap_or_default();
+    let remote_mods_newer = local_mods_wm.is_empty() || remote.mods_updated_at > local_mods_wm;
+    let mut toggled_mods = Vec::new();
+    if remote_mods_newer {
+        for remote_mod in &remote.mods {
+            if let Some(local_mod) = local_bundle.mods.iter().find(|m| m.name == remote_mod.name) {
+                if local_mod.enabled != remote_mod.enabled {
+                    toggle_mod_sync(&bepinex_path, &remote_mod.file_name, remote_mod.enabled)?;
+                    toggled_mods.push(remote_mod.name.clone());
+                }
+            }
+        }
+        // Stamp the ledger with our POST-toggle disk fingerprint carrying the
+        // remote's watermark: our set now derives from remote's edit at that
+        // instant, so we must not claim we edited it (which would make us win
+        // future merges and re-toggle the peer). A genuine local toggle later
+        // changes the fingerprint → bumps to `now` → local wins, as intended.
+        let post_mods = scan_profile_mods(&bepinex_path)?;
+        let post_ts = read_thunderstore_tracking(&bepinex_path);
+        state.mods = Some(ModRev {
+            fingerprint: mods_fingerprint(&post_mods, &post_ts),
+            updated_at: remote.mods_updated_at.clone(),
+        });
+    }
+
+    // 4. Find missing mods (present in remote set, absent on disk).
     let missing_mods: Vec<String> = remote.mods.iter()
         .filter(|rm| !local_bundle.mods.iter().any(|lm| lm.name == rm.name))
         .map(|m| m.name.clone())
         .collect();
+
+    // Persist the reconciled ledger before returning.
+    save_profile_state(&profile_id, &state);
 
     // 5. Update local settings
     let mut settings = load_sync_settings();
@@ -1311,22 +1465,39 @@ fn sync_check_remote_changed_impl() -> Result<bool, String> {
 
     match github_get_file(&path) {
         Ok((content, _)) => {
-            if let Ok(manifest) = serde_json::from_str::<SyncManifest>(&content) {
-                if manifest.machine_id != settings.machine_id {
-                    if let Some(ref last_pull) = settings.last_pull {
-                        Ok(manifest.last_sync > *last_pull)
-                    } else {
-                        Ok(true)
-                    }
-                } else {
-                    Ok(false)
+            // De-BOM defensively (a BOM'd manifest otherwise fails to parse and
+            // we'd silently never pull).
+            if let Ok(manifest) =
+                serde_json::from_str::<SyncManifest>(content.trim_start_matches('\u{feff}'))
+            {
+                // Our own last write — nothing to pull.
+                if manifest.machine_id == settings.machine_id {
+                    return Ok(false);
                 }
+                // Clock-skew-proof: a *different* last_sync string than the one
+                // we last reconciled means a peer changed something. Equality,
+                // not `>`, so a device whose clock runs ahead can't mask a real
+                // change (the old `manifest.last_sync > last_pull` compared the
+                // pusher's clock against the puller's — a genuine bug).
+                Ok(Some(manifest.last_sync.as_str()) != settings.last_seen_remote_sync.as_deref())
             } else {
                 Ok(false)
             }
         }
         Err(_) => Ok(false),
     }
+}
+
+/// Record the remote manifest's `last_sync` value we just reconciled against.
+/// Called by the frontend at the end of a successful pull pass so the next
+/// `sync_check_remote_changed` compares by equality and stops re-pulling until
+/// a peer bumps it again.
+#[command]
+pub fn sync_mark_remote_seen(last_sync: String) -> Result<(), String> {
+    let mut settings = load_sync_settings();
+    settings.last_seen_remote_sync = Some(last_sync);
+    save_sync_settings(&settings)?;
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -2226,21 +2397,26 @@ mod megalist_merge_tests {
     /// loses (because the peer revived/edited the entity later).
     #[test]
     fn tombstone_propagates_when_newer() {
-        // Local deletes the list at t=10
+        // Anchor timestamps to "now" so the tombstone stays inside the 30-day
+        // GC window whenever the suite runs. The old hardcoded April-2026 dates
+        // aged past the TTL and made this a time-bomb (it began failing once the
+        // wall clock passed 30 days after those dates).
+        let created = iso_days_ago(2);
+        let t_old = iso_days_ago(1); // remote last live
+        let t_new = iso_now(); // local delete — newer than remote
         let local = json!({
-            "version": 1, "device_id": "a", "updated_at": "2026-04-25T00:00:10Z",
+            "version": 1, "device_id": "a", "updated_at": t_new,
             "lists": [
-                { "id": "L1", "name": "Foo", "createdAt": "2026-04-25T00:00:00Z",
-                  "updatedAt": "2026-04-25T00:00:10Z", "deletedAt": "2026-04-25T00:00:10Z",
+                { "id": "L1", "name": "Foo", "createdAt": created,
+                  "updatedAt": t_new, "deletedAt": t_new,
                   "items": [] }
             ]
         });
-        // Remote still has the live list, last seen at t=5
         let remote = json!({
-            "version": 1, "device_id": "b", "updated_at": "2026-04-25T00:00:05Z",
+            "version": 1, "device_id": "b", "updated_at": t_old,
             "lists": [
-                { "id": "L1", "name": "Foo", "createdAt": "2026-04-25T00:00:00Z",
-                  "updatedAt": "2026-04-25T00:00:05Z", "items": [] }
+                { "id": "L1", "name": "Foo", "createdAt": created,
+                  "updatedAt": t_old, "items": [] }
             ]
         });
         let merged = merge_blobs(local, remote);
@@ -2518,5 +2694,39 @@ mod profile_bundle_merge_tests {
             "local-newer bundle's mod set must win, got {:?}", names);
         assert!(!names.contains(&"MegaHoe".to_string()),
             "stale remote mod set must NOT contribute, got {:?}", names);
+    }
+
+    /// The push short-circuit signature must be watermark-agnostic: two bundles
+    /// with identical CONTENT but different edit-time watermarks (the churn a
+    /// BepInEx relaunch used to produce) hash the same, so an idle poll-push
+    /// doesn't fire a redundant PUT. A genuine content change still moves it.
+    #[test]
+    fn content_signature_ignores_watermarks() {
+        let a = make_bundle(
+            "default",
+            "2026-04-25T00:00:10Z",
+            &[("MegaShot.cfg", "shot=same", "2026-04-25T00:00:10Z")],
+        );
+        let b = make_bundle(
+            "default",
+            "2026-05-01T08:00:00Z",
+            &[("MegaShot.cfg", "shot=same", "2026-05-01T07:00:00Z")],
+        );
+        assert_eq!(
+            bundle_content_signature(&a),
+            bundle_content_signature(&b),
+            "identical content with different watermarks must share a signature"
+        );
+
+        let c = make_bundle(
+            "default",
+            "2026-04-25T00:00:10Z",
+            &[("MegaShot.cfg", "shot=CHANGED", "2026-04-25T00:00:10Z")],
+        );
+        assert_ne!(
+            bundle_content_signature(&a),
+            bundle_content_signature(&c),
+            "a real content change must change the signature"
+        );
     }
 }

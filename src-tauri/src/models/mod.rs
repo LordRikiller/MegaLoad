@@ -146,4 +146,9 @@ pub struct SyncSettings {
     pub last_push: Option<String>,
     pub last_pull: Option<String>,
     pub machine_id: String,
+    /// The remote manifest `last_sync` value this device last reconciled
+    /// against. Change-detection compares by equality to this (clock-skew-proof)
+    /// instead of the old `last_sync > last_pull` cross-clock comparison.
+    #[serde(default)]
+    pub last_seen_remote_sync: Option<String>,
 }

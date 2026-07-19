@@ -971,6 +971,9 @@ export const syncPullBundle = (profileId: string, bepinexPath: string) =>
 export const syncCheckRemoteChanged = () =>
   invoke<boolean>("sync_check_remote_changed");
 
+export const syncMarkRemoteSeen = (lastSync: string) =>
+  invoke<void>("sync_mark_remote_seen", { lastSync });
+
 export const syncInstallAllMods = (bepinexPath: string) =>
   invoke<number>("sync_install_all_mods", { bepinexPath });
 

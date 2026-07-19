@@ -7,6 +7,7 @@ import {
   syncPullBundle,
   syncPullProfileState,
   syncCheckRemoteChanged,
+  syncMarkRemoteSeen,
   syncGetSettings,
   syncInstallAllMods,
   syncInstallThunderstoreMods,
@@ -201,6 +202,17 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       }
 
       await useProfileStore.getState().fetchProfiles();
+
+      // Record the manifest beacon we just reconciled against so the next
+      // change-detection poll compares by equality and stops re-pulling until
+      // a peer bumps it again. Clock-skew-proof (no cross-device `>` compare).
+      if (manifest.last_sync) {
+        try {
+          await syncMarkRemoteSeen(manifest.last_sync);
+        } catch {
+          // Non-critical — worst case is one redundant pull next poll.
+        }
+      }
 
       if (profilesProcessed > 0) {
         addToast({
