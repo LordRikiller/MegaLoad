@@ -80,6 +80,7 @@ export function Settings() {
     setAutoSync: setSyncAutoSync,
     pushAllProfiles,
     pullAllProfiles,
+    makeThisDeviceCanonical,
   } = useSyncStore();
   const [valheimPath, setValheimPath] = useState("");
   const [detecting, setDetecting] = useState(false);
@@ -523,6 +524,40 @@ export function Settings() {
                 )}
                 Pull All
               </button>
+            </div>
+
+            {/* Make this device canonical — one-time divergence fix */}
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-2.5">
+              <button
+                onClick={async () => {
+                  if (
+                    !confirm(
+                      "Make THIS device the source of truth?\n\nEvery mod config on this machine will be pushed to the cloud as canonical, and your other devices will pull these versions on their next sync (overwriting theirs).\n\nUse this once, on the machine whose configs are correct, to settle the first sync after updating."
+                    )
+                  )
+                    return;
+                  try {
+                    await makeThisDeviceCanonical();
+                    setToast("This device is now the source of truth");
+                  } catch (e) {
+                    setToast(`Canonical sync failed: ${e}`);
+                  }
+                }}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+              >
+                {syncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Shield className="w-3.5 h-3.5" />
+                )}
+                Make this device canonical
+              </button>
+              <p className="mt-1.5 text-[10px] text-zinc-500 leading-relaxed">
+                One-time fix for the first sync after updating both devices: pushes this
+                machine's configs as the authoritative set. Run it on the device whose
+                configs are correct.
+              </p>
             </div>
 
             {/* Sync progress */}

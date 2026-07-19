@@ -1500,6 +1500,52 @@ pub fn sync_mark_remote_seen(last_sync: String) -> Result<(), String> {
     Ok(())
 }
 
+/// One-time "make this device canonical" for a profile: reconcile the ledger
+/// with disk, then stamp EVERY tracked watermark (each config, trainer_state,
+/// the mod set) to a single `now`. Every file on this device then wins its
+/// per-file merge, so a subsequent push publishes this device's whole config
+/// set as the truth and peers pull it — resolving the first-run divergence with
+/// no per-file poking. It does NOT delete cloud configs this device lacks (a
+/// mod installed only on the other device keeps its config); it only makes the
+/// configs this device *has* authoritative. The caller should push afterwards.
+#[command]
+pub async fn sync_mark_profile_canonical(profile_id: String, bepinex_path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || sync_mark_profile_canonical_impl(profile_id, bepinex_path))
+        .await
+        .map_err(|e| format!("sync_mark_profile_canonical task panicked: {}", e))?
+}
+
+fn sync_mark_profile_canonical_impl(profile_id: String, bepinex_path: String) -> Result<(), String> {
+    let settings = load_sync_settings();
+    if !settings.enabled {
+        return Err("Cloud sync is not enabled".to_string());
+    }
+    // Reconcile the ledger with disk first (this also seeds any first-sight
+    // files), then stamp every watermark to a single `now` so nothing on this
+    // device can lose a merge on content it currently holds.
+    let _ = snapshot_bundle(&profile_id, "", &bepinex_path)?;
+    let mut state = load_profile_state(&profile_id);
+    let now = iso_now();
+    for rev in state.configs.values_mut() {
+        rev.updated_at = now.clone();
+    }
+    if let Some(t) = state.trainer_state.as_mut() {
+        t.updated_at = now.clone();
+    }
+    if let Some(m) = state.mods.as_mut() {
+        m.updated_at = now.clone();
+    }
+    let cfg_count = state.configs.len();
+    save_profile_state(&profile_id, &state);
+    // The next push must reconcile from scratch, not trust a cached signature.
+    invalidate_push_cache(&profile_id);
+    app_log(&format!(
+        "Sync: marked profile {} canonical — {} configs stamped {}",
+        profile_id, cfg_count, now
+    ));
+    Ok(())
+}
+
 // ---------------------------------------------------------------------------
 // Player Data Sync (v2 — binary-safe, mtime-aware)
 // ---------------------------------------------------------------------------

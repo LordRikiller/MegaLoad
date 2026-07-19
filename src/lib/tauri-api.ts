@@ -974,6 +974,9 @@ export const syncCheckRemoteChanged = () =>
 export const syncMarkRemoteSeen = (lastSync: string) =>
   invoke<void>("sync_mark_remote_seen", { lastSync });
 
+export const syncMarkProfileCanonical = (profileId: string, bepinexPath: string) =>
+  invoke<void>("sync_mark_profile_canonical", { profileId, bepinexPath });
+
 export const syncInstallAllMods = (bepinexPath: string) =>
   invoke<number>("sync_install_all_mods", { bepinexPath });
 

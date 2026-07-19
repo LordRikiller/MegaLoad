@@ -1,11 +1,11 @@
 {
-  "version": "1.10.61",
-  "notes": "Cloud sync rewrite: PC-to-PC config, mod-status and profile sync now works reliably. Config versioning no longer relies on filesystem modified-time (which BepInEx bumps on every game launch, so the machine that ran the game last used to win every merge and overwrite the other device's real edits). Sync now tracks genuine content changes via a persistent per-profile ledger, mod enabled/disabled state survives restarts, and change-detection is clock-skew-proof.",
-  "pub_date": "2026-07-19T06:34:39Z",
+  "version": "1.10.62",
+  "notes": "Adds a one-click 'Make this device canonical' button (Settings > Cloud Sync) to settle the first cross-device sync after updating: it stamps every config on this machine as the source of truth and pushes, so your other devices pull these versions. Builds on the v1.10.61 sync rewrite that replaced fragile mtime-based config versioning with an honest content-hash ledger.",
+  "pub_date": "2026-07-19T06:49:48Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZodTZHbVhYRHA4UnllZnVRdEdXa3R3enVjOXQ5YjdwWTVwS09YVUhoSDFsMnYxZ0Q5cEFveUQzRUZha0tDcnhNMVNSZW1LbEFtV3ZnclptcUw3Y3drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDQyNzE5CWZpbGU6TWVnYUxvYWRfMS4xMC42MV94NjQtc2V0dXAubnNpcy56aXAKYS9JMWRRRTgxR1YzSHZyTXNFdlh2NDFQRXN0TDdOM3E0aDRxZE9GZEFZUE1udkVTVDBmYXpxWnJuVmtmdGFPQTJvTkhzK0p6Y2pzdGpZcG9nRGVrRGc9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.61/MegaLoad_1.10.61_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUdCN2tvWWFWZWFvNXdyTWdEK1UwcEJOZDNsN0RWN2J0K2NRd3pXd1F3RkRueVBwdnM0Q2NJbUQxMFBGT2RiakQ4MzZ2QzBKNjNMRXVuUkFqMVJMdGdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDQzNzczCWZpbGU6TWVnYUxvYWRfMS4xMC42Ml94NjQtc2V0dXAubnNpcy56aXAKazFJYXpjdGh5YU5BaWNwUEhJU1hFR3U5MUtHMjgwSTlmYVBVZFROdTRGYzRBODNhMWhGaDJmUE5MU3BxN2pBNlc2TUI2QVd4WUttMER3VWxQeitMQWc9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.62/MegaLoad_1.10.62_x64-setup.nsis.zip"
     }
   }
 }

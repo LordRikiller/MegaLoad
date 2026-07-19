@@ -8,6 +8,7 @@ import {
   syncPullProfileState,
   syncCheckRemoteChanged,
   syncMarkRemoteSeen,
+  syncMarkProfileCanonical,
   syncGetSettings,
   syncInstallAllMods,
   syncInstallThunderstoreMods,
@@ -35,6 +36,7 @@ interface SyncState {
   pushAllProfiles: () => Promise<void>;
   pullAllProfiles: () => Promise<void>;
   checkForRemoteChanges: () => Promise<boolean>;
+  makeThisDeviceCanonical: () => Promise<void>;
 }
 
 export const useSyncStore = create<SyncState>((set, get) => ({
@@ -237,6 +239,39 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       return await syncCheckRemoteChanged();
     } catch {
       return false;
+    }
+  },
+
+  // One-time migration helper. Stamps every config/mod watermark on THIS device
+  // to "now" for all profiles, then pushes — making this machine's whole config
+  // set the source of truth so peers pull it on their next sync. Resolves the
+  // first-run divergence without per-mod poking.
+  makeThisDeviceCanonical: async () => {
+    const { enabled, syncing } = get();
+    if (!enabled || syncing) return;
+
+    const addToast = useToastStore.getState().addToast;
+    const profiles = useProfileStore.getState().profiles;
+    if (profiles.length === 0) return;
+
+    set({ syncing: true, syncProgress: "Marking this device as canonical...", error: null });
+    try {
+      for (const p of profiles) {
+        set({ syncProgress: `Marking "${p.name}" canonical...` });
+        await syncMarkProfileCanonical(p.id, p.bepinex_path);
+      }
+      // Release the sync lock before pushAllProfiles (it manages its own).
+      set({ syncing: false, syncProgress: null });
+      await get().pushAllProfiles();
+      addToast({
+        type: "success",
+        title: "This device is now canonical",
+        message: `${profiles.length} profile${profiles.length !== 1 ? "s" : ""} set as the source of truth. Other devices will pull these configs on their next sync.`,
+        duration: 6000,
+      });
+    } catch (e) {
+      set({ syncing: false, syncProgress: null, error: String(e) });
+      addToast({ type: "warning", title: "Canonical sync failed", message: String(e), duration: 6000 });
     }
   },
 }));
