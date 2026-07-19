@@ -930,8 +930,11 @@ export interface SyncProfileState {
 export interface SyncPullResult {
   profile_name: string;
   toggled_mods: string[];
+  installed_mods: string[];
+  uninstalled_mods: string[];
   configs_updated: number;
   missing_mods: string[];
+  thunderstore_mods: SyncThunderstoreMod[];
   last_updated: string;
 }
 

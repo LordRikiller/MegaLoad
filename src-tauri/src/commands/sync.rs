@@ -125,12 +125,33 @@ enum ConfigContentRaw {
     Legacy(String),
 }
 
+/// A mod tombstone — a mod that was uninstalled on some device. Carried in a
+/// SEPARATE bundle field (`removed_mods`) rather than as a flag on SyncModEntry
+/// so that older clients, which don't know the field, simply ignore it (they
+/// keep the old "mods = present set" semantics) instead of mistaking a tombstone
+/// for an installed mod. New clients uninstall these on pull when the tombstone
+/// is newer than their local copy (mirror-uninstall).
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RemovedMod {
+    pub name: String,
+    #[serde(default)]
+    pub file_name: String,
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub source: String,
+    pub updated_at: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SyncProfileBundle {
     pub profile_id: String,
     pub profile_name: String,
     pub last_updated: String,
     pub mods: Vec<SyncModEntry>,
+    /// Mod tombstones — mods removed on some device, for mirror-uninstall.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub removed_mods: Vec<RemovedMod>,
     pub thunderstore_mods: Vec<SyncThunderstoreMod>,
     /// Config file contents keyed by filename (e.g. "MegaShot.cfg" → ConfigEntry).
     /// v2 schema. Legacy v1 bundles were `HashMap<String, String>` — see
@@ -157,6 +178,8 @@ struct RawSyncProfileBundle {
     last_updated: String,
     #[serde(default)]
     mods: Vec<SyncModEntry>,
+    #[serde(default)]
+    removed_mods: Vec<RemovedMod>,
     #[serde(default)]
     thunderstore_mods: Vec<SyncThunderstoreMod>,
     #[serde(default)]
@@ -202,11 +225,35 @@ fn parse_bundle(content: &str) -> Result<SyncProfileBundle, String> {
     } else {
         raw.mods_updated_at
     };
+    // Seed each mod's per-mod watermark from the bundle-level watermark when a
+    // pre-per-mod bundle (v1.10.62 and earlier) left it empty, so LWW has a
+    // usable timestamp for legacy entries.
+    let mods: Vec<SyncModEntry> = raw
+        .mods
+        .into_iter()
+        .map(|mut m| {
+            if m.updated_at.is_empty() {
+                m.updated_at = mods_updated_at.clone();
+            }
+            m
+        })
+        .collect();
+    let removed_mods: Vec<RemovedMod> = raw
+        .removed_mods
+        .into_iter()
+        .map(|mut r| {
+            if r.updated_at.is_empty() {
+                r.updated_at = mods_updated_at.clone();
+            }
+            r
+        })
+        .collect();
     Ok(SyncProfileBundle {
         profile_id: raw.profile_id,
         profile_name: raw.profile_name,
         last_updated: raw.last_updated,
-        mods: raw.mods,
+        mods,
+        removed_mods,
         thunderstore_mods: raw.thunderstore_mods,
         configs,
         trainer_state,
@@ -298,20 +345,6 @@ fn invalidate_push_cache(profile_id: &str) {
     }
 }
 
-/// Stable fingerprint of a profile's installed mod set (enabled DLLs +
-/// thunderstore tracking). Order-independent.
-fn mods_fingerprint(mods: &[SyncModEntry], ts_mods: &[SyncThunderstoreMod]) -> String {
-    let mut parts: Vec<String> = mods
-        .iter()
-        .map(|m| format!("{}:{}:{}", m.name, m.file_name, m.enabled))
-        .collect();
-    for t in ts_mods {
-        parts.push(format!("ts:{}:{}", t.full_name, t.version));
-    }
-    parts.sort();
-    format!("{:016x}", fnv1a_hash(parts.join("|").as_bytes()))
-}
-
 // ---------------------------------------------------------------------------
 // Persistent per-profile sync-state ledger — the honest content watermark
 // ---------------------------------------------------------------------------
@@ -343,10 +376,20 @@ struct FileRev {
     updated_at: String,
 }
 
-/// Mod-set revision: order-independent fingerprint + when the set last changed.
+/// Per-mod revision: last-known state of one mod + when it last changed.
+/// `removed = true` is a tombstone (the mod was uninstalled here). Keyed by mod
+/// name in the ledger. Drives per-mod LWW so installs, uninstalls and enable
+/// flips each propagate independently instead of an all-or-nothing mod list.
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 struct ModRev {
-    fingerprint: String,
+    #[serde(default)]
+    file_name: String,
+    #[serde(default)]
+    source: String,
+    #[serde(default)]
+    enabled: bool,
+    #[serde(default)]
+    removed: bool,
     updated_at: String,
 }
 
@@ -358,8 +401,9 @@ struct ProfileSyncState {
     configs: HashMap<String, FileRev>,
     #[serde(default)]
     trainer_state: Option<FileRev>,
+    /// Per-mod ledger keyed by mod name (present mods + tombstones).
     #[serde(default)]
-    mods: Option<ModRev>,
+    mods: HashMap<String, ModRev>,
 }
 
 fn sync_state_dir() -> PathBuf {
@@ -461,14 +505,64 @@ fn snapshot_bundle(profile_id: &str, profile_name: &str, bepinex_path: &str) -> 
         }
     };
 
-    // --- Mods: honest fingerprint watermark (persisted, so it no longer
-    //     resets to `now` on restart the way the old in-memory cache did) ---
-    let fp = mods_fingerprint(&mods, &ts_mods);
-    let mods_updated_at = match &state.mods {
-        Some(m) if m.fingerprint == fp => m.updated_at.clone(),
-        _ => now.clone(),
-    };
-    state.mods = Some(ModRev { fingerprint: fp, updated_at: mods_updated_at.clone() });
+    // --- Mods: per-mod honest watermark ledger (present entries + tombstones) ---
+    // `mods` (from scan_profile_mods) is the current on-disk set. Reconcile it
+    // against the ledger: a mod's watermark bumps only when it first appears,
+    // is re-installed (was tombstoned), or its enabled state flips. A mod that
+    // vanished from disk is tombstoned. Both propagate per-mod (mirror sync).
+    let mut present_names: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut mods_out: Vec<SyncModEntry> = Vec::with_capacity(mods.len());
+    for m in &mods {
+        present_names.insert(m.name.clone());
+        let updated_at = match state.mods.get(&m.name) {
+            Some(rev) if !rev.removed && rev.enabled == m.enabled => rev.updated_at.clone(),
+            _ => now.clone(), // new, re-installed (was tombstoned), or enabled flipped
+        };
+        state.mods.insert(
+            m.name.clone(),
+            ModRev {
+                file_name: m.file_name.clone(),
+                source: m.source.clone(),
+                enabled: m.enabled,
+                removed: false,
+                updated_at: updated_at.clone(),
+            },
+        );
+        let mut e = m.clone();
+        e.updated_at = updated_at;
+        mods_out.push(e);
+    }
+    // Tombstone mods the ledger knew as present but that are now gone from disk.
+    for (name, rev) in state.mods.iter_mut() {
+        if !present_names.contains(name) && !rev.removed {
+            rev.removed = true;
+            rev.updated_at = now.clone();
+        }
+    }
+    // GC tombstones past the retention window so the ledger + bundle can't grow
+    // without bound as mods come and go.
+    let gc_cutoff = iso_days_ago(TOMBSTONE_TTL_DAYS);
+    state.mods.retain(|_, rev| !(rev.removed && rev.updated_at < gc_cutoff));
+    // Emit tombstones on the wire so peers can mirror the uninstall.
+    let removed_mods: Vec<RemovedMod> = state
+        .mods
+        .iter()
+        .filter(|(_, rev)| rev.removed)
+        .map(|(name, rev)| RemovedMod {
+            name: name.clone(),
+            file_name: rev.file_name.clone(),
+            enabled: rev.enabled,
+            source: rev.source.clone(),
+            updated_at: rev.updated_at.clone(),
+        })
+        .collect();
+    // Bundle-level watermark kept for legacy readers = max across per-mod entries.
+    let mods_updated_at = state
+        .mods
+        .values()
+        .map(|r| r.updated_at.clone())
+        .max()
+        .unwrap_or_else(|| now.clone());
 
     save_profile_state(profile_id, &state);
 
@@ -476,7 +570,8 @@ fn snapshot_bundle(profile_id: &str, profile_name: &str, bepinex_path: &str) -> 
         profile_id: profile_id.to_string(),
         profile_name: profile_name.to_string(),
         last_updated: now,
-        mods,
+        mods: mods_out,
+        removed_mods,
         thunderstore_mods: ts_mods,
         configs,
         trainer_state,
@@ -511,6 +606,7 @@ fn scan_mods_for_sync(dir: &Path, enabled: bool, mods: &mut Vec<SyncModEntry>) -
             let name = file_name.trim_end_matches(".dll").trim_end_matches(".DLL").to_string();
             mods.push(SyncModEntry {
                 name, file_name, version: None, enabled, source: "manual".to_string(),
+                updated_at: String::new(), // assigned from the ledger in snapshot_bundle
             });
         } else if path.is_dir() {
             if let Some(dll) = find_dll_in_folder(&path) {
@@ -519,6 +615,7 @@ fn scan_mods_for_sync(dir: &Path, enabled: bool, mods: &mut Vec<SyncModEntry>) -
                     .unwrap_or_default();
                 mods.push(SyncModEntry {
                     name, file_name: dll, version: None, enabled, source: "thunderstore".to_string(),
+                    updated_at: String::new(), // assigned from the ledger in snapshot_bundle
                 });
             }
         }
@@ -632,6 +729,16 @@ fn bundle_content_signature(bundle: &SyncProfileBundle) -> String {
         .collect();
     mods.sort();
     parts.extend(mods);
+
+    // Tombstones are content too — a new removal must trigger a push so the
+    // uninstall mirrors to peers.
+    let mut rm: Vec<String> = bundle
+        .removed_mods
+        .iter()
+        .map(|r| format!("rm:{}", r.name))
+        .collect();
+    rm.sort();
+    parts.extend(rm);
 
     let mut ts: Vec<String> = bundle
         .thunderstore_mods
@@ -921,6 +1028,64 @@ fn pick_config_entry(a: ConfigEntry, b: ConfigEntry) -> ConfigEntry {
     if b.updated_at >= a.updated_at { b } else { a }
 }
 
+/// Merge two mod sets (present entries + tombstones) per-mod by watermark. For
+/// each mod name the newest `updated_at` wins across BOTH the present list and
+/// the tombstone list — so an uninstall on one device beats a stale "present"
+/// on the other (and vice-versa), and neither side's whole list can clobber the
+/// other. On an exact-timestamp tie, present wins (keep the mod installed rather
+/// than let an equal-instant tombstone delete it). Returns (present, removed).
+fn merge_mod_sets(
+    local_present: &[SyncModEntry],
+    local_removed: &[RemovedMod],
+    remote_present: &[SyncModEntry],
+    remote_removed: &[RemovedMod],
+) -> (Vec<SyncModEntry>, Vec<RemovedMod>) {
+    // Best present entry per name (newer wins; remote processed first so an
+    // exact tie keeps remote — cosmetic, content is equal on a tie anyway).
+    let mut present_map: HashMap<String, SyncModEntry> = HashMap::new();
+    for m in remote_present.iter().chain(local_present.iter()) {
+        match present_map.get(&m.name) {
+            Some(cur) if cur.updated_at >= m.updated_at => {}
+            _ => {
+                present_map.insert(m.name.clone(), m.clone());
+            }
+        }
+    }
+    let mut removed_map: HashMap<String, RemovedMod> = HashMap::new();
+    for r in remote_removed.iter().chain(local_removed.iter()) {
+        match removed_map.get(&r.name) {
+            Some(cur) if cur.updated_at >= r.updated_at => {}
+            _ => {
+                removed_map.insert(r.name.clone(), r.clone());
+            }
+        }
+    }
+
+    let mut names: std::collections::HashSet<String> = std::collections::HashSet::new();
+    names.extend(present_map.keys().cloned());
+    names.extend(removed_map.keys().cloned());
+
+    let mut out_present: Vec<SyncModEntry> = Vec::new();
+    let mut out_removed: Vec<RemovedMod> = Vec::new();
+    for name in names {
+        match (present_map.get(&name), removed_map.get(&name)) {
+            (Some(p), Some(r)) => {
+                if r.updated_at > p.updated_at {
+                    out_removed.push(r.clone());
+                } else {
+                    out_present.push(p.clone());
+                }
+            }
+            (Some(p), None) => out_present.push(p.clone()),
+            (None, Some(r)) => out_removed.push(r.clone()),
+            (None, None) => {}
+        }
+    }
+    out_present.sort_by(|a, b| a.name.cmp(&b.name));
+    out_removed.sort_by(|a, b| a.name.cmp(&b.name));
+    (out_present, out_removed)
+}
+
 /// Merge two bundles per-file. Configs are unioned by filename; on collision,
 /// the newer `updated_at` wins. Mods + thunderstore_mods stay last-writer
 /// (they describe an installed-state set, not freely-editable content), but the
@@ -951,20 +1116,40 @@ fn merge_profile_bundle(local: SyncProfileBundle, remote: SyncProfileBundle) -> 
         (None, None) => None,
     };
 
-    // Mods/thunderstore_mods describe the active installed set. Pick the side
-    // whose mod set changed most recently (mods_updated_at); ties keep local.
-    let mods_local_wins = local.mods_updated_at >= remote.mods_updated_at;
-    let (mods, ts_mods, profile_name, mods_updated_at) = if mods_local_wins {
-        (local.mods, local.thunderstore_mods, local.profile_name, local.mods_updated_at)
+    // Mods — per-mod union with tombstone LWW so install/uninstall/enable each
+    // mirror independently. One side's stale whole list can no longer clobber
+    // the other's real change (the bug that reinstalled + re-enabled a mod the
+    // user had removed/disabled on the other device).
+    let (mods, removed_mods) = merge_mod_sets(
+        &local.mods,
+        &local.removed_mods,
+        &remote.mods,
+        &remote.removed_mods,
+    );
+
+    // Thunderstore set + profile name still follow the bundle-level watermark
+    // (ts mirror is a separate path; the name is cosmetic). Ties keep local.
+    let local_meta_wins = local.mods_updated_at >= remote.mods_updated_at;
+    let (ts_mods, profile_name) = if local_meta_wins {
+        (local.thunderstore_mods, local.profile_name)
     } else {
-        (remote.mods, remote.thunderstore_mods, remote.profile_name, remote.mods_updated_at)
+        (remote.thunderstore_mods, remote.profile_name)
     };
+
+    // Bundle-level watermark = max across the merged per-mod entries (legacy).
+    let mods_updated_at = mods
+        .iter()
+        .map(|m| m.updated_at.clone())
+        .chain(removed_mods.iter().map(|r| r.updated_at.clone()))
+        .max()
+        .unwrap_or_else(iso_now);
 
     SyncProfileBundle {
         profile_id: local.profile_id,
         profile_name,
         last_updated: iso_now(),
         mods,
+        removed_mods,
         thunderstore_mods: ts_mods,
         configs: merged_configs,
         trainer_state: merged_trainer,
@@ -1286,43 +1471,117 @@ fn sync_pull_bundle_impl(profile_id: String, bepinex_path: String) -> Result<Syn
         }
     }
 
-    // 3. Toggle mods (enabled/disabled) — only when the remote mod set changed
-    //    more recently than ours (honest, persisted watermark). Otherwise our
-    //    local toggles are the fresher truth and the push will propagate them.
-    let local_mods_wm = state
-        .mods
-        .as_ref()
-        .map(|m| m.updated_at.clone())
-        .unwrap_or_default();
-    let remote_mods_newer = local_mods_wm.is_empty() || remote.mods_updated_at > local_mods_wm;
-    let mut toggled_mods = Vec::new();
-    if remote_mods_newer {
-        for remote_mod in &remote.mods {
-            if let Some(local_mod) = local_bundle.mods.iter().find(|m| m.name == remote_mod.name) {
-                if local_mod.enabled != remote_mod.enabled {
-                    toggle_mod_sync(&bepinex_path, &remote_mod.file_name, remote_mod.enabled)?;
-                    toggled_mods.push(remote_mod.name.clone());
+    // 3. Mods — mirror install/uninstall/enable per-mod. For each remote entry
+    //    (present or tombstone) apply it locally only when the remote's per-mod
+    //    watermark is newer than what our ledger last recorded. The snapshot
+    //    above already refreshed the ledger from disk, so a mod the user just
+    //    installed/removed/toggled locally owns a fresh watermark and can't be
+    //    reverted here.
+    let mut toggled_mods: Vec<String> = Vec::new();
+    let mut uninstalled_mods: Vec<String> = Vec::new();
+    let mut to_install: Vec<(String, bool)> = Vec::new(); // (name, desired enabled)
+
+    // Present mods from remote → install if missing, toggle if enabled differs.
+    for rm in &remote.mods {
+        let local_wm = state.mods.get(&rm.name).map(|r| r.updated_at.clone()).unwrap_or_default();
+        if !local_wm.is_empty() && rm.updated_at <= local_wm {
+            continue; // local is newer or equal — keep local, push will propagate
+        }
+        match local_bundle.mods.iter().find(|m| m.name == rm.name) {
+            Some(local_mod) => {
+                if local_mod.enabled != rm.enabled {
+                    toggle_mod_sync(&bepinex_path, &rm.file_name, rm.enabled)?;
+                    toggled_mods.push(rm.name.clone());
                 }
+                state.mods.insert(rm.name.clone(), ModRev {
+                    file_name: rm.file_name.clone(),
+                    source: rm.source.clone(),
+                    enabled: rm.enabled,
+                    removed: false,
+                    updated_at: rm.updated_at.clone(),
+                });
+            }
+            None => to_install.push((rm.name.clone(), rm.enabled)),
+        }
+    }
+
+    // Tombstones from remote → uninstall locally if present and remote is newer
+    // (mirror-uninstall). Reversible — the DLL re-downloads from the Worker.
+    for rr in &remote.removed_mods {
+        let local_wm = state.mods.get(&rr.name).map(|r| r.updated_at.clone()).unwrap_or_default();
+        if !local_wm.is_empty() && rr.updated_at <= local_wm {
+            continue; // local newer/equal — keep whatever we have
+        }
+        if let Some(local_mod) = local_bundle.mods.iter().find(|m| m.name == rr.name) {
+            let folder = if local_mod.source == "thunderstore" {
+                local_mod.name.clone()
+            } else {
+                String::new()
+            };
+            match crate::commands::mods::delete_mod(
+                bepinex_path.clone(),
+                folder,
+                local_mod.file_name.clone(),
+                local_mod.enabled,
+            ) {
+                Ok(_) => {
+                    uninstalled_mods.push(rr.name.clone());
+                    app_log(&format!("Sync pull: uninstalled {} (mirror)", rr.name));
+                }
+                Err(e) => app_log(&format!("Sync pull: failed to uninstall {}: {}", rr.name, e)),
             }
         }
-        // Stamp the ledger with our POST-toggle disk fingerprint carrying the
-        // remote's watermark: our set now derives from remote's edit at that
-        // instant, so we must not claim we edited it (which would make us win
-        // future merges and re-toggle the peer). A genuine local toggle later
-        // changes the fingerprint → bumps to `now` → local wins, as intended.
-        let post_mods = scan_profile_mods(&bepinex_path)?;
-        let post_ts = read_thunderstore_tracking(&bepinex_path);
-        state.mods = Some(ModRev {
-            fingerprint: mods_fingerprint(&post_mods, &post_ts),
-            updated_at: remote.mods_updated_at.clone(),
+        state.mods.insert(rr.name.clone(), ModRev {
+            file_name: rr.file_name.clone(),
+            source: rr.source.clone(),
+            enabled: rr.enabled,
+            removed: true,
+            updated_at: rr.updated_at.clone(),
         });
     }
 
-    // 4. Find missing mods (present in remote set, absent on disk).
-    let missing_mods: Vec<String> = remote.mods.iter()
-        .filter(|rm| !local_bundle.mods.iter().any(|lm| lm.name == rm.name))
-        .map(|m| m.name.clone())
-        .collect();
+    // 4. Scoped installs — only the profile's missing mods, never the whole
+    //    catalogue (the old sync_install_all_mods behaviour, which reinstalled
+    //    every published mod and was what silently resurrected a deleted mod).
+    let mut installed_mods: Vec<String> = Vec::new();
+    let mut missing_mods: Vec<String> = Vec::new();
+    if !to_install.is_empty() {
+        let names: Vec<String> = to_install.iter().map(|(n, _)| n.clone()).collect();
+        let installed = match crate::commands::updater::install_named_mods(&bepinex_path, &names) {
+            Ok(v) => v,
+            Err(e) => {
+                app_log(&format!("Sync pull: install batch failed: {}", e));
+                Vec::new()
+            }
+        };
+        for (name, want_enabled) in &to_install {
+            if installed.iter().any(|n| n == name) {
+                // install_mod_update lands mods in plugins/ (enabled) — honour a
+                // remote "disabled" by moving it to disabled_plugins/.
+                if !want_enabled {
+                    if let Some(fresh) =
+                        scan_profile_mods(&bepinex_path)?.into_iter().find(|m| &m.name == name)
+                    {
+                        let _ = toggle_mod_sync(&bepinex_path, &fresh.file_name, false);
+                    }
+                }
+                let rm = remote.mods.iter().find(|m| &m.name == name);
+                state.mods.insert(name.clone(), ModRev {
+                    file_name: rm.map(|m| m.file_name.clone()).unwrap_or_default(),
+                    source: rm.map(|m| m.source.clone()).unwrap_or_default(),
+                    enabled: *want_enabled,
+                    removed: false,
+                    updated_at: rm.map(|m| m.updated_at.clone()).unwrap_or_else(iso_now),
+                });
+                installed_mods.push(name.clone());
+            } else {
+                // Couldn't install (not in the manifest — e.g. a manual/local-only
+                // mod). Surface it; leave the ledger untouched so a later pull
+                // retries once it becomes installable.
+                missing_mods.push(name.clone());
+            }
+        }
+    }
 
     // Persist the reconciled ledger before returning.
     save_profile_state(&profile_id, &state);
@@ -1340,25 +1599,38 @@ fn sync_pull_bundle_impl(profile_id: String, bepinex_path: String) -> Result<Syn
     let result = SyncPullResult {
         profile_name: remote.profile_name,
         toggled_mods,
+        installed_mods,
+        uninstalled_mods,
         configs_updated,
         missing_mods,
+        thunderstore_mods: remote.thunderstore_mods,
         last_updated: remote.last_updated,
     };
 
-    app_log(&format!("Sync pull complete: {} configs, {} toggled, {} missing",
-        result.configs_updated, result.toggled_mods.len(), result.missing_mods.len()));
+    app_log(&format!(
+        "Sync pull complete: {} configs, {} installed, {} uninstalled, {} toggled, {} missing",
+        result.configs_updated,
+        result.installed_mods.len(),
+        result.uninstalled_mods.len(),
+        result.toggled_mods.len(),
+        result.missing_mods.len()
+    ));
 
     let nothing_changed = result.configs_updated == 0
         && result.toggled_mods.is_empty()
+        && result.installed_mods.is_empty()
+        && result.uninstalled_mods.is_empty()
         && result.missing_mods.is_empty();
     if !nothing_changed {
         sync_log::emit(
             "PullBundle",
             "success",
             format!(
-                "{}: {} configs, {} toggled, {} missing",
+                "{}: {} configs, {} installed, {} uninstalled, {} toggled, {} missing",
                 result.profile_name,
                 result.configs_updated,
+                result.installed_mods.len(),
+                result.uninstalled_mods.len(),
                 result.toggled_mods.len(),
                 result.missing_mods.len()
             ),
@@ -1372,8 +1644,11 @@ fn sync_pull_bundle_impl(profile_id: String, bepinex_path: String) -> Result<Syn
 pub struct SyncPullResult {
     pub profile_name: String,
     pub toggled_mods: Vec<String>,
+    pub installed_mods: Vec<String>,
+    pub uninstalled_mods: Vec<String>,
     pub configs_updated: u32,
     pub missing_mods: Vec<String>,
+    pub thunderstore_mods: Vec<SyncThunderstoreMod>,
     pub last_updated: String,
 }
 
@@ -1521,27 +1796,56 @@ fn sync_mark_profile_canonical_impl(profile_id: String, bepinex_path: String) ->
         return Err("Cloud sync is not enabled".to_string());
     }
     // Reconcile the ledger with disk first (this also seeds any first-sight
-    // files), then stamp every watermark to a single `now` so nothing on this
-    // device can lose a merge on content it currently holds.
+    // files/mods), then stamp every watermark to a single `now` so nothing on
+    // this device can lose a merge on content it currently holds.
     let _ = snapshot_bundle(&profile_id, "", &bepinex_path)?;
     let mut state = load_profile_state(&profile_id);
     let now = iso_now();
+
+    // Tombstone any mod the CLOUD has but this device does not — that's what
+    // makes "canonical" a true mirror: the peer uninstalls it. Without this, a
+    // mod removed before this device started tracking (so it has no local
+    // tombstone) would just get reinstalled from the peer's still-present copy.
+    let identity = get_megaload_identity()?;
+    if let Ok((content, _)) = github_get_file(&sync_bundle_path(&identity.user_id, &profile_id)) {
+        if let Ok(remote) = parse_bundle(&content) {
+            for rm in &remote.mods {
+                let present_locally = state
+                    .mods
+                    .get(&rm.name)
+                    .map(|r| !r.removed)
+                    .unwrap_or(false);
+                if !present_locally {
+                    state.mods.insert(rm.name.clone(), ModRev {
+                        file_name: rm.file_name.clone(),
+                        source: rm.source.clone(),
+                        enabled: rm.enabled,
+                        removed: true,
+                        updated_at: now.clone(),
+                    });
+                }
+            }
+        }
+    }
+
     for rev in state.configs.values_mut() {
         rev.updated_at = now.clone();
     }
     if let Some(t) = state.trainer_state.as_mut() {
         t.updated_at = now.clone();
     }
-    if let Some(m) = state.mods.as_mut() {
-        m.updated_at = now.clone();
+    for rev in state.mods.values_mut() {
+        rev.updated_at = now.clone();
     }
     let cfg_count = state.configs.len();
+    let mod_count = state.mods.values().filter(|r| !r.removed).count();
+    let tomb_count = state.mods.values().filter(|r| r.removed).count();
     save_profile_state(&profile_id, &state);
     // The next push must reconcile from scratch, not trust a cached signature.
     invalidate_push_cache(&profile_id);
     app_log(&format!(
-        "Sync: marked profile {} canonical — {} configs stamped {}",
-        profile_id, cfg_count, now
+        "Sync: marked profile {} canonical — {} configs, {} mods, {} tombstones stamped {}",
+        profile_id, cfg_count, mod_count, tomb_count, now
     ));
     Ok(())
 }
@@ -2584,10 +2888,32 @@ mod profile_bundle_merge_tests {
             profile_name: name.to_string(),
             last_updated: last_updated.to_string(),
             mods: vec![],
+            removed_mods: vec![],
             thunderstore_mods: vec![],
             configs: map,
             trainer_state: None,
             mods_updated_at: last_updated.to_string(),
+        }
+    }
+
+    fn mod_entry(name: &str, enabled: bool, updated_at: &str) -> SyncModEntry {
+        SyncModEntry {
+            name: name.to_string(),
+            file_name: format!("{}.dll", name),
+            version: None,
+            enabled,
+            source: "manual".to_string(),
+            updated_at: updated_at.to_string(),
+        }
+    }
+
+    fn tombstone(name: &str, updated_at: &str) -> RemovedMod {
+        RemovedMod {
+            name: name.to_string(),
+            file_name: format!("{}.dll", name),
+            enabled: true,
+            source: "manual".to_string(),
+            updated_at: updated_at.to_string(),
         }
     }
 
@@ -2713,33 +3039,60 @@ mod profile_bundle_merge_tests {
         assert_eq!(t.content, "{\"opens\":5}", "newer trainer state must win");
     }
 
-    /// The merged bundle's mods array follows the bundle-level last_updated
-    /// (mods describe the active installed set, not freely-editable content).
-    /// Local newer ⇒ local mods wins.
+    /// Mods union per-mod across devices — one on each side both survive (no
+    /// all-or-nothing list clobber, which used to drop the mod only one device
+    /// had).
     #[test]
-    fn mods_follow_bundle_level_watermark() {
+    fn mods_union_per_mod_across_devices() {
         let mut local = make_bundle("default", "2026-04-25T00:00:10Z", &[]);
-        local.mods.push(SyncModEntry {
-            name: "MegaShot".to_string(),
-            file_name: "MegaShot.dll".to_string(),
-            version: None,
-            enabled: true,
-            source: "manual".to_string(),
-        });
+        local.mods.push(mod_entry("MegaShot", true, "2026-04-25T00:00:10Z"));
         let mut remote = make_bundle("default", "2026-04-25T00:00:05Z", &[]);
-        remote.mods.push(SyncModEntry {
-            name: "MegaHoe".to_string(),
-            file_name: "MegaHoe.dll".to_string(),
-            version: None,
-            enabled: true,
-            source: "manual".to_string(),
-        });
+        remote.mods.push(mod_entry("MegaHoe", true, "2026-04-25T00:00:05Z"));
         let merged = merge_profile_bundle(local, remote);
         let names: Vec<String> = merged.mods.iter().map(|m| m.name.clone()).collect();
-        assert!(names.contains(&"MegaShot".to_string()),
-            "local-newer bundle's mod set must win, got {:?}", names);
-        assert!(!names.contains(&"MegaHoe".to_string()),
-            "stale remote mod set must NOT contribute, got {:?}", names);
+        assert!(names.contains(&"MegaShot".to_string()), "local mod must survive, got {:?}", names);
+        assert!(names.contains(&"MegaHoe".to_string()), "remote mod must survive, got {:?}", names);
+        assert_eq!(names.len(), 2);
+    }
+
+    /// A newer tombstone beats a stale "present" on the peer — the uninstall
+    /// wins and the mod does NOT come back (the FarmBuild bug). And the reverse:
+    /// a reinstall newer than a tombstone keeps the mod.
+    #[test]
+    fn mod_tombstone_beats_stale_present_and_vice_versa() {
+        // Local removed FarmBuild at t=20; remote still has it present at t=05.
+        let mut local = make_bundle("default", "2026-04-25T00:00:20Z", &[]);
+        local.removed_mods.push(tombstone("FarmBuild", "2026-04-25T00:00:20Z"));
+        let mut remote = make_bundle("default", "2026-04-25T00:00:05Z", &[]);
+        remote.mods.push(mod_entry("FarmBuild", true, "2026-04-25T00:00:05Z"));
+        let merged = merge_profile_bundle(local, remote);
+        assert!(!merged.mods.iter().any(|m| m.name == "FarmBuild"),
+            "removed mod must NOT be present after merge");
+        assert!(merged.removed_mods.iter().any(|r| r.name == "FarmBuild"),
+            "removal must carry as a tombstone");
+
+        // Reverse: remote reinstalled it at t=30, local tombstone at t=20.
+        let mut local2 = make_bundle("default", "2026-04-25T00:00:20Z", &[]);
+        local2.removed_mods.push(tombstone("FarmBuild", "2026-04-25T00:00:20Z"));
+        let mut remote2 = make_bundle("default", "2026-04-25T00:00:30Z", &[]);
+        remote2.mods.push(mod_entry("FarmBuild", true, "2026-04-25T00:00:30Z"));
+        let merged2 = merge_profile_bundle(local2, remote2);
+        assert!(merged2.mods.iter().any(|m| m.name == "FarmBuild"),
+            "a reinstall newer than the tombstone must keep the mod");
+        assert!(!merged2.removed_mods.iter().any(|r| r.name == "FarmBuild"),
+            "the stale tombstone must not linger once out-dated");
+    }
+
+    /// Per-mod enabled state is LWW: the newer enabled flip wins independently.
+    #[test]
+    fn mod_enabled_state_is_per_mod_lww() {
+        let mut local = make_bundle("default", "2026-04-25T00:00:00Z", &[]);
+        local.mods.push(mod_entry("MegaShot", false, "2026-04-25T00:00:20Z")); // disabled, newer
+        let mut remote = make_bundle("default", "2026-04-25T00:00:00Z", &[]);
+        remote.mods.push(mod_entry("MegaShot", true, "2026-04-25T00:00:05Z")); // enabled, older
+        let merged = merge_profile_bundle(local, remote);
+        let m = merged.mods.iter().find(|m| m.name == "MegaShot").unwrap();
+        assert!(!m.enabled, "the newer disable must win");
     }
 
     /// The push short-circuit signature must be watermark-agnostic: two bundles

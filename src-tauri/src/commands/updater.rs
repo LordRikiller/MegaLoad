@@ -790,6 +790,44 @@ fn sync_install_all_mods_impl(bepinex_path: String) -> Result<u32, String> {
     Ok(installed)
 }
 
+/// Install ONLY the named mods from the manifest — scoped, unlike
+/// `sync_install_all_mods` which installs the whole catalogue. Used by the sync
+/// pull to replicate exactly a profile's mod set (never more). Returns the names
+/// that were actually installed. Names not in the manifest (manual/local-only
+/// mods) are skipped and logged, not treated as installed.
+pub fn install_named_mods(bepinex_path: &str, names: &[String]) -> Result<Vec<String>, String> {
+    if names.is_empty() {
+        return Ok(Vec::new());
+    }
+    let manifest = fetch_manifest()?;
+    let plugins_dir = PathBuf::from(bepinex_path).join("plugins");
+    let disabled_dir = PathBuf::from(bepinex_path).join("disabled_plugins");
+    let mut installed = Vec::new();
+    for name in names {
+        let Some(m) = manifest.mods.iter().find(|mm| &mm.name == name) else {
+            app_log(&format!("Sync: {} not in manifest — cannot auto-install", name));
+            continue;
+        };
+        let already = plugins_dir.join(&m.plugin_folder).join(&m.dll_name).exists()
+            || disabled_dir.join(&m.plugin_folder).join(&m.dll_name).exists();
+        if already {
+            installed.push(name.clone());
+            continue;
+        }
+        app_log(&format!("Sync: installing {} v{}", m.name, m.version));
+        match install_mod_update(
+            bepinex_path.to_string(),
+            m.name.clone(),
+            m.download_url.clone(),
+            m.version.clone(),
+        ) {
+            Ok(_) => installed.push(name.clone()),
+            Err(e) => app_log(&format!("Sync: failed to install {}: {}", name, e)),
+        }
+    }
+    Ok(installed)
+}
+
 // ── Update Log ────────────────────────────────────────────────
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

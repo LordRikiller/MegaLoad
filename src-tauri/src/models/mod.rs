@@ -110,6 +110,12 @@ pub struct SyncModEntry {
     pub version: Option<String>,
     pub enabled: bool,
     pub source: String, // "megaload" | "thunderstore" | "manual"
+    /// Per-mod content watermark — bumps when this mod is installed or its
+    /// enabled state flips. Drives per-mod last-writer-wins so one device's mod
+    /// change can't be clobbered by the other's whole-list push. Empty on legacy
+    /// bundles (parse_bundle seeds it from the bundle-level watermark).
+    #[serde(default)]
+    pub updated_at: String,
 }
 
 /// A Thunderstore mod in the sync state
