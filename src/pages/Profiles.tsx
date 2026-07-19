@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useProfileStore } from "../stores/profileStore";
+import { useModStore } from "../stores/modStore";
+import { useSyncStore } from "../stores/syncStore";
 import {
   Plus,
   Trash2,
@@ -112,6 +114,63 @@ export function Profiles() {
       setSelectedStarters(new Set());
     } else {
       setSelectedStarters(new Set(starterMods.map((m) => m.name)));
+    }
+  };
+
+  // ── Live mod management for the ACTIVE profile ──────────────────────────
+  // Tick a mod to install it into the active profile, untick to uninstall.
+  // Changes mirror to other devices via the normal sync push.
+  const {
+    mods: installedMods,
+    fetchMods: fetchInstalledMods,
+    deleteMod: uninstallModEntry,
+  } = useModStore();
+  const syncEnabled = useSyncStore((s) => s.enabled);
+  const pushAllProfiles = useSyncStore((s) => s.pushAllProfiles);
+  const [togglingMod, setTogglingMod] = useState<string | null>(null);
+
+  const active = profiles.find((p) => p.id === activeProfileId);
+
+  useEffect(() => {
+    if (active?.bepinex_path) {
+      fetchInstalledMods(active.bepinex_path);
+    }
+  }, [active?.bepinex_path, fetchInstalledMods]);
+
+  const normMod = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const installedNorm = new Set(installedMods.map((m) => normMod(m.name)));
+
+  const toggleActiveMod = async (mod: StarterMod) => {
+    if (!active || togglingMod) return;
+    const isInstalled = installedNorm.has(normMod(mod.name));
+    setTogglingMod(mod.name);
+    try {
+      if (isInstalled) {
+        const inst = installedMods.find((m) => normMod(m.name) === normMod(mod.name));
+        if (inst) {
+          await uninstallModEntry(active.bepinex_path, inst.folder ?? "", inst.file_name, inst.enabled);
+        }
+        setToast(`Removed ${formatModName(mod.name)} from "${active.name}"`);
+      } else {
+        setInstallProgress(`Installing ${formatModName(mod.name)}...`);
+        await installModUpdate(active.bepinex_path, mod.name, mod.download_url, mod.version);
+        await fetchInstalledMods(active.bepinex_path);
+        setInstallProgress("");
+        setToast(`Installed ${formatModName(mod.name)} into "${active.name}"`);
+      }
+      // Mirror the change to other devices (no-op if sync is off/unchanged).
+      if (syncEnabled) {
+        try {
+          await pushAllProfiles();
+        } catch {
+          // Non-critical — the periodic poll-push will still propagate it.
+        }
+      }
+    } catch (e) {
+      setInstallProgress("");
+      setToast(`Failed: ${e}`);
+    } finally {
+      setTogglingMod(null);
     }
   };
 
@@ -271,6 +330,60 @@ export function Profiles() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Manage active profile mods — live install/uninstall (mirrors via sync) */}
+      {active && starterMods.length > 0 && (
+        <div className="glass rounded-xl p-5 border border-zinc-800/50 mb-4">
+          <h2 className="text-sm font-semibold text-zinc-300 flex items-center gap-1.5">
+            <Package className="w-4 h-4" />
+            Manage mods — {active.name}
+          </h2>
+          <p className="text-[11px] text-zinc-500 mb-3 mt-0.5">
+            Tick to install into this profile, untick to remove.
+            {syncEnabled ? " Changes sync to your other devices." : ""}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {starterMods.map((mod) => {
+              const isInstalled = installedNorm.has(normMod(mod.name));
+              const busy = togglingMod === mod.name;
+              return (
+                <button
+                  key={mod.name}
+                  onClick={() => toggleActiveMod(mod)}
+                  disabled={!!togglingMod}
+                  className={cn(
+                    "flex items-start gap-2.5 p-3 rounded-lg text-left transition-all border disabled:opacity-60",
+                    isInstalled
+                      ? "bg-brand-500/10 border-brand-500/30 text-zinc-200"
+                      : "bg-zinc-900/50 border-zinc-800/50 text-zinc-500 hover:border-zinc-700"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors",
+                      isInstalled ? "bg-brand-500 border-brand-500" : "border-zinc-600"
+                    )}
+                  >
+                    {busy ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      isInstalled && <Check className="w-3 h-3 text-zinc-950" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold truncate">{formatModName(mod.name)}</p>
+                    {mod.description && (
+                      <p className="text-[10px] text-zinc-500 line-clamp-2 mt-0.5 leading-tight">
+                        {mod.description}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

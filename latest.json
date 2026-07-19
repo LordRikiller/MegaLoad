@@ -1,11 +1,11 @@
 {
-  "version": "1.10.63",
-  "notes": "Mod sync rework: mods now mirror per-profile across devices. A pull installs only that profile's mod set (no longer the whole mod catalogue, which used to reinstall + re-enable mods you'd removed), and uninstall + enabled/disabled now propagate per-mod (last edit wins). Uninstalling a mod on one device removes it on the other; a mod disabled on one stays disabled on the other. Builds on the v1.10.61 config-sync rewrite.",
-  "pub_date": "2026-07-19T07:22:16Z",
+  "version": "1.10.64",
+  "notes": "Sync UX: the Mods page now refreshes automatically when a sync installs, removes, enables or disables a mod (no need to navigate away and back). New 'Manage mods' card on the Profiles page — tick to install a mod into the active profile, untick to remove it; changes mirror to your other devices. Builds on the v1.10.61-63 sync rework.",
+  "pub_date": "2026-07-19T07:39:51Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZsdU9WNnd3OTk4NkxwNkFtMmZicEZST3BTU2I0WlljcFRmMkVsNEtRS2ZiR1cxQXhoY0RSa0xBOUxDbmdqVEJKYzZpaXVGZXFUNlpqOFBYenZBMFFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDQ1NzI2CWZpbGU6TWVnYUxvYWRfMS4xMC42M194NjQtc2V0dXAubnNpcy56aXAKakF5U0kzdzRsZnZhbHV6YkdDR1lJYkg1anZqYzVWVU5KTTNwd1ovSGsvUytoV2JDV01KNHdwMi9CcCtxYkxsRXNNK1UwalBYTTZ0N0NTbCsyQVNlQnc9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.63/MegaLoad_1.10.63_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUV1c0Flc1g4c3ZQY2FhVG1CNjFsNGVIWnRmcTNEL2VBNkhUODRLc3RJaE01SE1sai9JWTBNdVN2OEhjZWV4enlMNmYzeWkvUmhsWXROT0U1dDRORFFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDQ2Nzc5CWZpbGU6TWVnYUxvYWRfMS4xMC42NF94NjQtc2V0dXAubnNpcy56aXAKbC9jVzViQ0NoNUtGNEN4ZUVHSytmQVBUUy9QUnVwUU8xZjJzRUpDTm1zM2xWcGhuVUZaNkpIS0ZBSVN5WFZrc0R2ZENRS1ROSjBJbDN0cTlYeEMrQmc9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.64/MegaLoad_1.10.64_x64-setup.nsis.zip"
     }
   }
 }

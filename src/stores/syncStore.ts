@@ -194,6 +194,23 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
       await useProfileStore.getState().fetchProfiles();
 
+      // Refresh the Mods page's store when a sync actually changed mods, so
+      // installs/uninstalls/toggles show immediately instead of only after
+      // navigating away and back. Cheap (one directory scan) and only when
+      // something moved.
+      if (totalMods > 0) {
+        try {
+          const ps = useProfileStore.getState();
+          const active = ps.profiles.find((p) => p.id === ps.activeProfileId);
+          if (active) {
+            const { useModStore } = await import("./modStore");
+            await useModStore.getState().fetchMods(active.bepinex_path);
+          }
+        } catch {
+          // Non-critical — Mods page still refreshes on next navigation.
+        }
+      }
+
       // Record the manifest beacon we just reconciled against so the next
       // change-detection poll compares by equality and stops re-pulling until
       // a peer bumps it again. Clock-skew-proof (no cross-device `>` compare).
