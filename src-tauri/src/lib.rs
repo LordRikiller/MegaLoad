@@ -201,6 +201,7 @@ pub fn run() {
             sync_check_remote_changed,
             sync_mark_remote_seen,
             sync_mark_profile_canonical,
+            sync_apply_profile_tombstones,
             sync_push_player_data,
             sync_pull_player_data,
             sync_reconcile_player_data,

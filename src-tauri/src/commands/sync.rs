@@ -9,7 +9,7 @@ use crate::commands::player_data::{
     self, CharacterData, list_characters, read_character,
 };
 use crate::models::{
-    SyncManifest, SyncModEntry, SyncProfileEntry,
+    RemovedProfile, SyncManifest, SyncModEntry, SyncProfileEntry,
     SyncSettings, SyncStatus, SyncThunderstoreMod,
 };
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -444,6 +444,182 @@ fn content_hash(s: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
+// Manifest (profile-list) ledger — honest per-profile watermarks + tombstones
+// ---------------------------------------------------------------------------
+//
+// The sync manifest is the source of "which profiles exist". It used to be a
+// whole-list last-writer-wins overwrite with no deletion signal, so deleting a
+// profile on one device was reverted: the other device (which still had it)
+// re-published it, and the pull auto-created it back. This ledger records each
+// profile's last-known state + when it changed, and tombstones a profile the
+// moment it disappears from the local list — exactly the mod-tombstone pattern,
+// one level up. Persisted at `%APPDATA%/MegaLoad/sync_state/_manifest.json`.
+
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+struct ProfileLedgerEntry {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    removed: bool,
+    updated_at: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+struct ManifestLedger {
+    #[serde(default)]
+    profiles: HashMap<String, ProfileLedgerEntry>,
+}
+
+fn manifest_ledger_path() -> PathBuf {
+    sync_state_dir().join("_manifest.json")
+}
+
+fn load_manifest_ledger() -> ManifestLedger {
+    if let Ok(data) = fs::read_to_string(manifest_ledger_path()) {
+        if let Ok(l) = serde_json::from_str::<ManifestLedger>(&data) {
+            return l;
+        }
+    }
+    ManifestLedger::default()
+}
+
+fn save_manifest_ledger(led: &ManifestLedger) {
+    let dir = sync_state_dir();
+    if fs::create_dir_all(&dir).is_ok() {
+        if let Ok(json) = serde_json::to_string_pretty(led) {
+            let _ = fs::write(manifest_ledger_path(), json);
+        }
+    }
+}
+
+/// Reconcile the manifest ledger against the device's current profile list:
+/// bump newly-seen profiles, tombstone profiles gone from the list, GC old
+/// tombstones. Returns (present entries with watermarks, tombstones) for
+/// building this device's manifest view. Only `name` drives the watermark bump
+/// (not `is_active` — that's per-device and would otherwise churn the manifest).
+fn reconcile_manifest_ledger(desired: &[SyncProfileEntry]) -> (Vec<SyncProfileEntry>, Vec<RemovedProfile>) {
+    let mut led = load_manifest_ledger();
+    let now = iso_now();
+    let mut present_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut present: Vec<SyncProfileEntry> = Vec::new();
+    for p in desired {
+        present_ids.insert(p.id.clone());
+        let updated_at = match led.profiles.get(&p.id) {
+            Some(e) if !e.removed && e.name == p.name => e.updated_at.clone(),
+            _ => now.clone(),
+        };
+        led.profiles.insert(
+            p.id.clone(),
+            ProfileLedgerEntry { name: p.name.clone(), removed: false, updated_at: updated_at.clone() },
+        );
+        present.push(SyncProfileEntry {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            is_active: p.is_active,
+            is_linked: false,
+            updated_at,
+        });
+    }
+    for (id, e) in led.profiles.iter_mut() {
+        if !present_ids.contains(id) && !e.removed {
+            e.removed = true;
+            e.updated_at = now.clone();
+        }
+    }
+    let gc = iso_days_ago(TOMBSTONE_TTL_DAYS);
+    led.profiles.retain(|_, e| !(e.removed && e.updated_at < gc));
+    let removed: Vec<RemovedProfile> = led
+        .profiles
+        .iter()
+        .filter(|(_, e)| e.removed)
+        .map(|(id, e)| RemovedProfile { id: id.clone(), name: e.name.clone(), updated_at: e.updated_at.clone() })
+        .collect();
+    save_manifest_ledger(&led);
+    (present, removed)
+}
+
+/// Seed per-profile watermarks on a remote manifest whose entries predate the
+/// per-profile field (v1.10.64 and earlier), using the manifest's `last_sync`
+/// so LWW has a sane (older-than-a-fresh-tombstone) timestamp for legacy rows.
+fn seed_manifest_watermarks(m: &SyncManifest) -> (Vec<SyncProfileEntry>, Vec<RemovedProfile>) {
+    let fallback = if m.last_sync.is_empty() { "1970-01-01T00:00:00Z".to_string() } else { m.last_sync.clone() };
+    let present = m
+        .profiles
+        .iter()
+        .map(|p| {
+            let mut e = p.clone();
+            if e.updated_at.is_empty() {
+                e.updated_at = fallback.clone();
+            }
+            e
+        })
+        .collect();
+    let removed = m
+        .removed_profiles
+        .iter()
+        .map(|r| {
+            let mut e = r.clone();
+            if e.updated_at.is_empty() {
+                e.updated_at = fallback.clone();
+            }
+            e
+        })
+        .collect();
+    (present, removed)
+}
+
+/// Merge two profile-list views (present + tombstones) per-profile by watermark
+/// — newest wins across present and removed; exact tie keeps the profile live
+/// (don't delete on a clock tie). Returns (present, removed).
+fn merge_manifest_profiles(
+    local_present: &[SyncProfileEntry],
+    local_removed: &[RemovedProfile],
+    remote_present: &[SyncProfileEntry],
+    remote_removed: &[RemovedProfile],
+) -> (Vec<SyncProfileEntry>, Vec<RemovedProfile>) {
+    let mut present_map: HashMap<String, SyncProfileEntry> = HashMap::new();
+    for p in remote_present.iter().chain(local_present.iter()) {
+        match present_map.get(&p.id) {
+            Some(cur) if cur.updated_at >= p.updated_at => {}
+            _ => {
+                present_map.insert(p.id.clone(), p.clone());
+            }
+        }
+    }
+    let mut removed_map: HashMap<String, RemovedProfile> = HashMap::new();
+    for r in remote_removed.iter().chain(local_removed.iter()) {
+        match removed_map.get(&r.id) {
+            Some(cur) if cur.updated_at >= r.updated_at => {}
+            _ => {
+                removed_map.insert(r.id.clone(), r.clone());
+            }
+        }
+    }
+    let mut ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    ids.extend(present_map.keys().cloned());
+    ids.extend(removed_map.keys().cloned());
+    let mut out_present: Vec<SyncProfileEntry> = Vec::new();
+    let mut out_removed: Vec<RemovedProfile> = Vec::new();
+    for id in ids {
+        match (present_map.get(&id), removed_map.get(&id)) {
+            (Some(p), Some(r)) => {
+                if r.updated_at > p.updated_at {
+                    out_removed.push(r.clone());
+                } else {
+                    out_present.push(p.clone());
+                }
+            }
+            (Some(p), None) => out_present.push(p.clone()),
+            (None, Some(r)) => out_removed.push(r.clone()),
+            (None, None) => {}
+        }
+    }
+    out_present.sort_by(|a, b| a.id.cmp(&b.id));
+    out_removed.sort_by(|a, b| a.id.cmp(&b.id));
+    (out_present, out_removed)
+}
+
+// ---------------------------------------------------------------------------
 // Profile snapshot — reads current local state into a bundle
 // ---------------------------------------------------------------------------
 
@@ -760,20 +936,19 @@ fn bundle_content_signature(bundle: &SyncProfileBundle) -> String {
 /// *other* device's id, so folding it in made local and remote signatures never
 /// match, the PUT fired every poll, and the two devices ping-ponged full pulls
 /// (re-installing mods) forever. The signature reflects profile *content* only.
-fn manifest_profiles_signature(profiles: &[SyncProfileEntry]) -> String {
-    let mut sorted: Vec<&SyncProfileEntry> = profiles.iter().collect();
-    sorted.sort_by(|x, y| x.id.cmp(&y.id));
-    let mut buf = String::with_capacity(sorted.len() * 64);
-    for p in sorted {
-        buf.push('|');
-        buf.push_str(&p.id);
-        buf.push(':');
-        buf.push_str(&p.name);
-        buf.push(':');
-        buf.push(if p.is_active { 'A' } else { '-' });
-        buf.push(if p.is_linked { 'L' } else { '-' });
+fn manifest_profiles_signature(present: &[SyncProfileEntry], removed: &[RemovedProfile]) -> String {
+    // Content-only: id + name for present, id for tombstones. Excludes
+    // `is_active` (per-device, would churn the manifest on every active-switch)
+    // and `updated_at` (a watermark, not content).
+    let mut parts: Vec<String> = present
+        .iter()
+        .map(|p| format!("p:{}:{}", p.id, p.name))
+        .collect();
+    for r in removed {
+        parts.push(format!("rm:{}", r.id));
     }
-    format!("{:016x}", fnv1a_hash(buf.as_bytes()))
+    parts.sort();
+    format!("{:016x}", fnv1a_hash(parts.join("|").as_bytes()))
 }
 
 // ---------------------------------------------------------------------------
@@ -911,20 +1086,24 @@ fn sync_push_all_impl(profiles_json: String) -> Result<(), String> {
     //    device's `sync_check_remote_changed` into a useless pull cycle,
     //    burning ~5 API calls per profile per peer per poll until the PAT
     //    hourly limit choked sync entirely.
-    let desired_profiles: Vec<SyncProfileEntry> = profiles.iter().map(|p| SyncProfileEntry {
+    let desired: Vec<SyncProfileEntry> = profiles.iter().map(|p| SyncProfileEntry {
         id: p.id.clone(),
         name: p.name.clone(),
         is_active: p.is_active,
         is_linked: false,
+        updated_at: String::new(),
     }).collect();
+    // Reconcile the manifest ledger — bumps new profiles, tombstones any that
+    // vanished from the local list. This is what turns a local delete into a
+    // real, propagating event instead of a silent gap the peer re-fills.
+    let (local_present, local_removed) = reconcile_manifest_ledger(&desired);
     let manifest_path = sync_manifest_path(user_id);
-    let desired_sig = manifest_profiles_signature(&desired_profiles);
+    let desired_sig = manifest_profiles_signature(&local_present, &local_removed);
 
     // Dirty-tracking: if no bundle changed and our cached manifest signature
-    // still matches the desired profile list, the cloud manifest is provably
-    // current — skip the GET entirely. An idle poll-push then makes zero
-    // manifest calls. The cache is cleared by any pull, so a peer's change is
-    // still picked up via `sync_check_remote_changed` → pull → invalidate.
+    // still matches our local profile view, the cloud manifest is provably
+    // current for our side — skip the GET+merge entirely. A peer's change is
+    // still caught by `sync_check_remote_changed` → pull → invalidate.
     let cached_matches = bundles_changed == 0
         && push_cache()
             .lock()
@@ -933,47 +1112,98 @@ fn sync_push_all_impl(profiles_json: String) -> Result<(), String> {
             .as_deref()
             == Some(desired_sig.as_str());
 
-    let manifest_needs_push = if cached_matches {
-        false
-    } else {
-        let remote_manifest_sig = github_get_file(&manifest_path)
+    let mut manifest_pushed = false;
+    if !cached_matches {
+        // Fetch remote and MERGE per-profile (present + tombstones, LWW) so a
+        // deletion here isn't clobbered by the peer's stale list, and the peer's
+        // profiles we don't have locally aren't dropped.
+        let remote_manifest = github_get_file(&manifest_path)
             .ok()
-            .and_then(|(c, _)| serde_json::from_str::<SyncManifest>(&c).ok())
-            .map(|m| manifest_profiles_signature(&m.profiles));
-        bundles_changed > 0 || remote_manifest_sig.as_deref() != Some(desired_sig.as_str())
-    };
-
-    if manifest_needs_push {
-        let manifest = SyncManifest {
-            user_id: user_id.clone(),
-            last_sync: iso_now(),
-            machine_id: settings.machine_id.clone(),
-            profiles: desired_profiles,
+            .and_then(|(c, _)| serde_json::from_str::<SyncManifest>(c.trim_start_matches('\u{feff}')).ok());
+        let (remote_present, remote_removed) = match &remote_manifest {
+            Some(m) => seed_manifest_watermarks(m),
+            None => (Vec::new(), Vec::new()),
         };
-        let manifest_json = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
-        // 409-retry the manifest push — two devices changing profiles around the same time
-        // used to drop one's update silently.
-        github_put_file_with_retry(
-            &manifest_path,
-            &format!("Sync — {}", identity.display_name),
-            3,
-            |attempt| {
-                let sha = if attempt == 1 {
-                    github_get_file(&manifest_path).ok().map(|(_, s)| s)
-                } else {
-                    match github_get_file(&manifest_path) {
-                        Ok((_, s)) => Some(s),
-                        Err(_) => None,
-                    }
-                };
-                Ok((manifest_json.as_bytes().to_vec(), sha))
-            },
-        )?;
-    }
+        let (merged_present, merged_removed) =
+            merge_manifest_profiles(&local_present, &local_removed, &remote_present, &remote_removed);
+        let merged_sig = manifest_profiles_signature(&merged_present, &merged_removed);
+        let remote_sig = remote_manifest
+            .as_ref()
+            .map(|_| manifest_profiles_signature(&remote_present, &remote_removed));
 
-    // The cloud manifest now reflects our desired profile list (we either just
-    // PUT it, or confirmed it already matched). Cache that so the next idle
-    // push can skip the manifest GET.
+        let manifest_needs_push = bundles_changed > 0 || remote_sig.as_deref() != Some(merged_sig.as_str());
+        if manifest_needs_push {
+            manifest_pushed = true;
+            // Newly-created tombstones (removed here, not already removed remotely)
+            // → also delete the orphaned cloud bundle so it can't be re-pulled.
+            let remote_removed_ids: std::collections::HashSet<&str> =
+                remote_removed.iter().map(|r| r.id.as_str()).collect();
+            let newly_removed: Vec<String> = merged_removed
+                .iter()
+                .filter(|r| !remote_removed_ids.contains(r.id.as_str()))
+                .map(|r| r.id.clone())
+                .collect();
+
+            let manifest = SyncManifest {
+                user_id: user_id.clone(),
+                last_sync: iso_now(),
+                machine_id: settings.machine_id.clone(),
+                profiles: merged_present.clone(),
+                removed_profiles: merged_removed.clone(),
+            };
+            let manifest_json = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+            // 409-retry with re-merge: refetch remote, re-merge our local view,
+            // rebuild bytes — so a concurrent peer change survives the retry.
+            let path_for_retry = manifest_path.clone();
+            let lp = local_present.clone();
+            let lr = local_removed.clone();
+            let mid = settings.machine_id.clone();
+            let uid = user_id.clone();
+            github_put_file_with_retry(
+                &manifest_path,
+                &format!("Sync — {}", identity.display_name),
+                3,
+                |attempt| {
+                    if attempt == 1 {
+                        let sha = github_get_file(&path_for_retry).ok().map(|(_, s)| s);
+                        Ok((manifest_json.as_bytes().to_vec(), sha))
+                    } else {
+                        let (rp, rr, sha) = match github_get_file(&path_for_retry) {
+                            Ok((c, s)) => {
+                                let rm = serde_json::from_str::<SyncManifest>(c.trim_start_matches('\u{feff}')).ok();
+                                let (rp, rr) = rm.as_ref().map(seed_manifest_watermarks).unwrap_or_default();
+                                (rp, rr, Some(s))
+                            }
+                            Err(_) => (Vec::new(), Vec::new(), None),
+                        };
+                        let (mp, mrm) = merge_manifest_profiles(&lp, &lr, &rp, &rr);
+                        let m = SyncManifest {
+                            user_id: uid.clone(),
+                            last_sync: iso_now(),
+                            machine_id: mid.clone(),
+                            profiles: mp,
+                            removed_profiles: mrm,
+                        };
+                        let bytes = serde_json::to_string_pretty(&m).map_err(|e| e.to_string())?.into_bytes();
+                        Ok((bytes, sha))
+                    }
+                },
+            )?;
+
+            // Best-effort cleanup of orphaned bundles for freshly-removed profiles.
+            for id in &newly_removed {
+                let bpath = sync_bundle_path(&user_id, id);
+                if let Ok((_, sha)) = github_get_file(&bpath) {
+                    let _ = github_delete_file(&bpath, &sha, &format!("Sync remove profile bundle {} — {}", id, identity.display_name));
+                    app_log(&format!("Sync: deleted orphaned cloud bundle for removed profile {}", id));
+                }
+            }
+        }
+    }
+    let manifest_needs_push = manifest_pushed;
+
+    // Cache our local profile-view signature so the next idle push can skip the
+    // manifest GET+merge entirely.
     if let Ok(mut c) = push_cache().lock() {
         c.manifest_sig = Some(desired_sig.clone());
     }
@@ -1352,6 +1582,7 @@ fn sync_pull_manifest_impl() -> Result<SyncManifest, String> {
             last_sync: String::new(),
             machine_id: String::new(),
             profiles: Vec::new(),
+            removed_profiles: Vec::new(),
         }),
     }
 }
@@ -1848,6 +2079,103 @@ fn sync_mark_profile_canonical_impl(profile_id: String, bepinex_path: String) ->
         profile_id, cfg_count, mod_count, tomb_count, now
     ));
     Ok(())
+}
+
+/// Apply profile tombstones from a pulled manifest — mirror-delete profiles the
+/// peer removed. Called by the frontend during a pull (before the present-
+/// profile loop). Guards: reconciles the local manifest ledger first so a
+/// profile freshly (re)created here owns a newer watermark and can't be nuked
+/// by a stale tombstone; only deletes when the tombstone is strictly newer than
+/// our local copy; never deletes the last remaining profile. Returns the names
+/// of profiles actually deleted (for the UI).
+#[command]
+pub async fn sync_apply_profile_tombstones(removed_json: String) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || sync_apply_profile_tombstones_impl(removed_json))
+        .await
+        .map_err(|e| format!("sync_apply_profile_tombstones task panicked: {}", e))?
+}
+
+fn sync_apply_profile_tombstones_impl(removed_json: String) -> Result<Vec<String>, String> {
+    let settings = load_sync_settings();
+    if !settings.enabled {
+        return Ok(Vec::new());
+    }
+    let removed: Vec<RemovedProfile> = serde_json::from_str(&removed_json)
+        .map_err(|e| format!("Invalid removed_profiles JSON: {}", e))?;
+    if removed.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // Reconcile the ledger with the CURRENT local profiles first, so anything
+    // created/kept locally carries a fresh watermark before we compare.
+    let store = crate::commands::profiles::get_profiles()?;
+    let desired: Vec<SyncProfileEntry> = store
+        .profiles
+        .iter()
+        .map(|p| SyncProfileEntry {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            is_active: store.active_profile.as_deref() == Some(p.id.as_str()),
+            is_linked: false,
+            updated_at: String::new(),
+        })
+        .collect();
+    let _ = reconcile_manifest_ledger(&desired);
+    let mut led = load_manifest_ledger();
+
+    let mut deleted: Vec<String> = Vec::new();
+    let mut remaining = store.profiles.len();
+    for r in &removed {
+        let exists = store.profiles.iter().any(|p| p.id == r.id);
+        if !exists {
+            // Already gone — just record the tombstone so our next push agrees.
+            led.profiles.insert(
+                r.id.clone(),
+                ProfileLedgerEntry { name: r.name.clone(), removed: true, updated_at: r.updated_at.clone() },
+            );
+            continue;
+        }
+        // Safety: never let sync leave the app with zero profiles.
+        if remaining <= 1 {
+            app_log(&format!("Sync: skip mirror-delete of last profile {} ({})", r.name, r.id));
+            continue;
+        }
+        // Only delete when the tombstone is strictly newer than our local copy.
+        let local_wm = led
+            .profiles
+            .get(&r.id)
+            .filter(|e| !e.removed)
+            .map(|e| e.updated_at.clone())
+            .unwrap_or_default();
+        if !local_wm.is_empty() && r.updated_at <= local_wm {
+            continue;
+        }
+        match crate::commands::profiles::delete_profile(r.id.clone()) {
+            Ok(_) => {
+                app_log(&format!("Sync: mirror-deleted profile {} ({})", r.name, r.id));
+                deleted.push(if r.name.is_empty() { r.id.clone() } else { r.name.clone() });
+                remaining -= 1;
+                led.profiles.insert(
+                    r.id.clone(),
+                    ProfileLedgerEntry { name: r.name.clone(), removed: true, updated_at: r.updated_at.clone() },
+                );
+            }
+            Err(e) => app_log(&format!("Sync: failed to mirror-delete profile {}: {}", r.id, e)),
+        }
+    }
+    save_manifest_ledger(&led);
+    if !deleted.is_empty() {
+        // Local profile set changed — force the next push to re-merge cleanly.
+        if let Ok(mut c) = push_cache().lock() {
+            c.manifest_sig = None;
+        }
+        sync_log::emit(
+            "MirrorDeleteProfiles",
+            "success",
+            format!("Removed {}: {}", deleted.len(), deleted.join(", ")),
+        );
+    }
+    Ok(deleted)
 }
 
 // ---------------------------------------------------------------------------
@@ -3127,5 +3455,43 @@ mod profile_bundle_merge_tests {
             bundle_content_signature(&c),
             "a real content change must change the signature"
         );
+    }
+
+    /// Profile deletion mirrors: a newer tombstone beats the peer's stale
+    /// "present" profile (the bug where a deleted profile came back from the
+    /// other device), and a newer recreate beats an older tombstone.
+    #[test]
+    fn profile_tombstone_beats_stale_present() {
+        let present = |id: &str, wm: &str| SyncProfileEntry {
+            id: id.to_string(),
+            name: id.to_string(),
+            is_active: false,
+            is_linked: false,
+            updated_at: wm.to_string(),
+        };
+        let tomb = |id: &str, wm: &str| RemovedProfile {
+            id: id.to_string(),
+            name: id.to_string(),
+            updated_at: wm.to_string(),
+        };
+        // Local deleted P at t=20; remote still has it present at t=05.
+        let (p_out, r_out) = merge_manifest_profiles(
+            &[],
+            &[tomb("P", "2026-04-25T00:00:20Z")],
+            &[present("P", "2026-04-25T00:00:05Z")],
+            &[],
+        );
+        assert!(!p_out.iter().any(|p| p.id == "P"), "deleted profile must not be present");
+        assert!(r_out.iter().any(|r| r.id == "P"), "deletion must carry as a tombstone");
+
+        // Reverse: remote recreated P at t=30, local tombstone t=20 → keep it.
+        let (p2, r2) = merge_manifest_profiles(
+            &[],
+            &[tomb("P", "2026-04-25T00:00:20Z")],
+            &[present("P", "2026-04-25T00:00:30Z")],
+            &[],
+        );
+        assert!(p2.iter().any(|p| p.id == "P"), "a newer recreate must keep the profile");
+        assert!(!r2.iter().any(|r| r.id == "P"), "the stale tombstone must not linger");
     }
 }

@@ -866,6 +866,13 @@ export interface SyncProfileEntry {
   name: string;
   is_active: boolean;
   is_linked: boolean;
+  updated_at?: string;
+}
+
+export interface RemovedProfile {
+  id: string;
+  name: string;
+  updated_at: string;
 }
 
 export interface SyncStatus {
@@ -890,6 +897,7 @@ export interface SyncManifest {
   last_sync: string;
   machine_id: string;
   profiles: SyncProfileEntry[];
+  removed_profiles?: RemovedProfile[];
 }
 
 export interface SyncModEntry {
@@ -979,6 +987,9 @@ export const syncMarkRemoteSeen = (lastSync: string) =>
 
 export const syncMarkProfileCanonical = (profileId: string, bepinexPath: string) =>
   invoke<void>("sync_mark_profile_canonical", { profileId, bepinexPath });
+
+export const syncApplyProfileTombstones = (removedJson: string) =>
+  invoke<string[]>("sync_apply_profile_tombstones", { removedJson });
 
 export const syncInstallAllMods = (bepinexPath: string) =>
   invoke<number>("sync_install_all_mods", { bepinexPath });

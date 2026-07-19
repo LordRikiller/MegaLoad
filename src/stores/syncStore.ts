@@ -8,6 +8,7 @@ import {
   syncCheckRemoteChanged,
   syncMarkRemoteSeen,
   syncMarkProfileCanonical,
+  syncApplyProfileTombstones,
   syncGetSettings,
   syncInstallThunderstoreMods,
   type SyncProfileEntry,
@@ -128,6 +129,27 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     try {
       const manifest = await syncPullManifest();
       set({ remoteProfiles: manifest.profiles });
+
+      // Mirror-delete profiles removed on another device BEFORE creating/pulling
+      // the present ones. Guarded server-side (won't nuke a fresh local profile
+      // or the last remaining one).
+      if (manifest.removed_profiles && manifest.removed_profiles.length > 0) {
+        set({ syncProgress: "Applying profile deletions..." });
+        try {
+          const deleted = await syncApplyProfileTombstones(JSON.stringify(manifest.removed_profiles));
+          if (deleted.length > 0) {
+            await useProfileStore.getState().fetchProfiles();
+            addToast({
+              type: "info",
+              title: "Cloud Sync",
+              message: `Removed ${deleted.length} profile${deleted.length !== 1 ? "s" : ""} deleted on another device: ${deleted.join(", ")}`,
+              duration: 5000,
+            });
+          }
+        } catch {
+          // Non-critical — profile stays; next pull retries.
+        }
+      }
 
       const profileStore = useProfileStore.getState();
       let totalConfigs = 0;

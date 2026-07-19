@@ -1,11 +1,11 @@
 {
-  "version": "1.10.64",
-  "notes": "Sync UX: the Mods page now refreshes automatically when a sync installs, removes, enables or disables a mod (no need to navigate away and back). New 'Manage mods' card on the Profiles page — tick to install a mod into the active profile, untick to remove it; changes mirror to your other devices. Builds on the v1.10.61-63 sync rework.",
-  "pub_date": "2026-07-19T07:39:51Z",
+  "version": "1.10.65",
+  "notes": "Profile deletion now syncs. Deleting a profile on one device removes it on your other devices too (per-profile tombstones + last-writer-wins in the sync manifest), instead of being silently re-added by the other device. The orphaned cloud copy is cleaned up. Guards: never removes the last profile on a device, and won't delete one you just created locally. Completes the v1.10.61-64 sync rework.",
+  "pub_date": "2026-07-19T07:58:21Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUV1c0Flc1g4c3ZQY2FhVG1CNjFsNGVIWnRmcTNEL2VBNkhUODRLc3RJaE01SE1sai9JWTBNdVN2OEhjZWV4enlMNmYzeWkvUmhsWXROT0U1dDRORFFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDQ2Nzc5CWZpbGU6TWVnYUxvYWRfMS4xMC42NF94NjQtc2V0dXAubnNpcy56aXAKbC9jVzViQ0NoNUtGNEN4ZUVHSytmQVBUUy9QUnVwUU8xZjJzRUpDTm1zM2xWcGhuVUZaNkpIS0ZBSVN5WFZrc0R2ZENRS1ROSjBJbDN0cTlYeEMrQmc9PQo=",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.64/MegaLoad_1.10.64_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU9JZjQ3cytYMzhhcURBQXA0RWE4b25TcExaSWp3cExxdzljMkYrNG5EUE5MS2ZjZUswSjZKSTNQTWMwMVVNQWRvMDFud24zc3pKUEQ2WkNpL1VuNUFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0NDQ3ODkzCWZpbGU6TWVnYUxvYWRfMS4xMC42NV94NjQtc2V0dXAubnNpcy56aXAKZjVReGpUdDNrOHRUMEFwZFJGQUc5V3k1WkZFQ1I5dkxzUml3VEZpL3lsd0dJOW9UVVhlbGFCMDZ0UVgzUGtaNy9UdGdacmtjaDUxYTk3akRDTXFtQmc9PQo=",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.10.65/MegaLoad_1.10.65_x64-setup.nsis.zip"
     }
   }
 }

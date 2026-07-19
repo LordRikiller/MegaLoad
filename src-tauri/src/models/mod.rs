@@ -78,6 +78,11 @@ pub struct SyncManifest {
     pub last_sync: String,
     pub machine_id: String,
     pub profiles: Vec<SyncProfileEntry>,
+    /// Deleted-profile tombstones, for mirror-delete across devices. Separate
+    /// field so old clients ignore it (they keep the old "profiles = the set"
+    /// semantics) instead of mistaking a tombstone for a live profile.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub removed_profiles: Vec<RemovedProfile>,
 }
 
 /// Profile entry in the sync manifest
@@ -87,6 +92,21 @@ pub struct SyncProfileEntry {
     pub name: String,
     pub is_active: bool,
     pub is_linked: bool,
+    /// Per-profile change watermark (created/renamed). Empty on legacy manifests
+    /// (seeded from the manifest's last_sync on parse). Drives per-profile LWW so
+    /// a deletion on one device isn't reverted by the other's stale list.
+    #[serde(default)]
+    pub updated_at: String,
+}
+
+/// A profile tombstone — a profile deleted on some device. New clients
+/// mirror-delete it locally when the tombstone is newer than their copy.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RemovedProfile {
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    pub updated_at: String,
 }
 
 /// Full profile state stored at sync/{user_id}/profiles/{profile_id}/state.json
