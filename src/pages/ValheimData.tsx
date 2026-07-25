@@ -72,6 +72,7 @@ import {
   getStationMaterials,
   getCraftableMaterials,
   getCraftableItemCount,
+  filterMaterialsByBiome,
   CRAFTABLE_TYPES,
   getProcessingStationForOutput,
   getItemSource,
@@ -598,8 +599,14 @@ export function ValheimData() {
 
   const stationMaterials = useMemo(() => {
     if (!stationMaterialsMode || activeStations.length === 0) return [];
-    return getStationMaterials(activeStations, stationMaterialsMode);
-  }, [stationMaterialsMode, activeStations]);
+    // A station spans every biome, so the only way the sidebar biome filter can
+    // scope this rollup is to filter the aggregated mats by their own biome —
+    // otherwise Workbench Craft Mats leaks Mistlands/Ashlands/Plains ingredients.
+    return filterMaterialsByBiome(
+      getStationMaterials(activeStations, stationMaterialsMode),
+      activeBiomes,
+    );
+  }, [stationMaterialsMode, activeStations, activeBiomes]);
   // Materials toggle is only meaningful when at least one craftable type is in
   // scope — Weapons / Armour / Food etc. Falls back to false otherwise so
   // selecting only Material / Creature / WorldObject hides the toggle.
@@ -1375,7 +1382,7 @@ export function ValheimData() {
               onItemClick={selectItem}
             />
           ) : stationMaterialsMode && activeStations.length > 0 ? (
-            <StationMaterialsView materials={stationMaterials} stations={activeStations} mode={stationMaterialsMode} onItemClick={selectItem} />
+            <StationMaterialsView materials={stationMaterials} stations={activeStations} mode={stationMaterialsMode} activeBiomes={activeBiomes} onItemClick={selectItem} />
           ) : items.length === 0 ? (
             <div className="text-center py-12">
               <Package className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
@@ -2702,10 +2709,11 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
 }
 
 // ── Station Materials View ─────────────────────────────────
-function StationMaterialsView({ materials, stations, mode, onItemClick }: {
+function StationMaterialsView({ materials, stations, mode, activeBiomes, onItemClick }: {
   materials: { id: string; name: string; amount: number }[];
   stations: string[];
   mode: "craft" | "build";
+  activeBiomes: string[];
   onItemClick: (item: ValheimItem) => void;
 }) {
   const totalCraftable = useMemo(() => {
@@ -2744,8 +2752,17 @@ function StationMaterialsView({ materials, stations, mode, onItemClick }: {
               />
             </h2>
             <p className="text-[11px] text-zinc-500 mt-0.5">
-              All ingredients needed to {modeDesc} {totalCraftable} items at{" "}
-              {stations.join(", ")}
+              {activeBiomes.length > 0 ? (
+                <>
+                  Ingredients from {activeBiomes.join(", ")} needed to {modeDesc} at{" "}
+                  {stations.join(", ")}
+                </>
+              ) : (
+                <>
+                  All ingredients needed to {modeDesc} {totalCraftable} items at{" "}
+                  {stations.join(", ")}
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -2756,7 +2773,12 @@ function StationMaterialsView({ materials, stations, mode, onItemClick }: {
         <div className="divide-y divide-zinc-800/30">
           {materials.map((mat) => {
             const matItem = getItemById(mat.id);
-            const biome = matItem?.biomes[0];
+            // When biomes are filtered, show a biome tag that's actually in the
+            // active set (a mat can span several) so the tag never contradicts
+            // the filter; otherwise fall back to the primary biome.
+            const biome = activeBiomes.length > 0
+              ? (matItem?.biomes.find((b) => activeBiomes.includes(b)) ?? matItem?.biomes[0])
+              : matItem?.biomes[0];
             return (
               <div
                 key={mat.id}

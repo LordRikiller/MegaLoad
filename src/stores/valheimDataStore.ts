@@ -849,6 +849,25 @@ export function getCraftableItemCount(items: ValheimItem[]): number {
   return n;
 }
 
+/** Restrict a materials rollup to ingredients that come from the given biomes.
+ *  A material is kept when ANY of its biomes is in `activeBiomes`, mirroring the
+ *  item-level biome filter in getFilteredItems (`.some`). Empty `activeBiomes`
+ *  is a no-op. Uses getItemById (live) so it stays correct after a remote
+ *  hot-swap, unlike the module-level _bpItemMap. Without this the station
+ *  craft/build-mat rollups list every ingredient regardless of biome — e.g.
+ *  Anglerfish (Mistlands) / Black Metal (Plains) still show with only
+ *  Meadows/Black Forest/Ocean/Swamp ticked. */
+export function filterMaterialsByBiome(
+  mats: CartMaterial[],
+  activeBiomes: string[],
+): CartMaterial[] {
+  if (!activeBiomes || activeBiomes.length === 0) return mats;
+  return mats.filter((m) => {
+    const it = getItemById(m.id);
+    return !!it && it.biomes.some((b) => activeBiomes.includes(b));
+  });
+}
+
 /** Get items grouped by station level */
 export function getStationItemsByLevel(stationName: string): Map<number, ValheimItem[]> {
   const items = getStationItems(stationName);
