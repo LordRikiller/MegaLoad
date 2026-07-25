@@ -134,11 +134,11 @@
     },
     {
       "name": "FarmBuild",
-      "version": "1.0.2",
-      "download_url": "https://github.com/LordRikiller/FarmBuild/releases/download/v1.0.2/FarmBuild.dll",
+      "version": "1.1.0",
+      "download_url": "https://github.com/LordRikiller/FarmBuild/releases/download/v1.1.0/FarmBuild.dll",
       "dll_name": "FarmBuild.dll",
       "plugin_folder": "FarmBuild",
-      "description": "Standalone (not Mega series): MegaBuilder-style build-piece grid snap (F7 toggle on/off, F6 cycles 0.25/0.5/1/2/4m) plus MegaFarming mass farming (hold hotkey to mass-harvest pickables, pickable-items and beehives within radius, or grid-plant a configurable WxL block). Furniture snaps to the piece you point at, including angled/octagon builds. Farm grid obeys the F7 snap toggle; FarmGridSize (0 = follow the build grid F6 size) sets the plant cell size, auto-widening so bushes never overlap. No MegaBuilder/MegaFarming dependency."
+      "description": "Standalone (not Mega series): MegaBuilder-style build-piece grid snap (F7 toggle on/off, F6 cycles 0.25/0.5/1/2/4m) plus MegaFarming mass farming (hold hotkey to mass-harvest pickables, pickable-items and beehives within radius, or grid-plant a configurable WxL block) plus a Home Portal hub-and-spoke teleport network (build a stone hub from the Hammer, name it, tag portals \"hub>label\" as spokes, walk in to pick a destination). Furniture snaps to the piece you point at, including angled/octagon builds. Farm grid obeys the F7 snap toggle; FarmGridSize (0 = follow the build grid F6 size) sets the plant cell size, auto-widening so bushes never overlap. No MegaBuilder/MegaFarming/MegaQoL dependency."
     }
   ]
 }
