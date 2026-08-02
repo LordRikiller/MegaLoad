@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-02T12:55:00Z",
+  "updated_at": "2026-08-02T13:20:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -134,8 +134,8 @@
     },
     {
       "name": "FarmBuild",
-      "version": "1.3.0",
-      "download_url": "https://github.com/LordRikiller/FarmBuild/releases/download/v1.3.0/FarmBuild.dll",
+      "version": "1.3.1",
+      "download_url": "https://github.com/LordRikiller/FarmBuild/releases/download/v1.3.1/FarmBuild.dll",
       "dll_name": "FarmBuild.dll",
       "plugin_folder": "FarmBuild",
       "description": "Standalone (not Mega series): MegaBuilder-style build-piece grid snap (F7 toggle on/off, F6 cycles 0.25/0.5/1/2/4m) plus MegaFarming mass farming (hold hotkey to mass-harvest pickables, pickable-items and beehives within radius, or grid-plant a configurable WxL block) plus a Home Portal hub-and-spoke teleport network (build a stone hub from the Hammer, name it, tag portals \"hub>label\" as spokes, walk in to pick a destination from a sortable Name/Biome/Distance table). Furniture snaps to the piece you point at, including angled/octagon builds. Farm grid obeys the F7 snap toggle; FarmGridSize (0 = follow the build grid F6 size) sets the plant cell size, auto-widening so bushes never overlap. New Sea Floor Walking (4): press Minus [-] to stop swimming and walk along the ocean floor instead — hotkey only, no Megingjord belt or any other gear required, and the camera stops clipping above the waterline while you're down there. No MegaBuilder/MegaFarming/MegaQoL/MegaMegingjord dependency."
