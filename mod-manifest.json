@@ -36,11 +36,11 @@
     },
     {
       "name": "MegaQoL",
-      "version": "1.17.8",
-      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.17.8/MegaQoL.dll",
+      "version": "1.18.0",
+      "download_url": "https://github.com/LordRikiller/MegaQoL/releases/download/v1.18.0/MegaQoL.dll",
       "dll_name": "MegaQoL.dll",
       "plugin_folder": "MegaQoL",
-      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage), and Tamed Spike Immunity (your own Sharp Stakes, Ashwood Stakewall and Dvergr Sharp Stakes no longer skewer your tamed animals; wild mobs still cop it). New Tamed Range (16, default off): widens Valheim's active-zone radius so your tamed creatures stay simulated and interactive (follow/react/move) much further from you instead of freezing once you wander off — ActiveZoneRadius 2-4 (~128/192/256m). Global setting that keeps other nearby objects and creatures simulated further too, so it carries a CPU/RAM cost near busy bases. Ballista now holds fire without a clear line of sight to its target, plus optional infinite Flametal-Bolt ammo and an optional MegaShot-Armageddon firing animation (Staff-of-Lightning bolt + meteor-crash on impact). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). New Boat Map Reveal (17, on by default): while you're aboard a Raft, Karve, Longship or Drakkar, the map's fog-of-war uncovers a much larger area around you so sailing scouts the world (RevealMultiplier, ~8x by default). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch."
+      "description": "Quality of life — auto repair, refueller, ballista, map teleport, quicker portals, no mist, instant mining, Shield Generator bubble/prong toggles, Warden (active Wards make build pieces + plantables in radius immune to damage), and Tamed Spike Immunity (your own Sharp Stakes, Ashwood Stakewall and Dvergr Sharp Stakes no longer skewer your tamed animals; wild mobs still cop it). New Tamed Range (16, default off): widens Valheim's active-zone radius so your tamed creatures stay simulated and interactive (follow/react/move) much further from you instead of freezing once you wander off — ActiveZoneRadius 2-4 (~128/192/256m). Global setting that keeps other nearby objects and creatures simulated further too, so it carries a CPU/RAM cost near busy bases. Ballista now holds fire without a clear line of sight to its target, plus optional infinite Flametal-Bolt ammo and an optional MegaShot-Armageddon firing animation (Staff-of-Lightning bolt + meteor-crash on impact). MegaShot's ALT-fire destroy bolt can bypass the Warden to clear protected objects in the way (toggle in 12. Warden). New Boat Map Reveal (17, on by default): while you're aboard a Raft, Karve, Longship or Drakkar, the map's fog-of-war uncovers a much larger area around you so sailing scouts the world (RevealMultiplier, ~8x by default). Build Dust Removal & Rune Build live in MegaBuilder v1.5.0+; auto-prunes orphan config sections on launch. — v1.18.0 MOVED the Home Portal network out to the standalone MegaPortals mod (install that to keep it; your hubs and settings carry over automatically) and REMOVED Quicker Portals."
     },
     {
       "name": "MegaStuff",
@@ -134,12 +134,20 @@
     },
     {
       "name": "MiniQoL",
-      "version": "1.4.0",
-      "download_url": "https://github.com/LordRikiller/MiniQoL/releases/download/v1.4.0/MiniQoL.dll",
+      "version": "1.5.0",
+      "download_url": "https://github.com/LordRikiller/MiniQoL/releases/download/v1.5.0/MiniQoL.dll",
       "dll_name": "MiniQoL.dll",
       "plugin_folder": "MiniQoL",
-      "description": "Standalone replacement for parts of the Mega series — do NOT run it alongside MegaBuilder, MegaFarming, MegaQoL or MegaMegingjord, as it re-implements their features and would double-patch the same methods. Bundles: build-piece grid snap (F7 toggles, F6 cycles 0.25/0.5/1/2/4m, furniture snaps to the piece you point at including angled/octagon builds); mass farming (hold the hotkey to mass-harvest pickables, pickable-items and beehives within radius, or grid-plant a configurable WxL block, with FarmGridSize where 0 follows the F6 build grid and spacing auto-widens so bushes never overlap); a Home Portal hub-and-spoke teleport network (build a stone hub from the Hammer, name it, tag portals \"hub>label\" as spokes, walk in to pick a destination from a sortable Name/Biome/Distance table); and Sea Floor Walking (press Minus [-] to stop swimming and walk the ocean floor — hotkey only, no Megingjord belt or gear needed, and the camera stops clipping above the waterline). Renamed from FarmBuild in v1.4.0; your old config and placed Home Portal hubs carry over.",
+      "description": "Standalone replacement for parts of the Mega series — do NOT run it alongside MegaBuilder, MegaFarming or MegaMegingjord, as it re-implements their features and would double-patch the same methods. (MegaPortals is fine to run with it.) Bundles: build-piece grid snap (F7 toggles, F6 cycles 0.25/0.5/1/2/4m, furniture snaps to the piece you point at including angled/octagon builds); mass farming (hold the hotkey to mass-harvest pickables, pickable-items and beehives within radius, or grid-plant a configurable WxL block, with FarmGridSize where 0 follows the F6 build grid and spacing auto-widens so bushes never overlap); and Sea Floor Walking (press Minus [-] to stop swimming and walk the ocean floor — hotkey only, no Megingjord belt or gear needed, and the camera stops clipping above the waterline). — v1.5.0 MOVED the Home Portal network out to the standalone MegaPortals mod; install that to keep it. Your hubs and your Home Portal settings carry over automatically. Renamed from FarmBuild in v1.4.0.",
       "standalone": true
+    },
+    {
+      "name": "MegaPortals",
+      "version": "1.0.0",
+      "download_url": "https://github.com/LordRikiller/MegaPortals/releases/download/v1.0.0/MegaPortals.dll",
+      "dll_name": "MegaPortals.dll",
+      "plugin_folder": "MegaPortals",
+      "description": "Hub-and-spoke portal teleport network. Build a stone \"Home Portal Hub\" from the Hammer (Misc tab) and name it, e.g. \"home\", then name your ordinary portals \"home>Label\" to link them as spokes. Walk into a spoke to travel to its hub; walk into the hub to pick a destination from a sortable Name/Biome/Distance table — click a header to sort, hub pinned top, names sort symbols before digits before letters, and the biome shows for every destination on the map (not just loaded zones). SpokeToSpoke lets spokes reach sibling spokes directly. PortalNameMaxLength raises vanilla's 10-character portal name cap. Configurable hub build cost. — This feature MOVED here out of MegaQoL (v1.18.0) and MiniQoL (v1.5.0); update those at the same time or two mods will patch the same portal methods. Hubs you have already built keep working: MegaPortals registers the legacy MegaQoL_PortalHub and FarmBuild_PortalHub prefab names alongside its own, and adopts your existing Home Portal settings on first run."
     }
   ]
 }

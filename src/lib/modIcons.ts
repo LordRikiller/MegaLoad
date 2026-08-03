@@ -13,6 +13,7 @@ import {
   Bone,
   Sprout,
   LayoutGrid,
+  DoorOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -33,6 +34,8 @@ export const MOD_ICONS: Record<string, LucideIcon> = {
   megafarming: Sprout,
   // Standalone, was FarmBuild before its v1.4.0. Grid snap is its signature feature.
   miniqol: LayoutGrid,
+  // Home Portal hub-and-spoke network, split out of MegaQoL/MiniQoL.
+  megaportals: DoorOpen,
 };
 
 export function iconForMod(folder: string | null | undefined, fileName: string): LucideIcon {
