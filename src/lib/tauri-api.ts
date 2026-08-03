@@ -235,6 +235,13 @@ export interface StarterMod {
   version: string;
   download_url: string;
   description: string | null;
+  /**
+   * A mod that REPLACES parts of the Mega series rather than complementing it
+   * (currently MiniQoL). It re-implements features from other mods, so running
+   * both double-patches the same vanilla methods. Never tick these by default
+   * and skip them in "Select all" — the user must opt in deliberately.
+   */
+  standalone: boolean;
 }
 
 export const getStarterMods = () =>

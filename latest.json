@@ -1,11 +1,11 @@
 {
-  "version": "1.11.2",
-  "notes": "Valheim Data — Craft Mats and Build Mats now respect your biome filters. With biomes ticked, the materials list only shows ingredients from those biomes instead of every biome in the game.",
-  "pub_date": "2026-07-25T04:41:00.237Z",
+  "version": "1.11.3",
+  "notes": "FarmBuild is now MiniQoL. It is marked standalone, so it is no longer ticked by default when you create a profile and is skipped by \"Select all\" — it replaces Mega-series features rather than complementing them, and running both double-patches the same methods. Tick it deliberately, on its own profile.",
+  "pub_date": "2026-08-03T22:31:13.449Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBIQklBTjBnUUZuSzUvMEsyZS9jZ2JYMXNYc01sVGxmOWxIeVhYQXFkOXg1Sm9OWHNhYWxqdjBzelhnU3BaaUZIZEtJNXhkZFh5KzRKZW55NUJZSFFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0OTU0MzMzCWZpbGU6TWVnYUxvYWRfMS4xMS4yX3g2NC1zZXR1cC5uc2lzLnppcApjVEpqTW5mSFVuZnBTWmdUcGFwajM5NWV0Q0ZFSVpGZktHUDgvYk1XRGUybFY3NFVQNXd4UTBSbkJ4U0VxSmlLdHFOM3lGSUloanh1UlpuZjJpR0FBQT09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.11.2/MegaLoad_1.11.2_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUM2ck9CVnBJZ2piZVdVQWV3alFCa0sxZTJGQzVBdFpwRG16dFJsOXhrSG5HUzRMZVlSLzJkTmxJbUEvbVNXc2hPZVVGTHluU2o5aVpJQ0xrZ3dsaFFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1Nzk2MjQzCWZpbGU6TWVnYUxvYWRfMS4xMS4zX3g2NC1zZXR1cC5uc2lzLnppcApXcE1COXA0ME9qcHVrcytmTHhheHBOUWpQbEdqK1gySTZOeVA2ZGNQVFRpaVVJRlB1ZC91L0F1aitMbkdQQjNuK0NYZ0NsNDFQNDdGRkx2R0plSDNBdz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.11.3/MegaLoad_1.11.3_x64-setup.nsis.zip"
     }
   }
 }

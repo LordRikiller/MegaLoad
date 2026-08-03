@@ -3459,6 +3459,10 @@ mod profile_bundle_merge_tests {
     /// A newer tombstone beats a stale "present" on the peer — the uninstall
     /// wins and the mod does NOT come back (the FarmBuild bug). And the reverse:
     /// a reinstall newer than a tombstone keeps the mod.
+    ///
+    /// "FarmBuild" below is just the fixture name the original bug was found with;
+    /// that mod was renamed to MiniQoL in its v1.4.0. Kept as-is — the name is
+    /// arbitrary to the merge logic and it keeps the bug report traceable.
     #[test]
     fn mod_tombstone_beats_stale_present_and_vice_versa() {
         // Local removed FarmBuild at t=20; remote still has it present at t=05.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import { useModStore } from "../stores/modStore";
 import { useSyncStore } from "../stores/syncStore";
@@ -13,6 +13,7 @@ import {
   Package,
   ExternalLink,
   Download,
+  AlertTriangle,
 } from "lucide-react";
 import { cn, formatModName } from "../lib/utils";
 import {
@@ -55,7 +56,10 @@ export function Profiles() {
     getStarterMods()
       .then((mods) => {
         setStarterMods(mods);
-        setSelectedStarters(new Set(mods.map((m) => m.name)));
+        // Standalone mods (MiniQoL) replace Mega-series features rather than
+        // complementing them — ticking one alongside the Mega mods double-patches
+        // the same vanilla methods. Leave them for the user to opt into.
+        setSelectedStarters(new Set(mods.filter((m) => !m.standalone).map((m) => m.name)));
       })
       .catch((e) => console.warn("[MegaLoad]", e));
   }, [fetchProfiles]);
@@ -109,12 +113,21 @@ export function Profiles() {
     });
   };
 
+  // "Select all" only ever covers the Mega-series mods. Standalone mods (MiniQoL)
+  // replace those features instead of complementing them, so sweeping them in with
+  // a bulk tick is exactly the conflict we're trying to prevent — they stay opt-in.
+  const bulkStarterNames = useMemo(
+    () => starterMods.filter((m) => !m.standalone).map((m) => m.name),
+    [starterMods]
+  );
+  const allBulkSelected = useMemo(
+    () => bulkStarterNames.length > 0 && bulkStarterNames.every((n) => selectedStarters.has(n)),
+    [bulkStarterNames, selectedStarters]
+  );
+
   const toggleAllStarters = () => {
-    if (selectedStarters.size === starterMods.length) {
-      setSelectedStarters(new Set());
-    } else {
-      setSelectedStarters(new Set(starterMods.map((m) => m.name)));
-    }
+    // Deselecting clears everything, including a deliberately-ticked standalone mod.
+    setSelectedStarters(allBulkSelected ? new Set() : new Set(bulkStarterNames));
   };
 
   // ── Live mod management for the ACTIVE profile ──────────────────────────
@@ -353,17 +366,28 @@ export function Profiles() {
                   key={mod.name}
                   onClick={() => toggleActiveMod(mod)}
                   disabled={!!togglingMod}
+                  title={
+                    mod.standalone
+                      ? `${formatModName(mod.name)} replaces Mega-series features — install it on its own profile, not alongside them.`
+                      : undefined
+                  }
                   className={cn(
                     "flex items-start gap-2.5 p-3 rounded-lg text-left transition-all border disabled:opacity-60",
                     isInstalled
-                      ? "bg-brand-500/10 border-brand-500/30 text-zinc-200"
+                      ? mod.standalone
+                        ? "bg-amber-500/10 border-amber-500/40 text-zinc-200"
+                        : "bg-brand-500/10 border-brand-500/30 text-zinc-200"
                       : "bg-zinc-900/50 border-zinc-800/50 text-zinc-500 hover:border-zinc-700"
                   )}
                 >
                   <div
                     className={cn(
                       "w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors",
-                      isInstalled ? "bg-brand-500 border-brand-500" : "border-zinc-600"
+                      isInstalled
+                        ? mod.standalone
+                          ? "bg-amber-500 border-amber-500"
+                          : "bg-brand-500 border-brand-500"
+                        : "border-zinc-600"
                     )}
                   >
                     {busy ? (
@@ -374,6 +398,12 @@ export function Profiles() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold truncate">{formatModName(mod.name)}</p>
+                    {mod.standalone && (
+                      <p className="text-[10px] text-amber-400/90 mt-0.5 leading-tight flex items-center gap-1">
+                        <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                        Standalone — not with Mega mods
+                      </p>
+                    )}
                     {mod.description && (
                       <p className="text-[10px] text-zinc-500 line-clamp-2 mt-0.5 leading-tight">
                         {mod.description}
@@ -432,7 +462,7 @@ export function Profiles() {
                   onClick={toggleAllStarters}
                   className="text-[10px] text-zinc-500 hover:text-brand-400 transition-colors"
                 >
-                  {selectedStarters.size === starterMods.length ? "Deselect all" : "Select all"}
+                  {allBulkSelected ? "Deselect all" : "Select all"}
                 </button>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -442,10 +472,17 @@ export function Profiles() {
                     <button
                       key={mod.name}
                       onClick={() => toggleStarter(mod.name)}
+                      title={
+                        mod.standalone
+                          ? `${formatModName(mod.name)} replaces Mega-series features — install it on its own profile, not alongside them.`
+                          : undefined
+                      }
                       className={cn(
                         "flex items-start gap-2.5 p-3 rounded-lg text-left transition-all border",
                         selected
-                          ? "bg-brand-500/10 border-brand-500/30 text-zinc-200"
+                          ? mod.standalone
+                            ? "bg-amber-500/10 border-amber-500/40 text-zinc-200"
+                            : "bg-brand-500/10 border-brand-500/30 text-zinc-200"
                           : "bg-zinc-900/50 border-zinc-800/50 text-zinc-500 hover:border-zinc-700"
                       )}
                     >
@@ -453,7 +490,9 @@ export function Profiles() {
                         className={cn(
                           "w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors",
                           selected
-                            ? "bg-brand-500 border-brand-500"
+                            ? mod.standalone
+                              ? "bg-amber-500 border-amber-500"
+                              : "bg-brand-500 border-brand-500"
                             : "border-zinc-600"
                         )}
                       >
@@ -461,6 +500,12 @@ export function Profiles() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-semibold truncate">{formatModName(mod.name)}</p>
+                        {mod.standalone && (
+                          <p className="text-[10px] text-amber-400/90 mt-0.5 leading-tight flex items-center gap-1">
+                            <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                            Standalone — not with Mega mods
+                          </p>
+                        )}
                         {mod.description && (
                           <p className="text-[10px] text-zinc-500 line-clamp-2 mt-0.5 leading-tight">
                             {mod.description}

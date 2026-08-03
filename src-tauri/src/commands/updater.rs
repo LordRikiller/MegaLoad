@@ -61,6 +61,12 @@ struct ManifestMod {
     description: Option<String>,
     #[serde(default)]
     hidden: bool,
+    /// A mod that REPLACES parts of the Mega series rather than complementing it
+    /// (currently MiniQoL). It re-implements features from other mods, so loading
+    /// both double-patches the same vanilla methods. The UI must never tick these
+    /// by default and must skip them in "Select all" — see `Profiles.tsx`.
+    #[serde(default)]
+    standalone: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -377,6 +383,9 @@ pub struct StarterMod {
     pub version: String,
     pub download_url: String,
     pub description: Option<String>,
+    /// See `ManifestMod::standalone` — the UI uses this to keep the mod off the
+    /// default-selected set instead of hiding it.
+    pub standalone: bool,
 }
 
 #[command]
@@ -391,6 +400,7 @@ pub fn get_starter_mods() -> Result<Vec<StarterMod>, String> {
             version: m.version,
             download_url: m.download_url,
             description: m.description,
+            standalone: m.standalone,
         })
         .collect())
 }
