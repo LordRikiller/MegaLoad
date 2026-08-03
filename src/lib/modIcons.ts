@@ -12,6 +12,7 @@ import {
   Hammer,
   Bone,
   Sprout,
+  LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,6 +31,8 @@ export const MOD_ICONS: Record<string, LucideIcon> = {
   megabuilder: Hammer,
   megaskeletons: Bone,
   megafarming: Sprout,
+  // Standalone, was FarmBuild before its v1.4.0. Grid snap is its signature feature.
+  miniqol: LayoutGrid,
 };
 
 export function iconForMod(folder: string | null | undefined, fileName: string): LucideIcon {

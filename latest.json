@@ -1,11 +1,11 @@
 {
-  "version": "1.11.3",
-  "notes": "FarmBuild is now MiniQoL. It is marked standalone, so it is no longer ticked by default when you create a profile and is skipped by \"Select all\" — it replaces Mega-series features rather than complementing them, and running both double-patches the same methods. Tick it deliberately, on its own profile.",
-  "pub_date": "2026-08-03T22:31:13.449Z",
+  "version": "1.11.4",
+  "notes": "FarmBuild is now MiniQoL, and it is marked standalone: no longer ticked by default when you create a profile, and skipped by \"Select all\" — it replaces Mega-series features rather than complementing them. Also fixes the MegaBugs Mods filter, which silently ignored tags for MiniQoL, MegaDebug, MegaDragons, MegaDvergr and MegaPlanner.",
+  "pub_date": "2026-08-03T22:38:16.314Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUM2ck9CVnBJZ2piZVdVQWV3alFCa0sxZTJGQzVBdFpwRG16dFJsOXhrSG5HUzRMZVlSLzJkTmxJbUEvbVNXc2hPZVVGTHluU2o5aVpJQ0xrZ3dsaFFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1Nzk2MjQzCWZpbGU6TWVnYUxvYWRfMS4xMS4zX3g2NC1zZXR1cC5uc2lzLnppcApXcE1COXA0ME9qcHVrcytmTHhheHBOUWpQbEdqK1gySTZOeVA2ZGNQVFRpaVVJRlB1ZC91L0F1aitMbkdQQjNuK0NYZ0NsNDFQNDdGRkx2R0plSDNBdz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.11.3/MegaLoad_1.11.3_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUIyVWM0RldNTjhmSHZaRUw3ZStVVGJJZjhxaUNUU2VmNlNWVk8yTWJHTHZ0VmdhUFJ5ZDFkRjBwc2poVTAyZStXb0NNWitmbUtvOVlLUEFEaUNSdndnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1Nzk2Njg2CWZpbGU6TWVnYUxvYWRfMS4xMS40X3g2NC1zZXR1cC5uc2lzLnppcApIVzgxSGpUUmdPZXdMM2dvZ2tOTFo2V1R6L2RNNW8zanMzSWpyRThZRzN0NmVhamdCUWpGMUhZUWVyMzdLMWJta3MzWlcrT2V1b3lWNnNRQzB4MlREUT09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.11.4/MegaLoad_1.11.4_x64-setup.nsis.zip"
     }
   }
 }
