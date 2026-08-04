@@ -637,6 +637,9 @@ const CREATURE_TROPHY_OVERRIDE: Record<string, string> = {
   "Charred_Archer_Fader": "TrophyCharredArcher",
   "Charred_Twitcher": "TrophyCharredMelee",
   "BlobFrost": "TrophyBlob",
+  // Hens drop no trophy, so the trophy fallback finds nothing and the lucide
+  // skull glyph shows instead. The egg reads as poultry at a glance.
+  "Hen": "ChickenEgg",
 
   "Greyling": "TrophyGreydwarf",
   "BlobLava": "TrophySurtling",

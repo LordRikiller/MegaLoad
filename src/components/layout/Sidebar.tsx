@@ -24,6 +24,7 @@ import {
   MessageCircle,
   Shield,
   ListChecks,
+  PawPrint,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useProfileStore } from "../../stores/profileStore";
@@ -51,6 +52,7 @@ const navItems = [
   { to: "/config", icon: Settings2, label: "Config Editor" },
   { to: "/trainer", icon: Gamepad2, label: "Trainer" },
   { to: "/valheim-data", icon: Database, label: "Valheim Data" },
+  { to: "/pets", icon: PawPrint, label: "Pet Calculator" },
   { to: "/megalist", icon: ListChecks, label: "MegaList" },
   { to: "/player-data", icon: UserCircle, label: "Player Data" },
   { to: "/logs", icon: ScrollText, label: "Log Viewer" },
@@ -292,8 +294,10 @@ export function Sidebar() {
 
   return (
     <aside className="w-56 glass border-r border-zinc-800/50 flex flex-col shrink-0">
-      {/* Nav Items */}
-      <nav className="flex-1 py-4 px-3 space-y-1">
+      {/* Nav Items — scrolls on its own so the profile/sync/launch footer stays
+          pinned no matter how many pages the nav grows to. min-h-0 is what lets
+          a flex child actually shrink below its content height. */}
+      <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -483,7 +487,7 @@ export function Sidebar() {
       )}
 
       {/* Game Status + Launch Button */}
-      <div className="p-3 border-t border-zinc-800/50">
+      <div className="p-3 border-t border-zinc-800/50 shrink-0">
         {/* Game/Steam status indicator */}
         {gameStatus && valheimPath && (
           <div className="mb-2 space-y-1">
