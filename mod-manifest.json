@@ -4,11 +4,11 @@
   "mods": [
     {
       "name": "MegaHoe",
-      "version": "4.10.4",
-      "download_url": "https://github.com/LordRikiller/MegaHoe/releases/download/v4.10.4/MegaHoe.dll",
+      "version": "4.11.0",
+      "download_url": "https://github.com/LordRikiller/MegaHoe/releases/download/v4.11.0/MegaHoe.dll",
       "dll_name": "MegaHoe.dll",
       "plugin_folder": "MegaHoe",
-      "description": "Hoe tool overhaul with biome painter, extended terrain editing, and configurable radius"
+      "description": "Hoe tool overhaul — level/reset terrain, height limit bypass, and configurable radius"
     },
     {
       "name": "MegaMegingjord",
