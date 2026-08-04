@@ -642,9 +642,9 @@ const RAW_MATERIAL_BIOME = {
   "BirchSeeds": "Meadows",
 
   // ─── Ocean (tier 2) ───
+  // NB: FreshSeaweed + SpiceOceans used to live here on thematic grounds. Both are
+  // Bog Witch stock and are never harvested from the sea — see the Swamp block below.
   "Chitin": "Ocean",
-  "FreshSeaweed": "Ocean",
-  "SpiceOceans": "Ocean",
   "SerpentMeat": "Ocean",
   "SerpentScale": "Ocean",
   "SerpentMeatCooked": "Ocean",
@@ -658,10 +658,20 @@ const RAW_MATERIAL_BIOME = {
   "Turnip": "Swamp",
   "Entrails": "Swamp",
   "Ooze": "Swamp",
-  "MushroomBzerker": "Swamp",
   "Root": "Swamp",
   "ElderBark": "Swamp",
-  "BlobVial": "Swamp",  // Bog Witch vendor — blob bomb ingredient
+  // ── Bog Witch stock, ungated or gated below Swamp ──
+  // The witch lives in the Swamp, so Swamp is the floor for everything she sells
+  // (Rule 6). A gate only matters when its boss sits ABOVE tier 3 — the Elder is
+  // Black Forest (1) and a Serpent is Ocean (2), so neither lifts these.
+  // All vendor-exclusive: none of them are found in the world. Ticket 20260804-101500-3f2ab8d1.
+  "BlobVial": "Swamp",                // Elder-gated — blob bomb ingredient
+  "SpiceForests": "Swamp",            // Elder-gated — Woodland Herb Blend
+  "SpiceOceans": "Swamp",             // Serpent-gated — Seafarer's Herbs (NOT Ocean)
+  "FreshSeaweed": "Swamp",            // ungated (NOT Ocean — never harvested from the sea)
+  "CuredSquirrelHamstring": "Swamp",  // ungated (NOT Mistlands — no Mistlands source)
+  "PowderedDragonEgg": "Swamp",       // ungated (NOT Mountain — not looted from Drake nests)
+  "PungentPebbles": "Swamp",          // ungated (NOT Ashlands)
 
   // ─── Mountain (tier 4) ───
   "Silver": "Mountain",
@@ -676,6 +686,13 @@ const RAW_MATERIAL_BIOME = {
   "FreezeGland": "Mountain",
   "OnionSeeds": "Mountain",
   "Onion": "Mountain",
+  // ── Bog Witch stock gated behind Moder ──
+  // Moder is the Mountain boss (tier 4), which outranks the witch's own Swamp
+  // floor (3), so the unlock biome wins. Ticket 20260804-101500-3f2ab8d1.
+  "MushroomBzerker": "Mountain",   // Toadstool — vendor-only, not foraged
+  "FragrantBundle": "Mountain",
+  "ScytheHandle": "Mountain",
+  "SpiceMountains": "Mountain",    // Mountain Peak Pepper Powder
 
   // ─── Plains (tier 5) ───
   "BlackMetal": "Plains",
@@ -691,6 +708,7 @@ const RAW_MATERIAL_BIOME = {
   "Tar": "Plains",
   "BlobTar": "Plains",
   "GoblinTotem": "Plains",
+  "SpicePlains": "Plains",   // Bog Witch — Grasslands Herbalist Harvest, after Yagluth
 
   // ─── Mistlands (tier 6) ───
   "Carapace": "Mistlands",
@@ -712,7 +730,7 @@ const RAW_MATERIAL_BIOME = {
   "JuteRed": "Mistlands",
   "HareMeat": "Mistlands",
   "ScaleHide": "Mistlands",
-  "SpiceMistlands": "Mistlands",
+  "SpiceMistlands": "Mistlands",   // Bog Witch — Herbs of the Hidden Hills, after The Queen
 
   // ─── Ashlands (tier 7) ───
   "FlametalNew": "Ashlands",
@@ -725,7 +743,7 @@ const RAW_MATERIAL_BIOME = {
   "CeramicPlate": "Mistlands",  // Crafted from BlackMarble (Mistlands) at Artisan Station
   "VineberrySeeds": "Ashlands",
   "Fiddleheadfern": "Ashlands",
-  "SpiceAshlands": "Ashlands",
+  "SpiceAshlands": "Ashlands",   // Bog Witch — Fiery Spice Powder, after Fader
   "AsksvinCarrionNeck": "Ashlands",
   "AsksvinCarrionPelvic": "Ashlands",
   "AsksvinCarrionRibcage": "Ashlands",
@@ -798,24 +816,24 @@ const BIOME_OVERRIDE = {
   "MeadStaminaMedium": ["Plains"],        // Cloudberry=Plains
   "MeadFrostResist": ["Swamp"],           // Bloodbag=Swamp highest ingredient
   "MeadHealthMajor": ["Mistlands"],       // GiantBloodSack=Mistlands, RoyalJelly=Mistlands
-  "MeadBugRepellent": ["Mistlands"],      // FragrantBundle=Mistlands
+  "MeadBugRepellent": ["Plains"],         // Cloudberry+Fish7(Grouper)=Plains(5) > FragrantBundle=Mountain(4)
   "MeadEitrMinor": ["Mistlands"],         // Sap/Magecap=Mistlands
   "MeadHealthLingering": ["Ashlands"],    // Vineberry=Ashlands
   "MeadStaminaLingering": ["Mistlands"],  // Sap/JotunPuffs=Mistlands
   "MeadEitrLingering": ["Ashlands"],      // Vineberry=Ashlands
   "BarleyWine": ["Plains"],               // Barley/Cloudberry=Plains
   // ── Bog Witch meads (Swamp vendor gate, tier 3 minimum) ──
-  "MeadBzerker": ["Swamp"],              // Toadstool=Swamp, BogWitch=Swamp
+  // These are only a fallback: recomputeCookedBiomes() re-derives finished meads
+  // from their cloned MeadBase recipe and wins over anything written here. Keep
+  // them honest anyway so the file doesn't lie about the expected result.
+  "MeadBzerker": ["Mountain"],           // MushroomBzerker=Mountain (Bog Witch, after Moder)
   "MeadLightfoot": ["Mistlands"],        // ScaleHide=Mistlands(6), Magecap=Mistlands(6) > Swamp(3)
-  "MeadSwimmer": ["Swamp"],              // BogWitch=Swamp(3) > Seaweed=Ocean(2)
-  "MeadTamer": ["Ashlands"],             // PungentPebbles=Ashlands > Swamp
-  "MeadStrength": ["Mountain"],          // PowderedDragonEgg=Mountain > Swamp
-  "MeadHasty": ["Mistlands"],            // CuredSquirrelHamstring=Mistlands > Swamp
+  "MeadSwimmer": ["Swamp"],              // FreshSeaweed=Swamp (Bog Witch, ungated)
+  "MeadTamer": ["Mountain"],             // Onion=Mountain(4) > PungentPebbles=Swamp(3)
+  "MeadStrength": ["Swamp"],             // PowderedDragonEgg=Swamp (Bog Witch, ungated)
+  "MeadHasty": ["Swamp"],                // CuredSquirrelHamstring=Swamp (Bog Witch, ungated)
   "MeadTrollPheromones": ["Swamp"],      // BogWitch=Swamp(3) > TrollHide=BF(1)
-  // Regional spices
-  "SpicePlains": ["Plains"],
-  "SpiceMountains": ["Mountain"],
-  "SpiceForests": ["Swamp"],          // Bog Witch vendor — moved from Haldor in Bog Witch update
+  // Regional spices are all Bog Witch stock — see the Bog Witch block below.
   // Hildir quest keys
   "HildirKey_forestcrypt": ["Black Forest"],
   "HildirKey_plainsfortress": ["Plains"],
@@ -884,7 +902,7 @@ const BIOME_OVERRIDE = {
 
   // ─── Mushrooms & foraged items (multi-biome foraging) ───
   "MushroomYellow": ["Black Forest", "Swamp"],
-  "MushroomBzerker": ["Swamp"],
+  // MushroomBzerker (Toadstool) is NOT foraged — Bog Witch stock, see block below.
   "MushroomSmokePuff": ["Ashlands"],   // Wiki Ashlands forage — re-tagged from Mistlands
   "Carrot": ["Black Forest"],
   "Turnip": ["Swamp"],
@@ -934,31 +952,47 @@ const BIOME_OVERRIDE = {
   // ─── Mountain materials ───
   "DragonEgg": ["Mountain"],
   "WolfHairBundle": ["Mountain"],
-  "PowderedDragonEgg": ["Mountain"],
 
   // ─── Mistlands materials ───
   "DvergrKeyFragment": ["Mistlands"],
   "DvergrNeedle": ["Mistlands"],
-  "CuredSquirrelHamstring": ["Mistlands"],
-  "ScytheHandle": ["Mistlands"],
   "DyrnwynBladeFragment": ["Mistlands"],
   "DyrnwynTipFragment": ["Mistlands"],
-  "FragrantBundle": ["Mistlands"],
 
   // ─── Ashlands materials ───
   "CharredCogwheel": ["Ashlands"],
   "Charredskull": ["Ashlands"],
   "AsksvinEgg": ["Ashlands"],
-  "PungentPebbles": ["Ashlands"],
 
   // ─── Vendor items (biome of the vendor) ───
-  "CandleWick": ["Swamp"],                // Bog Witch vendor (moved from Haldor)
-  "BlobVial": ["Swamp"],                  // Bog Witch vendor
   "FireworksRocket_White": ["Meadows"],   // Hildir vendor (after Bronze Chest)
   "Ironpit": ["Meadows"],                 // Hildir vendor (also decorative in Ashlands)
-  "VineGreenSeeds": ["Swamp"],            // Bog Witch vendor (Ivy Seeds — moved from Haldor)
   "BarberKit": ["Meadows"],               // Hildir vendor
   "HelmetSweatBand": ["Meadows"],         // Hildir vendor (Headband)
+
+  // ─── Bog Witch stock — biome = max(vendor's Swamp, unlock boss's biome) ───
+  // Every one of these is vendor-exclusive. The witch spawns in the Swamp, so
+  // Swamp is the floor; a boss gate only lifts it when that boss sits above
+  // tier 3. Mirror any change here in RAW_MATERIAL_BIOME or the meads that use
+  // these as ingredients will drift. Ticket 20260804-101500-3f2ab8d1.
+  "CandleWick": ["Swamp"],                // ungated (moved from Haldor)
+  "VineGreenSeeds": ["Swamp"],            // ungated — Ivy Seeds (moved from Haldor)
+  "FreshSeaweed": ["Swamp"],              // ungated — was wrongly Ocean
+  "CuredSquirrelHamstring": ["Swamp"],    // ungated — was wrongly Mistlands
+  "PowderedDragonEgg": ["Swamp"],         // ungated — was wrongly Mountain
+  "PungentPebbles": ["Swamp"],            // ungated — was wrongly Ashlands
+  "BlobVial": ["Swamp"],                  // after The Elder (BF tier 1 < Swamp)
+  "SpiceForests": ["Swamp"],              // after The Elder — moved from Haldor
+  "SpiceOceans": ["Swamp"],               // after a Serpent (Ocean tier 2 < Swamp) — was wrongly Ocean
+  "MushroomBzerker": ["Mountain"],        // after Moder — Toadstool, was wrongly Swamp + tagged Foraging
+  "FragrantBundle": ["Mountain"],         // after Moder — was wrongly Mistlands
+  "ScytheHandle": ["Mountain"],           // after Moder — was wrongly Mistlands
+  "SpiceMountains": ["Mountain"],         // after Moder
+  "SpicePlains": ["Plains"],              // after Yagluth
+  "SpiceMistlands": ["Mistlands"],        // after The Queen
+  "SpiceAshlands": ["Ashlands"],          // after Fader
+  // Serving Tray (Feaster) is deliberately NOT here — the witch sells it, but it
+  // is also Workbench-craftable from 6 Deer Hide, so Meadows is correct (Rule 8).
   "TankardOdin": [],                      // DLC-only beta supporter item — no biome
   "AxeHead1": ["Meadows"],                // Found in Abandoned House ruins (variant 6) in Meadows
 
@@ -2639,15 +2673,32 @@ const ITEM_FIXUPS = {
   "VoltureEgg":       { source: ["Creature Drop", "Pickup"] },
   "Fish11":           { source: ["Fishing"] },  // Magmafish
   "Ironpit":          { biomes: ["Meadows"], source: ["Vendor"] },  // Hildir vendor (decorative in Ashlands but not pickable there)
-  "PungentPebbles":   { biomes: ["Swamp"], source: ["Vendor"] },
   // Mistlands materials wrongly tagged as chest loot
   "BlackCore":        { source: ["Pickup", "Creature Drop"] },  // Stand pickup in Infested Mines + Seeker Soldier drops
   "DvergrNeedle":     { source: ["Destructible"] },              // Dvergr Component Crates (surface settlements)
   "JuteRed":          { source: ["Chest Loot", "Destructible"] }, // Dvergr Chests + Dvergr curtains/banners
   // Vendor-source overrides (items moved to vendors / fix from extraction)
-  "CandleWick":              { biomes: ["Swamp"],   source: ["Vendor"] },     // Bog Witch
-  "VineGreenSeeds":          { biomes: ["Swamp"],   source: ["Vendor"] },     // Bog Witch (Ivy Seeds)
-  "SpiceForests":            { biomes: ["Swamp"],   source: ["Vendor"] },     // Bog Witch (Woodland Herb Blend)
+  // ── Bog Witch: every item below is vendor-exclusive. The extractor guesses
+  // "Pickup"/"Foraging" for anything with no recipe, so the source needs stating
+  // outright. Biomes come from BIOME_OVERRIDE (vendor floor vs unlock gate) —
+  // don't restate them here or the two copies drift. Ticket 20260804-101500-3f2ab8d1.
+  "CandleWick":              { source: ["Vendor"] },
+  "VineGreenSeeds":          { source: ["Vendor"] },   // Ivy Seeds
+  "SpiceForests":            { source: ["Vendor"] },   // Woodland Herb Blend
+  "SpiceOceans":             { source: ["Vendor"] },   // Seafarer's Herbs
+  "SpiceMountains":          { source: ["Vendor"] },   // Mountain Peak Pepper Powder
+  "SpicePlains":             { source: ["Vendor"] },   // Grasslands Herbalist Harvest
+  "SpiceMistlands":          { source: ["Vendor"] },   // Herbs of the Hidden Hills
+  "SpiceAshlands":           { source: ["Vendor"] },   // Fiery Spice Powder
+  "FreshSeaweed":            { source: ["Vendor"] },
+  "CuredSquirrelHamstring":  { source: ["Vendor"] },
+  "PowderedDragonEgg":       { source: ["Vendor"] },
+  "PungentPebbles":          { source: ["Vendor"] },
+  "FragrantBundle":          { source: ["Vendor"] },
+  "ScytheHandle":            { source: ["Vendor"] },
+  "MushroomBzerker":         { source: ["Vendor"] },   // Toadstool — not foraged
+  "BlobVial":                { source: ["Vendor"] },   // Corked Vial
+  "MeadTrollPheromones":     { source: ["Vendor"] },   // Love Potion — sold ready-made
   "FireworksRocket_White":   { biomes: ["Meadows"], source: ["Vendor"] },     // Hildir
   "BarberKit":               { biomes: ["Meadows"], source: ["Vendor"] },     // Hildir
   "HelmetSweatBand":         { biomes: ["Meadows"], source: ["Vendor"] },     // Hildir

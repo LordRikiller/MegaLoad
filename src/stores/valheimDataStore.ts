@@ -120,12 +120,15 @@ export const VENDORS: Record<string, Vendor> = {
       { id: "CuredSquirrelHamstring", price: 80, currency: "Coins" },
       { id: "PowderedDragonEgg", price: 120, currency: "Coins" },
       { id: "PungentPebbles", price: 125, currency: "Coins" },
-      { id: "LovePotion", price: 110, currency: "Coins" },
-      { id: "IvySeeds", price: 65, currency: "Coins" },
+      // These must be prefab IDs, not display names — VendorDetailView resolves
+      // them with getItemById() and there is no alias map, so a display name
+      // renders as a dead row and hides the vendor on the item's own page.
+      { id: "MeadTrollPheromones", price: 110, currency: "Coins" },  // Love Potion
+      { id: "VineGreenSeeds", price: 65, currency: "Coins" },        // Ivy Seeds
       { id: "Feaster", price: 140, currency: "Coins" },
       { id: "BlobVial", price: 150, currency: "Coins", requirement: "Defeat The Elder" },
       { id: "SpiceForests", price: 120, currency: "Coins", requirement: "Defeat The Elder" },
-      { id: "SpiceSea", price: 130, currency: "Coins", requirement: "Kill a Serpent" },
+      { id: "SpiceOceans", price: 130, currency: "Coins", requirement: "Kill a Serpent" },  // Seafarer's Herbs
       { id: "MushroomBzerker", price: 85, currency: "Coins", requirement: "Defeat Moder" },
       { id: "FragrantBundle", price: 140, currency: "Coins", requirement: "Defeat Moder" },
       { id: "ScytheHandle", price: 200, currency: "Coins", requirement: "Defeat Moder" },
