@@ -1,11 +1,11 @@
 {
-  "version": "1.11.5",
-  "notes": "New mod: MegaPortals — the Home Portal hub-and-spoke teleport network, split out of MegaQoL (v1.18.0) and MiniQoL (v1.5.0) into its own mod. Install all three together. Your existing hubs and your Home Portal settings carry over automatically. MegaQoL also drops Quicker Portals. This MegaLoad build adds the megaportals ticket tag and mod icon.",
-  "pub_date": "2026-08-04T09:20:00.000Z",
+  "version": "1.11.6",
+  "notes": "Valheim Data — the Bog Witch's shelf now agrees with itself.\n\nAnything she only sells after a boss kill shows that boss's biome: Fragrant Bundle, Scythe Handle, Toadstool and Mountain Peak Pepper Powder read Mountain for Moder instead of Mistlands or Swamp. Everything ungated now sits in the Swamp with her — Fresh Seaweed, Cured Squirrel Hamstring, Powdered Dragon Eggshells and Seafarer's Herbs were showing Ocean, Mistlands, Mountain and Ocean respectively, none of which you can actually find them in. All 17 items are tagged as vendor stock rather than world pickups.\n\nSix meads inherited the corrected tiers, two of them moving further than expected: Anti-Sting Concoction is Plains (its Cloudberries and Grouper outrank the bundle) and Brew of Animal Whispers is Mountain (Onion outranks the pebbles).\n\nAlso fixed: Love Potion, Ivy Seeds and Seafarer's Herbs were dead rows on the Bog Witch's page — no icon, no link — and their own item pages never listed her as a vendor. All three open properly now.\n\nServing Tray stays in Meadows on purpose: she sells it, but you can also craft it at a Workbench from 6 Deer Hide.",
+  "pub_date": "2026-08-04T11:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFzaWNmSlBGSGpuRzQvaFNIdThyRUh2dzZtQTU4VlVWOFBqMWluUyswOG5NSmVUdjRjcWdDS3hKYVhLWTJ1c0NuQmZFNHJWL2VheFR4NURFd1ZhZmdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1Nzk4OTc2CWZpbGU6TWVnYUxvYWRfMS4xMS41X3g2NC1zZXR1cC5uc2lzLnppcAplVUFKS2ZPblFxUGdlei9PWXdPaVhRSmpBeURrc3ZUTERQSkhLb3JPbENPbU1veDVQSGprQ3lGK3YvR2V2R1hlbkExQVR5amZxMW5FaTV6ZFhtOGRCZz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.11.5/MegaLoad_1.11.5_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUF3bTFNeXUyZGRRT2Z3ZXdvUFpjNFphMlY5QXJKNUhuUnVmSWVEVVNQc3dkaGptbkZjSWpMRDdBYytPekhDVFJWYm10TkFaWmRnaVFvWk5VQWpwcEFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1ODE4MDk5CWZpbGU6TWVnYUxvYWRfMS4xMS42X3g2NC1zZXR1cC5uc2lzLnppcApac1FIZmZrbWFHL1BJNFZLYUdVYWtXclJQQ2RLdGcvSm1BZjh3SkYwTVc4Qm9xZ1JOUXgvU1FvR1l5eWpia3VQeWJLUVdiQ21EMVNkSVo5TEV3L0ZBdz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.11.6/MegaLoad_1.11.6_x64-setup.nsis.zip"
     }
   }
 }
