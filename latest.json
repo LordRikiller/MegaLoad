@@ -1,11 +1,11 @@
 {
-  "version": "1.12.0",
-  "notes": "Pet Calculator — a new page that does the livestock sums for you.\n\nPick a beast (Boar, Wolf, Lox, Hen or Asksvin) and it lays out the taming clock, the food you need to carry, the breeding density cap and how long a herd takes to fill the pen. The pen designer takes octagonal, rectangular or square paddocks, sizes them with sliders, and prices the walls piece by piece.\n\nWall catalogue covers Wood (wall, half, quarter, log beams, stakewall), Ashwood, Stone 1x1 / 2x1 / 4x2, Grausten 1x2 / 2x2 / 4x2, Black Marble tiles 1x1 / 2x2 / 2x4, Iron cage walls, Crystal and Dvergr — each with its live recipe, a cost per square metre so you can spot the efficient piece, and a gate or door of your choosing.\n\nEvery wall piece, food and drop links straight through to its Valheim Data page, and the costs read from the live data set, so a data refresh keeps the calculator honest. Yield cards use the real chance-weighted drop tables.\n\nThe sidebar nav now scrolls on its own, with the profile, sync and Launch footer pinned in place.",
-  "pub_date": "2026-08-04T11:35:00.000Z",
+  "version": "1.12.1",
+  "notes": "Responsiveness fix — MegaLoad no longer seizes up after days of uptime.\n\nEvery background job (the game-status poll, mod update checks, the MegaBugs badge, cloud sync, MegaChat) used to do its work on the app's main thread, and a web request that stalled — typically after a laptop sleep/wake — could block that thread indefinitely. Everything you clicked afterwards queued up behind it, which is why pages took an age to open and the sidebar sat stuck on \"Updating mods...\".\n\nAll commands now run off the main thread, every web request has proper connect and read timeouts so a dead connection errors out instead of hanging forever, and the background pollers skip a beat instead of stacking up when a request runs long. Leave it open for a week — she'll be right.",
+  "pub_date": "2026-08-15T02:00:09.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFGajdGNDJxSzNFYXlIM2M3azNQOGlqUWpGUjV1eGtXdjdZbUtORUNHSE5mRG93L09kWDA2eFNPMWV6R0FZNnlrMjhYZWpKV01ienVadGRVdURjdVFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1ODQyODI4CWZpbGU6TWVnYUxvYWRfMS4xMi4wX3g2NC1zZXR1cC5uc2lzLnppcAo5c001Rm52Um40YkZvV0toME1ycEs0L3ZMN09IandyTjk2RTY1UnhOL3dqUG9KbThlb2RYNXFVNS9hMHRDOGw0YS9NMGpxdGpiS28rbzB2N005RWFDUT09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.12.0/MegaLoad_1.12.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOURqcENwY0dBNzhIRGlCRVdoYXJDcEFoUmxzMURuZE1MNDZtcGFBd1V2RlVRM1pLZ0h2ZHJxeUFvRmNtNmt1ZHNjZmw5ZTlOZEJnZXA3OWg1ODdZMXdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NzU5MDYyCWZpbGU6TWVnYUxvYWRfMS4xMi4xX3g2NC1zZXR1cC5uc2lzLnppcApydVRCL3BZUFl0Wk5oajdybVdndXdkWlNUdVBBQnlKT2tKbjVING1neTl0bi9XbG5YZnlGZDRyV1VBYWF4bTdJZjFJNHMxV2I5TUdPeEJYbmFLQkFBZz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.12.1/MegaLoad_1.12.1_x64-setup.nsis.zip"
     }
   }
 }

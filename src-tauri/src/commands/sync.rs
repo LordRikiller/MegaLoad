@@ -1004,7 +1004,7 @@ fn sync_get_status_impl() -> Result<SyncStatus, String> {
     })
 }
 
-#[command]
+#[command(async)]
 pub fn sync_set_enabled(enabled: bool) -> Result<(), String> {
     let mut settings = load_sync_settings();
     settings.enabled = enabled;
@@ -1018,7 +1018,7 @@ pub fn sync_set_enabled(enabled: bool) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn sync_set_auto_sync(auto_sync: bool) -> Result<(), String> {
     let mut settings = load_sync_settings();
     settings.auto_sync = auto_sync;
@@ -1032,7 +1032,7 @@ pub fn sync_set_auto_sync(auto_sync: bool) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn sync_get_settings() -> Result<SyncSettings, String> {
     Ok(load_sync_settings())
 }
@@ -1998,7 +1998,7 @@ fn sync_check_remote_changed_impl() -> Result<bool, String> {
 /// Called by the frontend at the end of a successful pull pass so the next
 /// `sync_check_remote_changed` compares by equality and stops re-pulling until
 /// a peer bumps it again.
-#[command]
+#[command(async)]
 pub fn sync_mark_remote_seen(last_sync: String) -> Result<(), String> {
     let mut settings = load_sync_settings();
     settings.last_seen_remote_sync = Some(last_sync);

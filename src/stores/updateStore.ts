@@ -58,6 +58,12 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   },
 
   autoUpdate: async (bepinexPath: string, force = false) => {
+    // Re-entrancy guard — the 5-min poll must not stack a new update run on
+    // top of one that is still in flight (a stalled network call used to pile
+    // these up for days; ticket 20260815-015213-7d805512).
+    const { checking, updating } = get();
+    if (checking || updating) return null;
+
     set({ checking: true, updating: true, error: null });
     try {
       const result = await autoUpdateMods(bepinexPath, force);

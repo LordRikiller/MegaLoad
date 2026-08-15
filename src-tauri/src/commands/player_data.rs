@@ -11,7 +11,7 @@ pub struct PlayerDataWatcherState {
     pub watcher: Mutex<Option<RecommendedWatcher>>,
 }
 
-#[command]
+#[command(async)]
 pub fn start_player_data_watcher(
     app: AppHandle,
     state: State<'_, PlayerDataWatcherState>,
@@ -66,7 +66,7 @@ pub fn start_player_data_watcher(
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn stop_player_data_watcher(state: State<'_, PlayerDataWatcherState>) -> Result<(), String> {
     let mut guard = state.watcher.lock().map_err(|e| e.to_string())?;
     *guard = None;
@@ -449,7 +449,7 @@ pub fn write_fch_with_mtime(path: &std::path::Path, bytes: &[u8], mtime_secs: u6
 
 // ── List Characters ────────────────────────────────────────
 
-#[command]
+#[command(async)]
 pub fn list_characters() -> Result<Vec<CharacterSummary>, String> {
     let dirs = find_character_dirs();
     if dirs.is_empty() {
@@ -543,7 +543,7 @@ fn capitalise_name(name: &str) -> String {
 
 // ── Read Character ─────────────────────────────────────────
 
-#[command]
+#[command(async)]
 pub fn read_character(path: String) -> Result<CharacterData, String> {
     let file_data = fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))?;
     parse_character_file(&file_data)
@@ -553,7 +553,7 @@ pub fn read_character(path: String) -> Result<CharacterData, String> {
 /// 1.4.3+ off FejdStartup's live character-select preview. Returns base64 so
 /// the frontend can slap it straight into an <img src="data:image/png;base64,...">.
 /// Returns None if no portrait has been captured yet.
-#[command]
+#[command(async)]
 pub fn get_character_portrait_png(name: String) -> Option<String> {
     use base64::Engine;
     let sanitised = sanitise_portrait_name(&name);

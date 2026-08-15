@@ -244,7 +244,7 @@ fn is_collaborator(user_id: &str) -> bool {
 // ---------------------------------------------------------------------------
 
 /// Check MegaBugs access — always enabled (core feature since v1.3.3), returns admin status.
-#[command]
+#[command(async)]
 pub fn check_megabugs_access(_bepinex_path: String) -> Result<MegaBugsAccess, String> {
     Ok(MegaBugsAccess {
         enabled: true,
@@ -281,7 +281,7 @@ pub async fn list_collaborators() -> Result<Vec<CollaboratorEntry>, String> {
 }
 
 /// Grant collaborator access to a user_id. Owner-only.
-#[command]
+#[command(async)]
 pub fn add_collaborator(user_id: String, display_name: String) -> Result<(), String> {
     if !is_local_owner() {
         return Err("Only the owner can add collaborators".to_string());
@@ -337,7 +337,7 @@ pub fn add_collaborator(user_id: String, display_name: String) -> Result<(), Str
 }
 
 /// Revoke collaborator access. Owner-only.
-#[command]
+#[command(async)]
 pub fn remove_collaborator(user_id: String) -> Result<(), String> {
     if !is_local_owner() {
         return Err("Only the owner can remove collaborators".to_string());
@@ -384,13 +384,13 @@ pub fn remove_collaborator(user_id: String) -> Result<(), String> {
 }
 
 /// Get or check if user identity exists — delegates to shared identity.
-#[command]
+#[command(async)]
 pub fn get_megabugs_identity() -> Result<UserIdentity, String> {
     crate::commands::identity::get_megaload_identity()
 }
 
 /// Create or update user identity — delegates to shared identity.
-#[command]
+#[command(async)]
 pub fn set_megabugs_identity(display_name: String) -> Result<UserIdentity, String> {
     let result = crate::commands::identity::set_megaload_identity(display_name)?;
     Ok(UserIdentity {

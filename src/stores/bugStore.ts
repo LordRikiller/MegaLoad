@@ -248,8 +248,11 @@ export const useBugStore = create<BugState>((set, get) => ({
   },
 
   loadTickets: async () => {
-    const { identity, role } = get();
+    const { identity, role, loading } = get();
     if (!identity) return;
+    // Skip if a load is already in flight — the 60s badge poll must not stack
+    // fetches behind a slow request (ticket 20260815-015213-7d805512).
+    if (loading) return;
     set({ loading: true, error: null });
     try {
       // Owner and collaborator see every ticket; regular users see only their own.

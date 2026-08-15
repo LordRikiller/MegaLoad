@@ -171,7 +171,7 @@ fn fetch_packages() -> Result<Vec<ThunderstorePackage>, String> {
 // ── Commands ───────────────────────────────────────────────
 
 /// Browse/search Thunderstore mods. Returns a slim list for the UI.
-#[command]
+#[command(async)]
 pub fn search_thunderstore(
     query: Option<String>,
     category: Option<String>,
@@ -278,7 +278,7 @@ pub struct ThunderstoreSearchResult {
 }
 
 /// Get detailed info for a specific Thunderstore package.
-#[command]
+#[command(async)]
 pub fn get_thunderstore_detail(full_name: String) -> Result<ThunderstoreModDetail, String> {
     let packages = fetch_packages()?;
     let pkg = packages
@@ -319,7 +319,7 @@ pub fn get_thunderstore_detail(full_name: String) -> Result<ThunderstoreModDetai
 }
 
 /// Get all unique categories from Thunderstore.
-#[command]
+#[command(async)]
 pub fn get_thunderstore_categories() -> Result<Vec<String>, String> {
     let packages = fetch_packages()?;
     let mut cats: Vec<String> = packages
@@ -334,7 +334,7 @@ pub fn get_thunderstore_categories() -> Result<Vec<String>, String> {
 
 /// Install a mod from Thunderstore into the active profile.
 /// Downloads the zip, extracts DLLs into plugins/<folder_name>/.
-#[command]
+#[command(async)]
 pub fn install_thunderstore_mod(
     bepinex_path: String,
     full_name: String,
@@ -373,7 +373,7 @@ pub fn install_thunderstore_mod(
 }
 
 /// Update an already-installed Thunderstore mod.
-#[command]
+#[command(async)]
 pub fn update_thunderstore_mod(
     bepinex_path: String,
     full_name: String,
@@ -417,7 +417,7 @@ pub fn update_thunderstore_mod(
 }
 
 /// Get list of Thunderstore mods installed in the current profile.
-#[command]
+#[command(async)]
 pub fn get_installed_thunderstore_mods(
     bepinex_path: String,
 ) -> Result<Vec<InstalledTsMod>, String> {
@@ -426,7 +426,7 @@ pub fn get_installed_thunderstore_mods(
 }
 
 /// Uninstall a Thunderstore mod.
-#[command]
+#[command(async)]
 pub fn uninstall_thunderstore_mod(
     bepinex_path: String,
     full_name: String,
@@ -673,7 +673,7 @@ pub struct TsUpdateInfo {
     pub folder_name: String,
 }
 
-#[command]
+#[command(async)]
 pub fn check_thunderstore_updates(bepinex_path: String) -> Result<Vec<TsUpdateInfo>, String> {
     let local_state = load_ts_state(&bepinex_path);
     if local_state.mods.is_empty() {

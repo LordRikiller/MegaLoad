@@ -114,7 +114,7 @@ pub fn emit(action: &str, result: &str, detail: impl Into<String>) {
 }
 
 /// Read the most recent events, newest last (chronological order).
-#[command]
+#[command(async)]
 pub fn read_sync_events(limit: Option<usize>) -> Result<Vec<SyncEvent>, String> {
     let path = events_path();
     if !path.exists() {
@@ -150,7 +150,7 @@ pub fn read_sync_events(limit: Option<usize>) -> Result<Vec<SyncEvent>, String> 
     Ok(events)
 }
 
-#[command]
+#[command(async)]
 pub fn clear_sync_events() -> Result<(), String> {
     let path = events_path();
     if path.exists() {

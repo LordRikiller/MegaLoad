@@ -288,7 +288,7 @@ fn clear_caches(bepinex_path: &str) {
 
 /// Check all mods for updates. Uses cache if <15min old, otherwise ONE HTTP request.
 /// When `force` is true, caches are cleared first to guarantee a fresh check.
-#[command]
+#[command(async)]
 pub fn check_mod_updates(bepinex_path: String, force: bool) -> Result<UpdateCheckResult, String> {
     if force {
         app_log("Force-checking for mod updates (caches cleared)...");
@@ -388,7 +388,7 @@ pub struct StarterMod {
     pub standalone: bool,
 }
 
-#[command]
+#[command(async)]
 pub fn get_starter_mods() -> Result<Vec<StarterMod>, String> {
     let manifest = fetch_manifest()?;
     Ok(manifest
@@ -406,7 +406,7 @@ pub fn get_starter_mods() -> Result<Vec<StarterMod>, String> {
 }
 
 /// Install a single mod update by downloading the DLL.
-#[command]
+#[command(async)]
 pub fn install_mod_update(
     bepinex_path: String,
     mod_name: String,
@@ -490,7 +490,7 @@ pub fn install_mod_update(
 
 /// Check for updates and install all available updates in one go.
 /// When `force` is true, caches are cleared first to guarantee a fresh check.
-#[command]
+#[command(async)]
 pub fn auto_update_mods(bepinex_path: String, force: bool) -> Result<UpdateCheckResult, String> {
     app_log("Auto-update: checking and installing all available updates...");
     let check = check_mod_updates(bepinex_path.clone(), force)?;
@@ -534,7 +534,7 @@ pub fn auto_update_mods(bepinex_path: String, force: bool) -> Result<UpdateCheck
 }
 
 /// Record the current version of a mod (used after manual install/build).
-#[command]
+#[command(async)]
 pub fn set_mod_version(bepinex_path: String, mod_name: String, version: String) -> Result<(), String> {
     let mut versions = load_installed_versions(&bepinex_path);
     versions.insert(mod_name, version);
@@ -654,7 +654,7 @@ pub struct DeployBundledResult {
 /// Returns per-plugin outcomes so the frontend can toast on failure — previously
 /// errors were swallowed via `.catch(console.warn)` in the sidebar and stale DLLs
 /// could linger invisibly (e.g. when Valheim held a file lock during deploy).
-#[command]
+#[command(async)]
 pub fn deploy_bundled_plugins(app: AppHandle, bepinex_path: String) -> Result<DeployBundledResult, String> {
     let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
     let mut outcomes = Vec::with_capacity(BUNDLED_PLUGINS.len());
@@ -922,13 +922,13 @@ fn iso_now() -> String {
 }
 
 /// Read the update log for the frontend.
-#[command]
+#[command(async)]
 pub fn get_update_log() -> Result<Vec<UpdateLogEntry>, String> {
     Ok(load_update_log())
 }
 
 /// Record an app update from the frontend.
-#[command]
+#[command(async)]
 pub fn record_app_update(from_version: String, to_version: String) -> Result<(), String> {
     record_update("app", "MegaLoad", Some(&from_version), &to_version);
     app_log(&format!("App updated: v{} → v{}", from_version, to_version));

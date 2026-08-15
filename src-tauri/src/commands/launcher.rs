@@ -19,7 +19,7 @@ pub struct GameStatus {
     pub status_text: String,
 }
 
-#[command]
+#[command(async)]
 pub fn detect_valheim_path() -> Result<String, String> {
     let candidates = vec![
         r"C:\Program Files (x86)\Steam\steamapps\common\Valheim",
@@ -39,7 +39,7 @@ pub fn detect_valheim_path() -> Result<String, String> {
     Err("Valheim installation not found. Please set the path manually.".to_string())
 }
 
-#[command]
+#[command(async)]
 pub fn detect_r2modman_profiles() -> Result<Vec<(String, String)>, String> {
     let app_data = std::env::var("APPDATA").map_err(|e| e.to_string())?;
     let r2_path = PathBuf::from(&app_data)
@@ -65,7 +65,7 @@ pub fn detect_r2modman_profiles() -> Result<Vec<(String, String)>, String> {
     Ok(profiles)
 }
 
-#[command]
+#[command(async)]
 pub fn launch_valheim(valheim_path: String, bepinex_path: String) -> Result<(), String> {
     app_log(&format!("Launching Valheim: game={}, bepinex={}", valheim_path, bepinex_path));
     let game_dir = PathBuf::from(&valheim_path);
@@ -140,7 +140,7 @@ debug_suspend=false
 }
 
 /// Check the current game/Steam status for launch readiness.
-#[command]
+#[command(async)]
 pub fn check_game_status(valheim_path: String) -> Result<GameStatus, String> {
     let valheim_running = is_process_running("valheim.exe");
     let steam_running = is_process_running("steam.exe");
@@ -174,7 +174,7 @@ pub fn check_game_status(valheim_path: String) -> Result<GameStatus, String> {
 }
 
 /// Start Steam if it's not already running. Returns the Steam exe path used.
-#[command]
+#[command(async)]
 pub fn start_steam(valheim_path: String) -> Result<String, String> {
     if is_process_running("steam.exe") {
         return Ok("already_running".to_string());

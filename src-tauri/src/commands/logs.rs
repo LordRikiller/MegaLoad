@@ -99,7 +99,7 @@ fn player_log_path() -> Option<PathBuf> {
 
 // ── BepInEx log (LogOutput.log under the active profile) ──────────────
 
-#[command]
+#[command(async)]
 pub fn read_log_file(bepinex_path: String, max_lines: Option<usize>) -> Result<Vec<LogLine>, String> {
     let log_path = Path::new(&bepinex_path).join("LogOutput.log");
     if !log_path.exists() {
@@ -124,19 +124,19 @@ pub fn read_log_file(bepinex_path: String, max_lines: Option<usize>) -> Result<V
     Ok(lines)
 }
 
-#[command]
+#[command(async)]
 pub fn read_log_tail(bepinex_path: String, tail_bytes: Option<u64>) -> Result<Vec<LogLine>, String> {
     let log_path = Path::new(&bepinex_path).join("LogOutput.log");
     read_tail(&log_path, tail_bytes.unwrap_or(65536), classify_level)
 }
 
-#[command]
+#[command(async)]
 pub fn get_log_size(bepinex_path: String) -> Result<u64, String> {
     let log_path = Path::new(&bepinex_path).join("LogOutput.log");
     file_size(&log_path)
 }
 
-#[command]
+#[command(async)]
 pub fn clear_log(bepinex_path: String) -> Result<(), String> {
     let log_path = Path::new(&bepinex_path).join("LogOutput.log");
     if log_path.exists() {
@@ -145,7 +145,7 @@ pub fn clear_log(bepinex_path: String) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn save_log_file(bepinex_path: String, dest_path: String) -> Result<(), String> {
     let log_path = Path::new(&bepinex_path).join("LogOutput.log");
     if !log_path.exists() {
@@ -159,14 +159,14 @@ pub fn save_log_file(bepinex_path: String, dest_path: String) -> Result<(), Stri
 
 /// Resolve the Player.log path, returning it only when the file exists so the
 /// UI can hide the tab / disable actions when Valheim has never logged.
-#[command]
+#[command(async)]
 pub fn get_player_log_path() -> Option<String> {
     player_log_path()
         .filter(|p| p.exists())
         .map(|p| p.to_string_lossy().to_string())
 }
 
-#[command]
+#[command(async)]
 pub fn read_player_log_tail(tail_bytes: Option<u64>) -> Result<Vec<LogLine>, String> {
     match player_log_path() {
         Some(path) => read_tail(&path, tail_bytes.unwrap_or(65536), classify_player_level),
@@ -174,7 +174,7 @@ pub fn read_player_log_tail(tail_bytes: Option<u64>) -> Result<Vec<LogLine>, Str
     }
 }
 
-#[command]
+#[command(async)]
 pub fn get_player_log_size() -> Result<u64, String> {
     match player_log_path() {
         Some(path) => file_size(&path),
@@ -182,7 +182,7 @@ pub fn get_player_log_size() -> Result<u64, String> {
     }
 }
 
-#[command]
+#[command(async)]
 pub fn save_player_log_file(dest_path: String) -> Result<(), String> {
     let log_path = player_log_path().ok_or_else(|| "USERPROFILE not set".to_string())?;
     if !log_path.exists() {
@@ -192,7 +192,7 @@ pub fn save_player_log_file(dest_path: String) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn save_text_file(dest_path: String, content: String) -> Result<(), String> {
     fs::write(&dest_path, &content).map_err(|e| e.to_string())?;
     Ok(())

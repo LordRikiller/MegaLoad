@@ -183,7 +183,7 @@ pub struct ChatResponse {
 // Tauri commands
 // ---------------------------------------------------------------------------
 
-#[command]
+#[command(async)]
 pub fn chat_send_message(
     messages: Vec<ChatMessage>,
     static_context: String,
@@ -255,8 +255,14 @@ pub fn chat_send_message(
 
     // Make API call
     let tls = native_tls::TlsConnector::new().map_err(|e| e.to_string())?;
+    // Long read timeout: the non-streaming Claude API sends nothing until the
+    // full completion is ready, so TTFB can be most of a minute. 180s still
+    // rescues a dead socket after laptop sleep instead of hanging forever.
     let agent = ureq::AgentBuilder::new()
         .tls_connector(std::sync::Arc::new(tls))
+        .timeout_connect(std::time::Duration::from_secs(15))
+        .timeout_read(std::time::Duration::from_secs(180))
+        .timeout_write(std::time::Duration::from_secs(30))
         .build();
 
     let resp = agent
@@ -326,12 +332,12 @@ pub fn chat_send_message(
     }
 }
 
-#[command]
+#[command(async)]
 pub fn chat_get_usage() -> DailyUsage {
     load_usage()
 }
 
-#[command]
+#[command(async)]
 pub fn chat_reset_usage() -> Result<(), String> {
     if !is_admin() {
         return Err("Only admin can reset usage".to_string());
@@ -343,17 +349,17 @@ pub fn chat_reset_usage() -> Result<(), String> {
     save_usage(&usage)
 }
 
-#[command]
+#[command(async)]
 pub fn chat_check_available() -> bool {
     claude_token().is_ok()
 }
 
-#[command]
+#[command(async)]
 pub fn chat_get_debug_enabled() -> bool {
     MEGACHAT_DEBUG.load(Ordering::Relaxed)
 }
 
-#[command]
+#[command(async)]
 pub fn chat_set_debug_enabled(enabled: bool) -> Result<(), String> {
     let mut settings = crate::commands::app_log::load_settings();
     settings.megachat_debug = enabled;
@@ -370,7 +376,7 @@ pub fn chat_set_debug_enabled(enabled: bool) -> Result<(), String> {
 // API key management — user-provided key stored locally
 // ---------------------------------------------------------------------------
 
-#[command]
+#[command(async)]
 pub fn chat_save_api_key(key: String) -> Result<(), String> {
     let trimmed = key.trim().to_string();
     if trimmed.is_empty() {
@@ -383,7 +389,7 @@ pub fn chat_save_api_key(key: String) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn chat_clear_api_key() -> Result<(), String> {
     let path = api_key_path();
     if path.exists() {
@@ -393,7 +399,7 @@ pub fn chat_clear_api_key() -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn chat_get_api_key_status() -> bool {
     claude_token().is_ok()
 }

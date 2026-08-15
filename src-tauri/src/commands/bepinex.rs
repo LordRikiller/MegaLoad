@@ -10,7 +10,7 @@ const BEPINEX_FALLBACK_URL: &str =
 
 /// Find all places where BepInEx core files exist on this machine.
 /// Returns a list of (label, path) tuples.
-#[command]
+#[command(async)]
 pub fn find_bepinex_sources(valheim_path: Option<String>) -> Result<Vec<(String, String)>, String> {
     let mut sources: Vec<(String, String)> = Vec::new();
 
@@ -84,7 +84,7 @@ pub fn find_bepinex_sources(valheim_path: Option<String>) -> Result<Vec<(String,
 }
 
 /// Copy BepInEx core files from a source core/ directory into a profile's BepInEx/core/.
-#[command]
+#[command(async)]
 pub fn install_bepinex_core(source_core_path: String, profile_bepinex_path: String) -> Result<(), String> {
     app_log(&format!("Installing BepInEx core from {} to {}", source_core_path, profile_bepinex_path));
     let src = Path::new(&source_core_path);
@@ -114,7 +114,7 @@ pub fn install_bepinex_core(source_core_path: String, profile_bepinex_path: Stri
 
 /// Ensure doorstop (winhttp.dll + doorstop_config.ini) is installed in the Valheim game dir.
 /// Returns true if doorstop is present (was already there or we found a source to copy from).
-#[command]
+#[command(async)]
 pub fn ensure_doorstop(valheim_path: String) -> Result<bool, String> {
     let game_dir = PathBuf::from(&valheim_path);
     let winhttp = game_dir.join("winhttp.dll");
@@ -204,7 +204,7 @@ fn copy_dir(src: &Path, dst: &Path) -> Result<(), String> {
 /// Download BepInEx 5.x from GitHub and install it for the given profile.
 /// Extracts doorstop files (winhttp.dll, doorstop_config.ini) to the Valheim game directory,
 /// and BepInEx core/plugins/config to the profile's BepInEx directory.
-#[command]
+#[command(async)]
 pub fn download_bepinex(valheim_path: String, profile_bepinex_path: String) -> Result<String, String> {
     app_log("Downloading BepInEx from GitHub...");
     // 1. Try to get latest BepInEx 5.x download URL from GitHub API

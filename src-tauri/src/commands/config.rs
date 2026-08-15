@@ -13,7 +13,7 @@ pub struct ConfigWatcherState {
     pub watcher: Mutex<Option<RecommendedWatcher>>,
 }
 
-#[command]
+#[command(async)]
 pub fn start_config_watcher(
     app: AppHandle,
     state: State<'_, ConfigWatcherState>,
@@ -64,14 +64,14 @@ pub fn start_config_watcher(
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn stop_config_watcher(state: State<'_, ConfigWatcherState>) -> Result<(), String> {
     let mut guard = state.watcher.lock().map_err(|e| e.to_string())?;
     *guard = None;
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn get_config_files(bepinex_path: String) -> Result<Vec<ConfigFile>, String> {
     let config_dir = Path::new(&bepinex_path).join("config");
     let mut configs = Vec::new();
@@ -95,7 +95,7 @@ pub fn get_config_files(bepinex_path: String) -> Result<Vec<ConfigFile>, String>
     Ok(configs)
 }
 
-#[command]
+#[command(async)]
 pub fn save_config_value(
     config_path: String,
     section: String,
@@ -291,7 +291,7 @@ fn parse_config_file(path: &Path) -> Result<ConfigFile, String> {
 }
 
 /// Reset all entries in a config file to their default values.
-#[command]
+#[command(async)]
 pub fn reset_config_file(config_path: String) -> Result<ConfigFile, String> {
     app_log(&format!("Resetting config to defaults: {}", config_path));
     let path = Path::new(&config_path);
@@ -357,7 +357,7 @@ const PROTECTED_PREFIXES: &[&str] = &["bepinex"];
 
 /// Remove config files for mods that are no longer installed.
 /// Returns the list of deleted config filenames.
-#[command]
+#[command(async)]
 pub fn clean_orphan_configs(bepinex_path: String) -> Result<Vec<String>, String> {
     let base = Path::new(&bepinex_path);
     let config_dir = base.join("config");
@@ -404,7 +404,7 @@ pub fn clean_orphan_configs(bepinex_path: String) -> Result<Vec<String>, String>
 
 /// Delete a single config file by path.
 /// Protected configs (BepInEx core) cannot be deleted.
-#[command]
+#[command(async)]
 pub fn delete_config_file(config_path: String) -> Result<(), String> {
     validate_config_path(&config_path, "")?;
 
@@ -514,7 +514,7 @@ fn write_debug_mode(path: &Path, enabled: bool) -> Result<bool, String> {
 }
 
 /// Returns the DebugMode status for every Mega* cfg in the active profile.
-#[command]
+#[command(async)]
 pub fn get_mega_debug_status(bepinex_path: String) -> Result<Vec<MegaDebugEntry>, String> {
     let config_dir = Path::new(&bepinex_path).join("config");
     if !config_dir.exists() {
@@ -549,7 +549,7 @@ pub fn get_mega_debug_status(bepinex_path: String) -> Result<Vec<MegaDebugEntry>
 /// Flip DebugMode under [99. Debug] to the given value across every Mega* cfg.
 /// A cfg is "updated" only if the DebugMode key existed; otherwise it's "skipped"
 /// (mod hasn't been launched yet or uses a legacy section we don't migrate here).
-#[command]
+#[command(async)]
 pub fn toggle_all_mega_debug(
     bepinex_path: String,
     enabled: bool,

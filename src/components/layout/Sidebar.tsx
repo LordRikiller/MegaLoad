@@ -175,13 +175,22 @@ export function Sidebar() {
   useEffect(() => {
     if (!valheimPath) return;
     const setStoreStatus = useGameStatusStore.getState().setStatus;
-    const poll = () =>
+    // In-flight guard: if a status check is still awaiting its IPC reply,
+    // skip this tick instead of queueing another behind it.
+    let inFlight = false;
+    const poll = () => {
+      if (inFlight) return;
+      inFlight = true;
       checkGameStatus(valheimPath)
         .then((s) => {
           setGameStatus(s);
           setStoreStatus(s);
         })
-        .catch((e) => console.warn("[MegaLoad]", e));
+        .catch((e) => console.warn("[MegaLoad]", e))
+        .finally(() => {
+          inFlight = false;
+        });
+    };
     poll();
     const id = setInterval(poll, 3000);
     return () => {

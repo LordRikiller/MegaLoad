@@ -65,7 +65,7 @@ fn write_payload(body: &str) -> Result<(), String> {
 /// changed. On 200, validates that the body parses as a JSON array, then
 /// caches it to %APPDATA%/MegaLoad/valheim-items-cached.json before returning
 /// the body to the frontend.
-#[command]
+#[command(async)]
 pub fn fetch_valheim_data() -> FetchResult {
     let local = read_meta();
     let url = match &local {
@@ -152,7 +152,7 @@ pub fn fetch_valheim_data() -> FetchResult {
 /// Read the cached payload + version (if cache exists). Used at startup so
 /// the frontend can render cached data immediately while the network fetch
 /// is in flight.
-#[command]
+#[command(async)]
 pub fn read_cached_valheim_data() -> Option<CachedDataResult> {
     let meta = read_meta()?;
     let body = fs::read_to_string(cache_path()).ok()?;

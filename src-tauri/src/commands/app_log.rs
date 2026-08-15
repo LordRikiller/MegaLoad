@@ -129,17 +129,17 @@ fn epoch_days_to_ymd(days: u64) -> (u64, u64, u64) {
 // ── Tauri commands ──────────────────────────────────────────
 
 /// Log a message from the frontend (same log file as Rust-side app_log).
-#[command]
+#[command(async)]
 pub fn log_from_frontend(message: String) {
     app_log(&format!("[frontend] {}", message));
 }
 
-#[command]
+#[command(async)]
 pub fn get_logging_enabled() -> bool {
     LOGGING_ENABLED.load(Ordering::Relaxed)
 }
 
-#[command]
+#[command(async)]
 pub fn set_logging_enabled(enabled: bool) -> Result<(), String> {
     let mut settings = load_settings();
     settings.logging_enabled = enabled;
@@ -153,7 +153,7 @@ pub fn set_logging_enabled(enabled: bool) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn read_app_log(tail_lines: Option<usize>) -> Result<String, String> {
     let path = log_path();
     if !path.exists() {
@@ -166,7 +166,7 @@ pub fn read_app_log(tail_lines: Option<usize>) -> Result<String, String> {
     Ok(lines[start..].join("\n"))
 }
 
-#[command]
+#[command(async)]
 pub fn clear_app_log() -> Result<(), String> {
     let path = log_path();
     if path.exists() {
@@ -176,24 +176,24 @@ pub fn clear_app_log() -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn get_app_log_path() -> String {
     log_path().to_string_lossy().to_string()
 }
 
-#[command]
+#[command(async)]
 pub fn get_diagnostic_logs_path() -> Option<String> {
     load_settings().diagnostic_logs_path
 }
 
-#[command]
+#[command(async)]
 pub fn set_diagnostic_logs_path(path: Option<String>) -> Result<(), String> {
     let mut settings = load_settings();
     settings.diagnostic_logs_path = path.map(|p| p.trim().to_string()).filter(|p| !p.is_empty());
     save_settings(&settings)
 }
 
-#[command]
+#[command(async)]
 pub fn open_data_dir() -> Result<(), String> {
     let dir = megaload_dir();
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -204,7 +204,7 @@ pub fn open_data_dir() -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn open_folder(path: String) -> Result<(), String> {
     let p = std::path::Path::new(&path);
     if !p.exists() {

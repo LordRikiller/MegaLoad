@@ -258,7 +258,7 @@ pub struct ChatHistoryMessage {
 // ---------------------------------------------------------------------------
 
 /// Get current MegaLoad identity (local file).
-#[command]
+#[command(async)]
 pub fn get_megaload_identity() -> Result<MegaLoadIdentity, String> {
     migrate_identity_if_needed();
     let path = megaload_data_dir().join(IDENTITY_FILE);
@@ -268,7 +268,7 @@ pub fn get_megaload_identity() -> Result<MegaLoadIdentity, String> {
 }
 
 /// Check if a display name is available (case-insensitive uniqueness).
-#[command]
+#[command(async)]
 pub fn check_username_available(display_name: String) -> Result<bool, String> {
     let name_lower = display_name.trim().to_lowercase();
     if name_lower.is_empty() {
@@ -294,7 +294,7 @@ pub struct IdentityResult {
 
 /// Set identity: validates, checks uniqueness, saves locally, registers server-side.
 /// Returns the link code for new accounts (None for existing account updates).
-#[command]
+#[command(async)]
 pub fn set_megaload_identity(display_name: String) -> Result<IdentityResult, String> {
     let trimmed = display_name.trim().to_string();
     if trimmed.is_empty() {
@@ -430,7 +430,7 @@ pub fn set_megaload_identity(display_name: String) -> Result<IdentityResult, Str
 }
 
 /// Link an existing account by display name + link code.
-#[command]
+#[command(async)]
 pub fn link_existing_account(display_name: String, link_code: String) -> Result<MegaLoadIdentity, String> {
     let trimmed = display_name.trim().to_string();
     let code = link_code.trim().to_string();
@@ -505,7 +505,7 @@ pub fn link_existing_account(display_name: String, link_code: String) -> Result<
 }
 
 /// Regenerate link code for the current account. Returns the new plaintext code.
-#[command]
+#[command(async)]
 pub fn regenerate_link_code() -> Result<String, String> {
     let identity = get_megaload_identity()?;
     let code = generate_link_code();
@@ -526,7 +526,7 @@ pub fn regenerate_link_code() -> Result<String, String> {
 }
 
 /// Clear local identity — effectively "logout".
-#[command]
+#[command(async)]
 pub fn clear_megaload_identity() -> Result<(), String> {
     let dir = megaload_data_dir();
     let _ = fs::remove_file(dir.join(IDENTITY_FILE));
@@ -538,7 +538,7 @@ pub fn clear_megaload_identity() -> Result<(), String> {
 /// Validate that the local identity is linked to a modern account (has link_code_hash).
 /// Returns true if the identity is valid, false if it was cleared (legacy account).
 /// Network failures return true (benefit of the doubt — don't penalize offline users).
-#[command]
+#[command(async)]
 pub fn validate_identity() -> bool {
     let identity = match get_megaload_identity() {
         Ok(id) => id,
@@ -566,7 +566,7 @@ pub fn validate_identity() -> bool {
 }
 
 /// Check if the current user is admin (local key file check).
-#[command]
+#[command(async)]
 pub fn check_is_admin() -> bool {
     is_admin()
 }
@@ -635,7 +635,7 @@ fn update_user_index(user_id: &str, display_name: &str, is_admin: bool) -> Resul
 // ---------------------------------------------------------------------------
 
 /// Check if the current user is banned.
-#[command]
+#[command(async)]
 pub fn check_user_banned() -> Result<bool, String> {
     let identity = get_megaload_identity()?;
     match github_get_file(&format!("users/{}.json", identity.user_id)) {
@@ -665,7 +665,7 @@ pub struct AdminUserInfo {
 }
 
 /// List all registered users (admin only).
-#[command]
+#[command(async)]
 pub fn admin_list_users() -> Result<Vec<AdminUserInfo>, String> {
     if !is_admin() {
         return Err("Admin access required".to_string());
@@ -700,7 +700,7 @@ pub fn admin_list_users() -> Result<Vec<AdminUserInfo>, String> {
 }
 
 /// Ban a user (admin only).
-#[command]
+#[command(async)]
 pub fn admin_ban_user(user_id: String) -> Result<(), String> {
     if !is_admin() {
         return Err("Admin access required".to_string());
@@ -735,7 +735,7 @@ pub fn admin_ban_user(user_id: String) -> Result<(), String> {
 }
 
 /// Unban a user (admin only).
-#[command]
+#[command(async)]
 pub fn admin_unban_user(user_id: String) -> Result<(), String> {
     if !is_admin() {
         return Err("Admin access required".to_string());
@@ -765,7 +765,7 @@ pub fn admin_unban_user(user_id: String) -> Result<(), String> {
 }
 
 /// Get a user's chat history (admin only).
-#[command]
+#[command(async)]
 pub fn admin_get_user_chat_history(user_id: String) -> Result<ChatHistoryFile, String> {
     if !is_admin() {
         return Err("Admin access required".to_string());
@@ -782,7 +782,7 @@ pub fn admin_get_user_chat_history(user_id: String) -> Result<ChatHistoryFile, S
 // ---------------------------------------------------------------------------
 
 /// Load the current user's chat history from the server.
-#[command]
+#[command(async)]
 pub fn chat_load_history() -> Result<ChatHistoryFile, String> {
     let identity = get_megaload_identity()?;
     let path = format!("chat-history/{}.json", identity.user_id);
@@ -800,7 +800,7 @@ pub fn chat_load_history() -> Result<ChatHistoryFile, String> {
 
 /// Save the current user's chat history to the server.
 /// Keeps only the last 50 messages.
-#[command]
+#[command(async)]
 pub fn chat_save_history(messages: Vec<ChatHistoryMessage>) -> Result<(), String> {
     let identity = get_megaload_identity()?;
     let path = format!("chat-history/{}.json", identity.user_id);

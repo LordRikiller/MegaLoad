@@ -53,7 +53,7 @@ fn load_manifest_info(bepinex_path: &str) -> std::collections::HashMap<String, (
     map
 }
 
-#[command]
+#[command(async)]
 pub fn get_mods(app: tauri::AppHandle, bepinex_path: String) -> Result<Vec<ModInfo>, String> {
     let plugins_dir = Path::new(&bepinex_path).join("plugins");
     let disabled_dir = Path::new(&bepinex_path).join("disabled_plugins");
@@ -204,7 +204,7 @@ fn read_thunderstore_manifest(folder: &Path) -> Option<(String, Option<String>)>
     Some((version, description))
 }
 
-#[command]
+#[command(async)]
 pub fn toggle_mod(bepinex_path: String, folder: String, file_name: String, enable: bool) -> Result<(), String> {
     // Validate path components to prevent traversal attacks
     if !folder.is_empty() {
@@ -242,7 +242,7 @@ pub fn toggle_mod(bepinex_path: String, folder: String, file_name: String, enabl
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn delete_mod(bepinex_path: String, folder: String, file_name: String, enabled: bool) -> Result<(), String> {
     // Validate path components to prevent traversal attacks
     if !folder.is_empty() {
@@ -270,7 +270,7 @@ pub fn delete_mod(bepinex_path: String, folder: String, file_name: String, enabl
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn install_mod(bepinex_path: String, source_path: String) -> Result<String, String> {
     let source = Path::new(&source_path);
     let plugins_dir = Path::new(&bepinex_path).join("plugins");
@@ -302,7 +302,7 @@ pub fn install_mod(bepinex_path: String, source_path: String) -> Result<String, 
     }
 }
 
-#[command]
+#[command(async)]
 pub fn validate_bepinex(bepinex_path: String) -> Result<serde_json::Value, String> {
     let base = Path::new(&bepinex_path);
     let has_core = base.join("core").join("BepInEx.Preloader.dll").exists();

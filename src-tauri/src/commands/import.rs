@@ -20,7 +20,7 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn import_r2modman_profile(profile_name: String, r2_profile_path: String) -> Result<String, String> {
     app_log(&format!("Importing R2Modman profile: {} from {}", profile_name, r2_profile_path));
     let r2_path = Path::new(&r2_profile_path);

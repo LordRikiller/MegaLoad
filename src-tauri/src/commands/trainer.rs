@@ -240,7 +240,7 @@ fn ensure_trainer_plugin(app: &AppHandle, bepinex_path: &str) {
 // ── Commands ───────────────────────────────────────────────
 
 /// Get all available cheats with their current toggle states.
-#[command]
+#[command(async)]
 pub fn get_trainer_cheats(app: AppHandle, bepinex_path: String) -> Result<Vec<CheatDef>, String> {
     ensure_trainer_plugin(&app, &bepinex_path);
     let data = load_trainer_data(&bepinex_path);
@@ -257,7 +257,7 @@ pub fn get_trainer_cheats(app: AppHandle, bepinex_path: String) -> Result<Vec<Ch
 }
 
 /// Toggle a cheat on/off and persist the state.
-#[command]
+#[command(async)]
 pub fn toggle_trainer_cheat(
     bepinex_path: String,
     cheat_id: String,
@@ -281,7 +281,7 @@ pub fn toggle_trainer_cheat(
 }
 
 /// Save the current cheat state as a named profile.
-#[command]
+#[command(async)]
 pub fn save_trainer_profile(
     bepinex_path: String,
     name: String,
@@ -306,7 +306,7 @@ pub fn save_trainer_profile(
 }
 
 /// Load a saved profile, replacing the active cheat state.
-#[command]
+#[command(async)]
 pub fn load_trainer_profile(
     app: AppHandle,
     bepinex_path: String,
@@ -330,7 +330,7 @@ pub fn load_trainer_profile(
 }
 
 /// Delete a saved trainer profile.
-#[command]
+#[command(async)]
 pub fn delete_trainer_profile(
     bepinex_path: String,
     name: String,
@@ -343,7 +343,7 @@ pub fn delete_trainer_profile(
 }
 
 /// Get all saved trainer profiles.
-#[command]
+#[command(async)]
 pub fn get_trainer_profiles(
     bepinex_path: String,
 ) -> Result<Vec<SavedTrainerProfile>, String> {
@@ -352,7 +352,7 @@ pub fn get_trainer_profiles(
 }
 
 /// Reset all cheats to disabled.
-#[command]
+#[command(async)]
 pub fn reset_trainer(bepinex_path: String) -> Result<(), String> {
     let mut data = load_trainer_data(&bepinex_path);
     data.active.cheats.clear();
@@ -364,14 +364,14 @@ pub fn reset_trainer(bepinex_path: String) -> Result<(), String> {
 }
 
 /// Get the current speed/jump multipliers.
-#[command]
+#[command(async)]
 pub fn get_trainer_multipliers(bepinex_path: String) -> Result<(f32, f32), String> {
     let data = load_trainer_data(&bepinex_path);
     Ok((data.active.speed_multiplier, data.active.jump_multiplier))
 }
 
 /// Set a speed or jump multiplier.
-#[command]
+#[command(async)]
 pub fn set_trainer_multiplier(
     bepinex_path: String,
     kind: String,

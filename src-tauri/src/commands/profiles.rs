@@ -42,12 +42,12 @@ fn save_profiles(store: &ProfileStore) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn get_profiles() -> Result<ProfileStore, String> {
     Ok(load_profiles())
 }
 
-#[command]
+#[command(async)]
 pub fn create_profile(name: String) -> Result<Profile, String> {
     app_log(&format!("Creating profile: {}", name));
     let mut store = load_profiles();
@@ -97,7 +97,7 @@ pub fn create_profile(name: String) -> Result<Profile, String> {
     Ok(profile)
 }
 
-#[command]
+#[command(async)]
 pub fn delete_profile(id: String) -> Result<(), String> {
     // Validate profile ID to prevent path traversal
     sanitize_path_component(&id)?;
@@ -121,7 +121,7 @@ pub fn delete_profile(id: String) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn set_active_profile(id: String) -> Result<(), String> {
     let mut store = load_profiles();
     let name = store.profiles.iter().find(|p| p.id == id).map(|p| p.name.clone()).unwrap_or_default();
@@ -142,7 +142,7 @@ pub fn set_active_profile(id: String) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn rename_profile(id: String, new_name: String) -> Result<(), String> {
     app_log(&format!("Renaming profile {} to: {}", id, new_name));
     let mut store = load_profiles();
@@ -156,7 +156,7 @@ pub fn rename_profile(id: String, new_name: String) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn get_profile_path(id: String) -> Result<String, String> {
     let store = load_profiles();
     store
