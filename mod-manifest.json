@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-09T22:24:47Z",
+  "updated_at": "2026-09-10T02:03:11Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -156,6 +156,14 @@
       "dll_name": "MegaArrow.dll",
       "plugin_folder": "MegaArrow",
       "description": "Volley arrow for any bow. Craft 100 at the Workbench (10 Wood, 10 Feathers, 1 Freeze Gland, 1 Ooze, 1 Resin, 1 Obsidian). Loose one and it becomes one homing arrow per enemy in your forward cone, up to 10 (crows and gulls included, perched or in flight — TargetBirds toggle) — target 1 is the creature under your crosshair and is the arrow you fired; the rest each wear a different vanilla arrow's look (Frost, Poison, Fire, Needle, Obsidian, Silver, Charred, Carapace, Iron, Bronze — or shuffled every shot with RandomiseArrowLooks). All or nothing: if your aimed arrow strikes a creature every extra arrow lands, if it misses they all miss. Every arrow deals TotalDamage (100) split evenly across the enabled types — Pierce, Blunt, Slash, Fire, Frost, Lightning, Poison, Spirit, all on by default — with vanilla burn/poison/spirit DoT, frost slow and lightning effects. Configurable cone, range, line-of-sight gate, homing turn rate and per-type toggles; live config reload."
+    },
+    {
+      "name": "MegaCommander",
+      "version": "1.0.0",
+      "download_url": "https://github.com/LordRikiller/MegaCommander/releases/download/v1.0.0/MegaCommander.dll",
+      "dll_name": "MegaCommander.dll",
+      "plugin_folder": "MegaCommander",
+      "description": "Admin and dev console commands — devcommands, aliases, key binds, autocomplete and server tooling (fork of JereKuusela's Server Devcommands)"
     }
   ]
 }
