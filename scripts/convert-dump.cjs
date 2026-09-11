@@ -2081,7 +2081,13 @@ const CREATURE_SUBCATEGORY_OVERRIDE = {
   "Cultist_Hildir": "Miniboss",
 };
 
-// Creatures that can be tamed (fed their preferred food until friendly)
+// Creatures that can be tamed (fed their preferred food until friendly).
+//
+// This is the FALLBACK only. MegaDataExtractor 1.7.0+ reads `tameable` and
+// `tameFoods` straight off each prefab (Tameable + MonsterAI.m_consumeItems), and
+// the dump wins wherever it has an answer. Hand-maintaining this list is how
+// Valheim 1.0's tameable Moose came to be missing — a new tameable creature
+// should need no code change at all now.
 const TAMEABLE_CREATURES = new Set([
   "Boar",
   "Wolf",
@@ -2089,6 +2095,7 @@ const TAMEABLE_CREATURES = new Set([
   "Asksvin",
   "Chicken",
   "Hen",
+  "Moose", // Deep North, Valheim 1.0
 ]);
 
 // Foods each tameable creature accepts (prefab IDs, in display order).
@@ -2245,8 +2252,17 @@ for (const cd of creatureDrops) {
     drops: drops,
     worldSources: [],
     stats: stats,
-    ...(TAMEABLE_CREATURES.has(cd.creature) ? { tameable: true } : {}),
-    ...(TAMEABLE_CREATURE_FOODS[cd.creature] ? { tameFoods: TAMEABLE_CREATURE_FOODS[cd.creature] } : {}),
+    // The dump is authoritative when it carries taming data; the hardcoded sets
+    // only cover dumps predating MegaDataExtractor 1.7.0.
+    ...((typeof cd.tameable === "boolean" ? cd.tameable : TAMEABLE_CREATURES.has(cd.creature))
+      ? { tameable: true }
+      : {}),
+    ...(() => {
+      const foods = (cd.tameFoods && cd.tameFoods.length ? cd.tameFoods : null)
+        ?? TAMEABLE_CREATURE_FOODS[cd.creature]
+        ?? null;
+      return foods ? { tameFoods: foods } : {};
+    })(),
     ...(factionPretty ? { faction: factionPretty } : {}),
     ...(typeof cd.staggerDamageFactor === "number"
       ? { staggerLimit: `${Math.round(cd.staggerDamageFactor * 100)}%` }
@@ -3026,13 +3042,42 @@ console.log("Type breakdown:", typeCounts);
     if (!c || !c.prefab || !c.slots) continue;
     byPrefab.set(c.prefab, c);
   }
+
+  // The loot-chest rows are synthesised from CHEST_LOOT and keyed by display
+  // name, so they carry no prefab to match on. Each maps to a representative
+  // TreasureChest_* prefab — the variants within a biome all share a size, so
+  // one representative is enough. Verified against the dump rather than
+  // guessed; anything not listed here simply shows no capacity.
+  const LOOT_CHEST_PREFAB = {
+    LootChest_MeadowsChest: "TreasureChest_meadows",
+    LootChest_BurialChamberChest: "TreasureChest_fCrypt",
+    LootChest_TrollCaveChest: "TreasureChest_trollcave",
+    LootChest_SunkenCryptChest: "TreasureChest_sunkencrypt",
+    LootChest_FrostCaveChest: "TreasureChest_mountaincave",
+    LootChest_FulingVillageChest: "TreasureChest_heath",
+    LootChest_DvergrChest: "TreasureChest_dvergrtown",
+    LootChest_CharredFortressChest: "TreasureChest_charredfortress",
+    LootChest_VikingGraveyard: "TreasureChest_meadows_buried",
+    LootChest_CombatRuin: "TreasureChest_meadows_combat",
+    LootChest_DraugrVillage: "TreasureChest_swamp",
+    LootChest_AbandonedOutpost: "TreasureChest_blackforest",
+    LootChest_AbandonedHut: "TreasureChest_meadows_01",
+    LootChest_SwampRunestoneTower: "TreasureChest_swamp",
+  };
+
   let tagged = 0;
+  const unresolvedAliases = [];
   for (const e of converted) {
-    const c = byPrefab.get(e.id);
+    const alias = LOOT_CHEST_PREFAB[e.id];
+    if (alias && !byPrefab.has(alias)) unresolvedAliases.push(`${e.id} -> ${alias}`);
+    const c = byPrefab.get(e.id) ?? (alias ? byPrefab.get(alias) : undefined);
     if (!c) continue;
     e.storageSlots = c.slots;
     e.storageGrid = `${c.width}x${c.height}`;
     tagged++;
+  }
+  if (unresolvedAliases.length) {
+    console.log(`  Loot-chest aliases with no container in the dump: ${unresolvedAliases.join(", ")}`);
   }
   console.log(
     containers.length

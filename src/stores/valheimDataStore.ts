@@ -683,8 +683,33 @@ export const FACTION_LIST: string[] = (() => {
 // ── Pre-computed totals (for Dashboard / PlayerData "out of" stats) ──
 /** All obtainable trophies in the game database. */
 export const TOTAL_TROPHIES = VALHEIM_ITEMS.filter((i) => i.subcategory === "Trophy").length;
-/** All craftable things (items with a recipe). */
-export const TOTAL_RECIPES = VALHEIM_ITEMS.filter((i) => i.recipe && i.recipe.length > 0).length;
+/**
+ * Every recipe a character can know, as localisation tokens.
+ *
+ * A save stores known recipes as TOKENS (`$item_axe_stone`, `$piece_workbench`) —
+ * build pieces included — so the denominator has to be distinct tokens, not item
+ * rows. Counting rows double-counted the 29 items that share a token with another,
+ * and compared a token count against a row count, which is two different units.
+ */
+export const RECIPE_TOKENS = new Set(
+  VALHEIM_ITEMS.filter((i) => i.recipe && i.recipe.length > 0 && i.token).map((i) => i.token),
+);
+/** All craftable things a character can learn. */
+export const TOTAL_RECIPES = RECIPE_TOKENS.size;
+
+/**
+ * How many of a character's known recipes correspond to something craftable.
+ *
+ * A save's known-recipe list also carries entries that are not recipes at all:
+ * the hammer and hoe build MODES (`$piece_repair`, `$piece_path`,
+ * `$piece_levelground`, `$piece_cultivate`, `$piece_replant`), and a handful of
+ * foraged plants stored by English display name rather than token. Counting the
+ * raw list against the recipe total inflated the numerator with things that can
+ * never appear in the denominator.
+ */
+export function countKnownRecipes(knownRecipes: string[]): number {
+  return knownRecipes.filter((t) => RECIPE_TOKENS.has(t)).length;
+}
 /** Everything the player can realistically "discover" — all items that aren't creatures. */
 export const TOTAL_DISCOVERABLE = VALHEIM_ITEMS.filter((i) => i.type !== "Creature").length;
 
@@ -927,6 +952,7 @@ interface ValheimDataState {
   activeStations: string[];
   activeFactories: string[];
   activeVendors: string[];
+  onlyContainers: boolean;
   onlyTameable: boolean;
   activeFactions: string[];
   activeDealsDamage: string[];
@@ -956,6 +982,8 @@ interface ValheimDataState {
   toggleFactory: (f: string) => void;
   toggleVendor: (v: string) => void;
   setOnlyTameable: (v: boolean) => void;
+  setOnlyContainers: (v: boolean) => void;
+  toggleOnlyContainers: () => void;
   toggleOnlyTameable: () => void;
   toggleFaction: (f: string) => void;
   toggleDealsDamage: (d: string) => void;
@@ -1031,6 +1059,7 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   activeStations: [],
   activeFactories: [],
   activeVendors: [],
+  onlyContainers: false,
   onlyTameable: false,
   activeFactions: [],
   activeDealsDamage: [],
@@ -1099,6 +1128,8 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   })),
   setOnlyTameable: (v) => set({ onlyTameable: v }),
   toggleOnlyTameable: () => set((s) => ({ onlyTameable: !s.onlyTameable })),
+  setOnlyContainers: (v) => set({ onlyContainers: v }),
+  toggleOnlyContainers: () => set((s) => ({ onlyContainers: !s.onlyContainers })),
   toggleFaction: (f) => set((s) => ({
     activeFactions: s.activeFactions.includes(f) ? s.activeFactions.filter((x) => x !== f) : [...s.activeFactions, f],
   })),
@@ -1208,11 +1239,19 @@ export function getFilteredItems(
   onlyTameable: boolean = false,
   activeFactions: string[] = [],
   activeDealsDamage: string[] = [],
-  activeWeakTo: string[] = []
+  activeWeakTo: string[] = [],
+  onlyContainers: boolean = false
 ): ValheimItem[] {
   let items = VALHEIM_ITEMS;
   if (onlyTameable) {
     items = items.filter((i) => i.tameable === true);
+  }
+  // Anything that holds items — chests and barrels, the cart, every boat, and the
+  // world's loot chests. Capacity only exists once the data has been regenerated
+  // from a dump that carries container sizes, so this filter is simply empty
+  // until then rather than wrong.
+  if (onlyContainers) {
+    items = items.filter((i) => typeof i.storageSlots === "number" && i.storageSlots > 0);
   }
   if (activeFactions.length > 0) {
     items = items.filter((i) => i.faction && activeFactions.includes(i.faction));

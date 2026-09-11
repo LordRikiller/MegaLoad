@@ -8,6 +8,7 @@ import {
   useValheimDataStore,
   TOTAL_TROPHIES,
   TOTAL_RECIPES,
+  countKnownRecipes,
 } from "../stores/valheimDataStore";
 import { BIOME_COLORS, BIOME_BG_COLORS } from "./ValheimData";
 import { cn } from "../lib/utils";
@@ -36,6 +37,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { TOTAL_BOSSES, countBossesDefeated } from "../lib/forsaken";
 /** Top N skills by level, filtered to levels > 0 */
 function topSkills(skills: { name: string; level: number }[], n = 3) {
   return [...skills]
@@ -48,18 +50,6 @@ function topSkills(skills: { name: string; level: number }[], n = 3) {
 function prettySkillName(name: string): string {
   return name.replace(/([A-Z])/g, " $1").trim();
 }
-
-/** The 7 Valheim boss trophies. character.boss_kills is unreliable — this is authoritative. */
-const BOSS_TROPHY_IDS = new Set([
-  "TrophyEikthyr",
-  "TrophyTheElder",
-  "TrophyBonemass",
-  "TrophyDragonQueen", // Moder
-  "TrophyGoblinKing",  // Yagluth
-  "TrophySeekerQueen",
-  "TrophyFader",
-]);
-const TOTAL_BOSSES = BOSS_TROPHY_IDS.size;
 
 export function Dashboard() {
   const { activeProfileId, fetchProfiles, activeProfile } = useProfileStore();
@@ -125,11 +115,12 @@ export function Dashboard() {
     return character.known_biomes.filter((b) => canon.has(b));
   }, [character]);
 
-  // Derive bosses-defeated from trophies (character.boss_kills is unreliable — caps below true count)
-  const bossesDefeated = useMemo(() => {
-    if (!character) return 0;
-    return character.trophies.filter((t) => BOSS_TROPHY_IDS.has(t)).length;
-  }, [character]);
+  // character.boss_kills is unreliable — derive it. See lib/forsaken.ts.
+  const bossesDefeated = useMemo(() => countBossesDefeated(character), [character]);
+  const knownRecipes = useMemo(
+    () => (character ? countKnownRecipes(character.known_recipes) : 0),
+    [character],
+  );
 
   const availableUpdates = updateResult?.mods.filter((m) => m.status === "outdated").length ?? 0;
 
@@ -402,7 +393,7 @@ export function Dashboard() {
             <AchievementCard
               icon={BookOpen}
               label="Recipes Mastered"
-              value={character.known_recipes.length}
+              value={knownRecipes}
               max={TOTAL_RECIPES}
               hint={`${character.known_materials.length} materials known`}
               color="text-cyan-300"

@@ -498,7 +498,7 @@ export function ValheimData() {
   const {
     query, activeTypes, activeBiomes, activeStations, activeFactories, activeVendors, sortBy,
     selectedItem, selectedStation, selectedFactory, selectedVendor,
-    cartItems, activeSubcategories, onlyTameable,
+    cartItems, activeSubcategories, onlyTameable, onlyContainers,
     activeFactions, activeDealsDamage, activeWeakTo,
     viewMode, tableSortKey, tableSortDir,
     stationMaterialsMode, setStationMaterialsMode,
@@ -509,6 +509,7 @@ export function ValheimData() {
     setViewMode, setTableSort,
     toggleType, toggleSubcategory, toggleBiome, toggleStation, toggleFactory, toggleVendor,
     setOnlyTameable, toggleOnlyTameable,
+    setOnlyContainers, toggleOnlyContainers,
     toggleFaction, toggleDealsDamage, toggleWeakTo,
   } = useValheimDataStore();
 
@@ -577,7 +578,7 @@ export function ValheimData() {
     }
   }, [selectedItem, selectedStation, selectedFactory, selectedVendor]);
 
-  const rawItems = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo);
+  const rawItems = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo, onlyContainers);
   // Apply discovery filter. Creatures are skipped from this filter since they
   // aren't "discovered" in the save-file knowledge lists (those cover
   // materials / recipes / pieces).
@@ -621,7 +622,7 @@ export function ValheimData() {
     return getCraftableItemCount(rawItems);
   }, [itemMaterialsActive, rawItems]);
   const subcategoryEntries = Object.entries(subcategoryCounts).sort((a, b) => b[1] - a[1]);
-  const hasActiveFilters = query || activeTypes.length > 0 || activeSubcategories.length > 0 || activeBiomes.length > 0 || activeStations.length > 0 || activeFactories.length > 0 || activeVendors.length > 0 || onlyTameable || activeFactions.length > 0 || activeDealsDamage.length > 0 || activeWeakTo.length > 0 || sortBy !== "name-asc";
+  const hasActiveFilters = query || activeTypes.length > 0 || activeSubcategories.length > 0 || activeBiomes.length > 0 || activeStations.length > 0 || activeFactories.length > 0 || activeVendors.length > 0 || onlyTameable || onlyContainers || activeFactions.length > 0 || activeDealsDamage.length > 0 || activeWeakTo.length > 0 || sortBy !== "name-asc";
 
   // Group items by type (default) or by biome (when biome-grouped)
   const groupedItems = useMemo(() => {
@@ -698,7 +699,7 @@ export function ValheimData() {
     await saveTextFile(path, content);
   };
 
-  const activeFilterCount = activeTypes.length + activeSubcategories.length + activeBiomes.length + activeStations.length + activeFactories.length + activeVendors.length + (onlyTameable ? 1 : 0) + activeFactions.length + activeDealsDamage.length + activeWeakTo.length;
+  const activeFilterCount = activeTypes.length + activeSubcategories.length + activeBiomes.length + activeStations.length + activeFactories.length + activeVendors.length + (onlyTameable ? 1 : 0) + (onlyContainers ? 1 : 0) + activeFactions.length + activeDealsDamage.length + activeWeakTo.length;
 
   // Browser-style back — first try to pop the in-page nav history (so chained
   // detail clicks unwind one step at a time). If history is empty: honour the
@@ -950,6 +951,7 @@ export function ValheimData() {
                   setActiveFactory("");
                   setActiveVendor("");
                   setOnlyTameable(false);
+                  setOnlyContainers(false);
                   useValheimDataStore.setState({ activeFactions: [], activeDealsDamage: [], activeWeakTo: [] });
                   setStationMaterialsMode(false);
                   setItemMaterialsMode(false);
@@ -1017,9 +1019,18 @@ export function ValheimData() {
               )}
             </FilterAccordion>
 
-            {/* Special — only when viewing creatures or no type filter */}
-            {(activeTypes.length === 0 || activeTypes.includes("Creature")) && (
-              <FilterAccordion title="Special" defaultOpen>
+            {/* Special — Containers is always available; Tameable only makes
+                sense while creatures are in view. */}
+            <FilterAccordion title="Special" defaultOpen>
+              <FilterCheckbox
+                checked={onlyContainers}
+                onChange={toggleOnlyContainers}
+                count={VALHEIM_ITEMS.filter((i) => (i.storageSlots ?? 0) > 0).length}
+                labelClassName="text-cyan-400"
+              >
+                Containers
+              </FilterCheckbox>
+              {(activeTypes.length === 0 || activeTypes.includes("Creature")) && (
                 <FilterCheckbox
                   checked={onlyTameable}
                   onChange={toggleOnlyTameable}
@@ -1028,8 +1039,8 @@ export function ValheimData() {
                 >
                   Tameable
                 </FilterCheckbox>
-              </FilterAccordion>
-            )}
+              )}
+            </FilterAccordion>
 
             {/* Subcategory — only shown when types are selected and subcategories exist */}
             {activeTypes.length > 0 && subcategoryEntries.length > 1 && (
@@ -1290,6 +1301,14 @@ export function ValheimData() {
                   </button>
                 </span>
               ))}
+              {onlyContainers && (
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-[11px] text-cyan-400 border border-cyan-500/20">
+                  Containers
+                  <button title="Clear Containers filter" onClick={() => setOnlyContainers(false)}>
+                    <X className="w-3 h-3 text-cyan-400/50 hover:text-cyan-400" />
+                  </button>
+                </span>
+              )}
               {onlyTameable && (
                 <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-[11px] text-emerald-400 border border-emerald-500/20">
                   Tameable
