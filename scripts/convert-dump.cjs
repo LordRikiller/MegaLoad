@@ -3013,6 +3013,34 @@ for (const e of converted) {
 }
 console.log("Type breakdown:", typeCounts);
 
+// ── Storage capacity ────────────────────────────────────────────────────────
+// A container's slot count lives on its Container component as a width x height
+// grid and appears nowhere in the piece or item data, so it comes from the
+// dump's own `containers` section (MegaDataExtractor 1.6.0+). Without a fresh
+// dump these fields are simply absent and the UI shows nothing, which is the
+// same as before.
+{
+  const containers = raw.containers ?? [];
+  const byPrefab = new Map();
+  for (const c of containers) {
+    if (!c || !c.prefab || !c.slots) continue;
+    byPrefab.set(c.prefab, c);
+  }
+  let tagged = 0;
+  for (const e of converted) {
+    const c = byPrefab.get(e.id);
+    if (!c) continue;
+    e.storageSlots = c.slots;
+    e.storageGrid = `${c.width}x${c.height}`;
+    tagged++;
+  }
+  console.log(
+    containers.length
+      ? `Storage: ${tagged} entries tagged with capacity (from ${containers.length} containers)`
+      : "Storage: dump has no `containers` section — re-run MegaDataExtractor 1.6.0+ in-game"
+  );
+}
+
 let ts = `// @ts-nocheck — generated data, array literal too large for TS union inference
 // ── Valheim Item Database ──────────────────────────────────
 // Auto-generated from game data dump (assembly_valheim.dll via MegaDataExtractor)
@@ -3117,6 +3145,8 @@ export interface ValheimItem {
   neutralTo?: string[];  // Creatures only — normal-damage types
   baits?: { id: string; name: string }[];   // Fish only — bait variants that catch this fish (MegaBug 20260621-133714)
   catches?: { id: string; name: string }[]; // Fishing bait only — fish this bait attracts (reverse of baits)
+  storageSlots?: number; // Containers only — inventory slots (e.g. Barrel = 12)
+  storageGrid?: string;  // Containers only — the slot grid, e.g. "6x2"
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
   setEffect?: SetEffect | null; // Armor only — set bonus mechanics on the chest piece

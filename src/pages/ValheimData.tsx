@@ -2241,10 +2241,22 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
             )}
 
             {/* Properties */}
-            {(item.weight > 0 || item.stack > 1 || item.value > 0) && (
+            {(item.weight > 0 || item.stack > 1 || item.value > 0 || !!item.storageSlots) && (
               <div className="glass rounded-xl p-5 border border-zinc-800/50">
                 <h2 className="text-sm font-semibold text-zinc-200 mb-3">Properties</h2>
                 <div className="space-y-0">
+                  {/* Storage first — for a chest, cart or boat it's the headline number. */}
+                  {!!item.storageSlots && (
+                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/30">
+                      <span className="text-xs text-zinc-500">Storage</span>
+                      <span className="text-xs text-cyan-400 font-medium">
+                        {item.storageSlots} slots
+                        {item.storageGrid && (
+                          <span className="text-zinc-500 font-normal"> ({item.storageGrid})</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                   {item.weight > 0 && (
                     <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/30">
                       <span className="text-xs text-zinc-500">Weight</span>
@@ -3504,6 +3516,7 @@ function exportItem(item: ValheimItem) {
     stack: item.stack,
     weight: item.weight,
     value: item.value,
+    storageSlots: item.storageSlots ?? "",
     recipe: item.recipe.map((r) => `${r.name} x${r.amount}`).join(", "),
     stats: item.stats.map((s) => `${s.label}: ${s.value}`).join(", "),
     wikiUrl: item.wikiUrl,

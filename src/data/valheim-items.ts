@@ -102,6 +102,8 @@ export interface ValheimItem {
   neutralTo?: string[];  // Creatures only — normal-damage types
   baits?: { id: string; name: string }[];   // Fish only — bait variants that catch this fish (MegaBug 20260621-133714)
   catches?: { id: string; name: string }[]; // Fishing bait only — fish this bait attracts (reverse of baits)
+  storageSlots?: number; // Containers only — inventory slots (e.g. Barrel = 12)
+  storageGrid?: string;  // Containers only — the slot grid, e.g. "6x2"
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
   setEffect?: SetEffect | null; // Armor only — set bonus mechanics on the chest piece
