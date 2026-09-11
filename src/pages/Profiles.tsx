@@ -56,10 +56,11 @@ export function Profiles() {
     getStarterMods()
       .then((mods) => {
         setStarterMods(mods);
-        // Standalone mods (MiniQoL) replace Mega-series features rather than
-        // complementing them — ticking one alongside the Mega mods double-patches
-        // the same vanilla methods. Leave them for the user to opt into.
-        setSelectedStarters(new Set(mods.filter((m) => !m.standalone).map((m) => m.name)));
+        // Nothing is pre-ticked. A new profile used to arrive with every
+        // Mega-series mod selected, which quietly made "create a profile" mean
+        // "install the lot" — wrong default for a profile built for one specific
+        // playthrough or for testing a single mod. Use "Select all" to opt in.
+        setSelectedStarters(new Set());
       })
       .catch((e) => console.warn("[MegaLoad]", e));
   }, [fetchProfiles]);

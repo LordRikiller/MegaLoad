@@ -11,6 +11,7 @@ pub mod launcher;
 pub mod logs;
 pub mod mods;
 pub mod player_data;
+pub mod prefab_names;
 pub mod profiles;
 pub mod security;
 pub mod sync;

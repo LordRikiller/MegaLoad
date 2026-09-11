@@ -124,8 +124,17 @@ export function IdentityGate({ children }: { children: React.ReactNode }) {
       // New account flow
       try {
         await saveIdentity(nameInput.trim());
-      } catch {
-        // Error is set in the store
+      } catch (e) {
+        // The availability probe fails OPEN — a network hiccup makes it report
+        // "available" for a name that is very much taken, and the name can also
+        // be claimed between the check and the click. The backend is the
+        // authority, so when it says taken, drop into the link flow instead of
+        // leaving the user staring at "Choose another." with no way forward.
+        if (/already taken/i.test(String(e))) {
+          setAvailable(false);
+          useIdentityStore.setState({ error: null });
+        }
+        // Any other error is already set in the store.
       }
     }
   };
@@ -253,7 +262,9 @@ export function IdentityGate({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-emerald-400">Name available — ready to create your account.</p>
             )}
             {isExisting && (
-              <p className="text-xs text-cyan-400">Account found — enter your link code below to connect this device.</p>
+              <p className="text-xs text-cyan-400">
+                That name is already registered — enter its link code below to connect this device to that account.
+              </p>
             )}
             {!isNew && !isExisting && available === null && nameInput.trim().length >= 2 && !checking && (
               <p className="text-xs text-zinc-500">Letters, numbers, spaces, hyphens and underscores only.</p>
@@ -275,7 +286,9 @@ export function IdentityGate({ children }: { children: React.ReactNode }) {
                 autoFocus
               />
               <p className="text-xs text-zinc-500">
-                The link code was shown when this account was created, or can be regenerated in Settings on the original device.
+                The link code was shown when the account was created. Lost it? On a device that
+                is already signed in, go to <strong className="text-zinc-400">Settings &rarr; Generate
+                Link Code</strong> and use the code it gives you.
               </p>
             </div>
           )}

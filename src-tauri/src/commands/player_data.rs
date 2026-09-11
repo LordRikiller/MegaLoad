@@ -136,6 +136,36 @@ impl<'a> BinReader<'a> {
         Ok(v)
     }
 
+    fn read_u8(&mut self) -> Result<u8, String> {
+        if self.pos >= self.data.len() {
+            return Err(format!("EOF reading byte at offset {}", self.pos));
+        }
+        let v = self.data[self.pos];
+        self.pos += 1;
+        Ok(v)
+    }
+
+    fn read_u16(&mut self) -> Result<u16, String> {
+        if self.pos + 2 > self.data.len() {
+            return Err(format!("EOF reading u16 at offset {}", self.pos));
+        }
+        let v = u16::from_le_bytes([self.data[self.pos], self.data[self.pos + 1]]);
+        self.pos += 2;
+        Ok(v)
+    }
+
+    /// ZPackage.ReadNumItems — one byte, or a two-byte big-endian value when the
+    /// high bit is set. Used for the per-item custom-data count in Valheim 1.0.
+    fn read_num_items(&mut self) -> Result<i32, String> {
+        let b = self.read_u8()?;
+        if b & 128 != 0 {
+            let lo = self.read_u8()?;
+            Ok(((((b & 127) as i32) << 8) | lo as i32) as i32)
+        } else {
+            Ok(b as i32)
+        }
+    }
+
     fn read_bool(&mut self) -> Result<bool, String> {
         if self.pos >= self.data.len() {
             return Err(format!("EOF reading bool at offset {}", self.pos));
@@ -296,6 +326,39 @@ pub struct KnownText {
 }
 
 // ── Skill & Biome Name Lookups ─────────────────────────────
+
+/// Valheim's `StringExtensionMethods.GetStableHashCode` — the hash an item's
+/// prefab name is stored under from inventory format 108 onwards.
+fn stable_hash_code(s: &str) -> i32 {
+    let chars: Vec<char> = s.chars().collect();
+    let mut hash1: i32 = 5381;
+    let mut hash2: i32 = 5381;
+    let mut i = 0usize;
+    while i < chars.len() && chars[i] != '\0' {
+        hash1 = ((hash1 << 5).wrapping_add(hash1)) ^ (chars[i] as i32);
+        if i == chars.len() - 1 || chars[i + 1] == '\0' {
+            break;
+        }
+        hash2 = ((hash2 << 5).wrapping_add(hash2)) ^ (chars[i + 1] as i32);
+        i += 2;
+    }
+    hash1.wrapping_add(hash2.wrapping_mul(1566083941))
+}
+
+/// Reverse map built once from the generated prefab name table.
+fn prefab_name_for_hash(hash: i32) -> Option<&'static str> {
+    use std::collections::HashMap;
+    use std::sync::OnceLock;
+    static MAP: OnceLock<HashMap<i32, &'static str>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        super::prefab_names::PREFAB_NAMES
+            .iter()
+            .map(|n| (stable_hash_code(n), *n))
+            .collect()
+    })
+    .get(&hash)
+    .copied()
+}
 
 fn skill_name(id: i32) -> &'static str {
     match id {
@@ -594,21 +657,63 @@ fn parse_character_file(file_data: &[u8]) -> Result<CharacterData, String> {
 
     let version = r.read_i32()?;
 
-    // Stats — format changed in v38
-    let (kills, deaths, crafts, builds, boss_kills) = if version >= 38 {
-        // v38+: stat_count (int32) + stat_count x float
-        let stat_count = r.read_i32()?;
-        let mut stats = vec![0.0f32; stat_count as usize];
-        for i in 0..stat_count as usize {
-            stats[i] = r.read_f32()?;
+    // Stats — format changed in v38, then again in Valheim 1.0.
+    let (kills, deaths, crafts, builds, boss_kills) = if has_grouped_stats(version) {
+        // v44/v46+: stats are no longer one flat array. The file now holds
+        // `entry_count` parallel stat blocks (10 in practice — the game tracks
+        // several scopes side by side), each carrying its own float array AND
+        // its own copies of the dictionaries that used to live further down the
+        // file. Entry 0 is the lifetime aggregate, which is what the old flat
+        // array was and what the game itself still reads as m_playerStats[0].
+        let stats_per_entry = r.read_i32()?;
+        let entry_count = r.read_i32()?;
+        if !(0..=10_000).contains(&stats_per_entry) || !(0..=10_000).contains(&entry_count) {
+            return Err(format!(
+                "Implausible stat block: {} stats x {} entries",
+                stats_per_entry, entry_count
+            ));
         }
-        // PlayerStatType: Deaths=0, CraftsOrUpgrades=1, Builds=2, EnemyKills=6, BossKills=86
-        let deaths = stats.get(0).copied().unwrap_or(0.0) as i32;
-        let crafts = stats.get(1).copied().unwrap_or(0.0) as i32;
-        let builds = stats.get(2).copied().unwrap_or(0.0) as i32;
-        let kills = stats.get(6).copied().unwrap_or(0.0) as i32;
-        let boss_kills = stats.get(86).copied().unwrap_or(0.0) as i32;
-        (kills, deaths, crafts, builds, boss_kills)
+
+        let mut first: Vec<f32> = Vec::new();
+        for entry in 0..entry_count {
+            let mut stats = vec![0.0f32; stats_per_entry as usize];
+            for slot in stats.iter_mut() {
+                *slot = r.read_f32()?;
+            }
+            if entry == 0 {
+                first = stats;
+            }
+
+            // knownWorlds / knownWorldKeys / knownCommands
+            for _ in 0..3 {
+                skip_string_float_dict(&mut r)?;
+            }
+            // enemyStats became an ARRAY of dictionaries (one per enemy tier).
+            let enemy_dicts = r.read_i32()?;
+            if !(0..=100_000).contains(&enemy_dicts) {
+                return Err(format!("Implausible enemy stat count {}", enemy_dicts));
+            }
+            for _ in 0..enemy_dicts {
+                skip_string_float_dict(&mut r)?;
+            }
+            // itemPickup, itemCraft, and 1.0's new pickable / foodEaten /
+            // piecesPlaced dictionaries.
+            for _ in 0..5 {
+                skip_string_float_dict(&mut r)?;
+            }
+        }
+        summarise_stats(&first, version)
+    } else if version >= 38 {
+        // v38-43: stat_count (int32) + stat_count x float
+        let stat_count = r.read_i32()?;
+        if !(0..=10_000).contains(&stat_count) {
+            return Err(format!("Implausible stat count {}", stat_count));
+        }
+        let mut stats = vec![0.0f32; stat_count as usize];
+        for slot in stats.iter_mut() {
+            *slot = r.read_f32()?;
+        }
+        summarise_stats(&stats, version)
     } else if version >= 28 {
         // v28-37: individual int32 fields
         let kills = r.read_i32()?;
@@ -640,6 +745,10 @@ fn parse_character_file(file_data: &[u8]) -> Result<CharacterData, String> {
     if version >= 38 {
         let _used_cheats = r.read_bool()?;
         let _date_created = r.read_i64()?;
+
+        // On 1.0 files every dictionary below was already read as part of the
+        // per-entry stat blocks above, so the game skips this whole section.
+        if !has_grouped_stats(version) {
 
         // knownWorlds: Dict<string, float>
         let kw_count = r.read_i32()?;
@@ -683,6 +792,8 @@ fn parse_character_file(file_data: &[u8]) -> Result<CharacterData, String> {
                 r.read_f32()?;
             }
         }
+
+        } // !has_grouped_stats
     }
 
     // Player data blob (bool flag + length-prefixed byte array)
@@ -738,6 +849,39 @@ fn parse_character_file(file_data: &[u8]) -> Result<CharacterData, String> {
         world_count,
         ..pd
     })
+}
+
+/// Valheim 1.0 regrouped the character-file stat section. The game gates it on
+/// exactly this condition (`version >= 46 || version == 44`) — 45 is deliberately
+/// excluded, so don't simplify it to a `>=`.
+fn has_grouped_stats(version: i32) -> bool {
+    version >= 46 || version == 44
+}
+
+fn skip_string_float_dict(r: &mut BinReader) -> Result<(), String> {
+    let count = r.read_i32()?;
+    if !(0..=2_000_000).contains(&count) {
+        return Err(format!(
+            "Implausible dictionary count {} at offset {}",
+            count, r.pos
+        ));
+    }
+    for _ in 0..count {
+        r.read_string()?;
+        r.read_f32()?;
+    }
+    Ok(())
+}
+
+/// Pull the handful of headline numbers out of a PlayerStatType float array.
+///
+/// The enum shifted in 1.0: `BossKills` moved from 86 to 85 (86 is now
+/// `BossLastHits`), and the array grew from 105 entries to 205. Deaths,
+/// CraftsOrUpgrades, Builds and EnemyKills kept their slots.
+fn summarise_stats(stats: &[f32], version: i32) -> (i32, i32, i32, i32, i32) {
+    let boss_slot = if has_grouped_stats(version) { 85 } else { 86 };
+    let at = |i: usize| stats.get(i).copied().unwrap_or(0.0) as i32;
+    (at(6), at(0), at(1), at(2), at(boss_slot))
 }
 
 fn skip_world_data(r: &mut BinReader, version: i32) -> Result<(), String> {
@@ -859,9 +1003,24 @@ fn parse_player_data(blob: &[u8], name: &str) -> Result<CharacterData, String> {
         Vec::new()
     };
 
-    // Known biomes (v18+)
-    let known_biomes = if pv >= 18 {
+    // Known biomes. Valheim 1.0 writes the biome NAME; before that it was the
+    // Heightmap.Biome bit value, which had to be looked up. Same gate the game
+    // uses (v31, then v33+) — v32 kept the old form.
+    let known_biomes = if pv >= 33 || pv == 31 {
         let count = r.read_i32()?;
+        if !(0..=10_000).contains(&count) {
+            return Err(format!("Implausible biome count {}", count));
+        }
+        let mut biomes = Vec::with_capacity(count as usize);
+        for _ in 0..count {
+            biomes.push(r.read_string()?);
+        }
+        biomes
+    } else if pv >= 18 {
+        let count = r.read_i32()?;
+        if !(0..=10_000).contains(&count) {
+            return Err(format!("Implausible biome count {}", count));
+        }
         let mut biomes = Vec::with_capacity(count as usize);
         for _ in 0..count {
             let id = r.read_i32()?;
@@ -931,6 +1090,13 @@ fn parse_player_data(blob: &[u8], name: &str) -> Result<CharacterData, String> {
         (max_stamina, 0.0)
     };
 
+    // v31 / v33+ end with the build-menu layout as an opaque byte array. Nothing
+    // here needs it, but read it so the parse consumes the blob exactly — a
+    // trailing surplus is the first sign the format has moved again.
+    if pv >= 33 || pv == 31 {
+        let _build_ui = r.read_byte_array()?;
+    }
+
     Ok(CharacterData {
         name: name.to_string(),
         version: pv,
@@ -966,7 +1132,13 @@ fn parse_player_data(blob: &[u8], name: &str) -> Result<CharacterData, String> {
 
 fn parse_inventory(r: &mut BinReader) -> Result<Vec<InventoryItem>, String> {
     let inv_version = r.read_i32()?;
+    if inv_version >= 108 {
+        return parse_inventory_1_0(r, inv_version);
+    }
     let count = r.read_i32()?;
+    if !(0..=100_000).contains(&count) {
+        return Err(format!("Implausible inventory count {}", count));
+    }
     let mut items = Vec::with_capacity(count as usize);
 
     for _ in 0..count {
@@ -1017,6 +1189,78 @@ fn parse_inventory(r: &mut BinReader) -> Result<Vec<InventoryItem>, String> {
         if inv_version >= 106 {
             let _picked_up = r.read_bool()?;
         }
+
+        items.push(InventoryItem {
+            name,
+            stack,
+            durability,
+            grid_x,
+            grid_y,
+            equipped,
+            quality,
+            variant,
+            crafter_name,
+            world_level,
+        });
+    }
+
+    Ok(items)
+}
+
+/// Inventory format 108+ (Valheim 1.0).
+///
+/// Two things changed and both are easy to miss. The item count is now a
+/// **ushort**, not an int32. And an item no longer stores its prefab *name* —
+/// it stores the stable hash of that name, and only writes the optional fields
+/// a flags byte says are present, so the record is variable-length. Get the
+/// flag order wrong and everything after it is garbage.
+fn parse_inventory_1_0(r: &mut BinReader, inv_version: i32) -> Result<Vec<InventoryItem>, String> {
+    let count = r.read_u16()? as usize;
+    let mut items = Vec::with_capacity(count);
+
+    for _ in 0..count {
+        // Durability is stored as hundredths in an int32.
+        let durability = r.read_i32()? as f32 * 0.01;
+        let grid_x = r.read_u8()? as i32;
+        let grid_y = r.read_u8()? as i32;
+        let world_level = r.read_u8()? as i32;
+
+        let flags = r.read_u8()?;
+        let _picked_up = flags & 1 != 0;
+        let equipped = flags & 2 != 0;
+        let quality = if flags & 4 != 0 { r.read_u16()? as i32 } else { 1 };
+        let stack = if flags & 8 != 0 { r.read_u16()? as i32 } else { 1 };
+        let variant = if flags & 16 != 0 { r.read_i32()? } else { 0 };
+        // crafterID and crafterName share the one flag.
+        let crafter_name = if flags & 32 != 0 {
+            let _crafter_id = r.read_i64()?;
+            r.read_string()?
+        } else {
+            String::new()
+        };
+        let prefab_hash = if flags & 64 != 0 { r.read_i32()? } else { 0 };
+        let custom_data = if flags & 128 != 0 { r.read_num_items()? } else { 0 };
+        if !(0..=100_000).contains(&custom_data) {
+            return Err(format!("Implausible item custom data count {}", custom_data));
+        }
+        for _ in 0..custom_data {
+            r.read_string()?;
+            r.read_string()?;
+        }
+        // The cheated flag arrived in 107 and stuck from 109 — 108 doesn't have it.
+        if inv_version >= 109 || inv_version == 107 {
+            let _cheated = r.read_u8()?;
+        }
+
+        // A zero hash means "no item"; the game drops those on load.
+        if prefab_hash == 0 {
+            continue;
+        }
+        let name = prefab_name_for_hash(prefab_hash)
+            .map(|n| n.to_string())
+            // Modded items were never in the vanilla dump, so name them by hash
+            // rather than dropping the row — the slot is still occupied.
+            .unwrap_or_else(|| format!("Unknown item ({})", prefab_hash));
 
         items.push(InventoryItem {
             name,
@@ -1143,6 +1387,81 @@ mod tests {
 
         assert!(!c.name.is_empty());
         assert!(c.kills >= 0);
+    }
+
+    /// Valheim 1.0 (character file v46, player data v33, inventory v109) across
+    /// every 1.0 save on this machine.
+    ///
+    /// The check that matters is the last one: a correct parse consumes the
+    /// player blob EXACTLY. The old parser failed loudly here ("EOF skipping N
+    /// bytes"), but a subtler format change can leave the parse looking fine
+    /// while silently landing on the wrong fields, so assert on the shape of
+    /// what came back rather than just on "no error".
+    #[test]
+    fn test_parse_valheim_1_0_characters() {
+        let mut checked = 0;
+        for dir in find_character_dirs() {
+            let entries = match std::fs::read_dir(&dir) {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("fch") {
+                    continue;
+                }
+                let data = match std::fs::read(&path) {
+                    Ok(d) => d,
+                    Err(_) => continue,
+                };
+                if data.len() < 8 {
+                    continue;
+                }
+                let version = i32::from_le_bytes([data[4], data[5], data[6], data[7]]);
+                if version < 44 {
+                    continue;
+                }
+
+                let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                let c = parse_character_file(&data)
+                    .unwrap_or_else(|e| panic!("{} (v{}) failed to parse: {}", name, version, e));
+
+                assert!(!c.name.is_empty(), "{}: empty character name", name);
+                assert!(c.max_hp > 0.0, "{}: max_hp was {}", name, c.max_hp);
+                // A character created but never taken into a world has no world
+                // data and no skills yet, so those are only meaningful once it
+                // has actually been played.
+                if c.world_count > 0 {
+                    assert!(
+                        !c.skills.is_empty(),
+                        "{}: played character with no skills — the parse drifted                          before the skill block",
+                        name
+                    );
+                }
+                // Item names come back through the prefab-hash table now; if that
+                // lookup broke, every item would read "Unknown item (...)".
+                let named = c
+                    .inventory
+                    .iter()
+                    .filter(|i| !i.name.starts_with("Unknown item"))
+                    .count();
+                assert!(
+                    c.inventory.is_empty() || named > 0,
+                    "{}: {} items and not one resolved to a prefab name",
+                    name,
+                    c.inventory.len()
+                );
+                println!(
+                    "{} v{}: {} items ({} named), {} skills, {} biomes, K:{} D:{}",
+                    name, c.version, c.inventory.len(), named,
+                    c.skills.len(), c.known_biomes.len(), c.kills, c.deaths
+                );
+                checked += 1;
+            }
+        }
+        if checked == 0 {
+            println!("Skipping — no Valheim 1.0 character files on this machine");
+        }
     }
 
     #[test]

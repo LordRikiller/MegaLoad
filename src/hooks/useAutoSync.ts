@@ -4,9 +4,18 @@ import { useIdentityStore } from "../stores/identityStore";
 import { useToastStore } from "../stores/toastStore";
 import { useMegaListStore } from "../stores/megaListStore";
 import { useGameStatusStore } from "../stores/gameStatusStore";
+import { debugWarn } from "../lib/debug";
 
 const POLL_INTERVAL_MS = 30_000; // Check for remote changes every 30s
 const INITIAL_PULL_DELAY_MS = 2_000; // Let IdentityGate clear first
+/**
+ * Consecutive MegaList reconcile failures before we say something out loud.
+ * One failure is usually a dropped connection and not worth a toast; a run of
+ * them means lists genuinely aren't syncing, which used to be completely
+ * invisible — every reconcile error was swallowed by a bare `catch {}`, so an
+ * account could go months without syncing and nobody would know.
+ */
+const LIST_FAILURE_TOAST_THRESHOLD = 3;
 
 /**
  * Auto-sync hook — handles:
@@ -41,6 +50,37 @@ export function useAutoSync() {
   const initialPullTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialPullDone = useRef(false);
   const wasGameRunning = useRef(false);
+  const listFailureStreak = useRef(0);
+  const listFailureToasted = useRef(false);
+
+  // MegaList reconcile is best-effort, but "best-effort" used to mean "silent
+  // forever". Log every failure and surface a toast once a run of them says the
+  // problem is real rather than a blip. Resets as soon as one succeeds.
+  const noteListSync = useRef<(err: unknown | null, where: string) => void>(() => {});
+  noteListSync.current = (err, where) => {
+    if (err === null) {
+      listFailureStreak.current = 0;
+      listFailureToasted.current = false;
+      return;
+    }
+    listFailureStreak.current += 1;
+    debugWarn(
+      `MegaList reconcile failed (${where}, streak ${listFailureStreak.current}):`,
+      err
+    );
+    if (
+      listFailureStreak.current >= LIST_FAILURE_TOAST_THRESHOLD &&
+      !listFailureToasted.current
+    ) {
+      listFailureToasted.current = true;
+      addToast({
+        type: "warning",
+        title: "MegaLists not syncing",
+        message: `${listFailureStreak.current} attempts failed. Your lists are safe locally, but they aren't reaching the cloud.`,
+        duration: 8000,
+      });
+    }
+  };
 
   // Load sync status on mount
   useEffect(() => {
@@ -72,13 +112,14 @@ export function useAutoSync() {
               duration: 3000,
             });
           }
-        } catch {
-          // Silent fail on initial pull
+        } catch (e) {
+          debugWarn("Cloud Sync: initial profile pull failed:", e);
         }
         try {
           await useMegaListStore.getState().reconcile();
-        } catch {
-          // Silent fail — toast would noise up startup
+          noteListSync.current(null, "startup");
+        } catch (e) {
+          noteListSync.current(e, "startup");
         }
       })();
     }, INITIAL_PULL_DELAY_MS);
@@ -116,8 +157,8 @@ export function useAutoSync() {
             duration: 4000,
           });
         }
-      } catch {
-        // Silent fail on poll
+      } catch (e) {
+        debugWarn("Cloud Sync: poll pull failed:", e);
       }
       // Push any local edits to the cloud. The Rust side short-circuits when
       // the merged bundle matches remote (only `last_updated` would change),
@@ -126,13 +167,14 @@ export function useAutoSync() {
       // strand their edits locally (ticket 20260524-222756-b294a49e).
       try {
         await pushAllProfiles();
-      } catch {
-        // Silent fail on poll
+      } catch (e) {
+        debugWarn("Cloud Sync: poll push failed:", e);
       }
       try {
         await useMegaListStore.getState().reconcile();
-      } catch {
-        // Silent fail on poll
+        noteListSync.current(null, "poll");
+      } catch (e) {
+        noteListSync.current(e, "poll");
       }
     }, POLL_INTERVAL_MS);
 
@@ -156,13 +198,15 @@ export function useAutoSync() {
       (async () => {
         try {
           await pushAllProfiles();
-        } catch {
-          // Error already set in store
+        } catch (e) {
+          // Error is also set in the store; this is the diagnostic trail.
+          debugWarn("Cloud Sync: game-exit push failed:", e);
         }
         try {
           await useMegaListStore.getState().reconcile();
-        } catch {
-          // Silent
+          noteListSync.current(null, "game-exit");
+        } catch (e) {
+          noteListSync.current(e, "game-exit");
         }
       })();
     }

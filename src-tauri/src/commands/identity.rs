@@ -369,6 +369,11 @@ pub fn set_megaload_identity(display_name: String) -> Result<IdentityResult, Str
     // Also keep legacy file in sync for compat
     let _ = fs::write(dir.join(LEGACY_IDENTITY_FILE), &json);
 
+    // Hand the Worker this install's secret before the first signed write below.
+    // Without it the next PUT 401s and has to re-register on the retry path,
+    // which works but costs a wasted round trip on every fresh setup.
+    crate::commands::worker_auth::register_with_worker_best_effort();
+
     // Register/update on server
     let admin = is_admin();
     let mut link_code: Option<String> = None;
@@ -481,6 +486,12 @@ pub fn link_existing_account(display_name: String, link_code: String) -> Result<
     fs::write(dir.join(IDENTITY_FILE), &json)
         .map_err(|e| format!("Failed to save identity: {}", e))?;
     let _ = fs::write(dir.join(LEGACY_IDENTITY_FILE), &json);
+
+    // This install has a brand new secret that the Worker has never seen, so
+    // register it now rather than waiting for the next launch. The Worker keeps
+    // one secret per DEVICE, so this sits alongside the other machine's rather
+    // than replacing it.
+    crate::commands::worker_auth::register_with_worker_best_effort();
 
     // Sync admin status from server — create local admin key if server says admin
     if profile.is_admin {
