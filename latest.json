@@ -1,11 +1,11 @@
 {
-  "version": "1.12.2",
-  "notes": "MegaArrow joins the family.\n\nA new mod, MegaArrow, is now in the mod list: a volley arrow for any bow that fires one homing arrow per enemy in front of you (up to ten), all-or-nothing with the arrow you actually aimed. This MegaLoad update adds its icon in the mod list and the 'MegaArrow' tag in MegaBugs so tickets can be filed against it. No other changes.",
-  "pub_date": "2026-09-07T22:12:44.000Z",
+  "version": "1.12.3",
+  "notes": "Valheim 1.0 data pass.\n\nThe Valheim Data page now carries the Deep North: 249 entries tagged to the new biome, up from 2. That covers Bloodgold, Liquid Frost, Timberwood, Petrified Tissue, the Nord gear and its casting moulds, and every Deep North creature.\n\nIt also strips 119 entries that 1.0 had leaking into the list but were never real items - boss attack definitions, the Frozen King's attack set, Jotun NPC weapons that all showed as 'Club', Jotun hair prefabs listed as 'Iron plate armor', and 53 NPC loadout duplicates of gear you already had.\n\nPlayer Data counts the eighth Forsaken. Kall Fimbulbringer drops no trophy, unlike every other Deep North creature, so the Forsaken card was stuck reading out of 7 and could never have shown him. It now reads out of 8 and detects him from the Hugin message that fires on his defeat.",
+  "pub_date": "2026-09-11T21:14:08.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUhYRVJyN1EwVmZSRGhiWnQxaWpOOCt0VWQ3dFNjc2NqdXc0S1F5TENjSXJmcDN2LzlNbitqSjFiL2VjK3MyRzljb1pIZFpDYzM5SW8rT1JFcHdVZXdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4ODE5MTE1CWZpbGU6TWVnYUxvYWRfMS4xMi4yX3g2NC1zZXR1cC5uc2lzLnppcAphd08yRllxK21hWm1FYmRJbHhUZ0Z2c29wME1FUWVFK01QaUtnUHNzWWFMZWtjLzhEVDBoOE96UDVlWDJDYTA4OW9XWG12SnM1MlZ0RFlISXE1c3ZBdz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.12.2/MegaLoad_1.12.2_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU15RjBzNUI5TWdUbjlBOXNEQTlpWkEzQkFWUDBLaHRaSU84UXZOTFFKN28waXFxU05vRkpzU0VJdS9OcHRhR0NmNk1YZXRxblRxOHpNeXNQYWJxM0E0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5MTYxMjI5CWZpbGU6TWVnYUxvYWRfMS4xMi4zX3g2NC1zZXR1cC5uc2lzLnppcAptNU4wNno3RXVNOEVUM1lpRGhwYnBHYUZhRGlHNnFHa0Y0c25JN0JMSnBhVVJmUk9hazJ4K0JvTFZUSWJLMmU0Uk1HQnhyYyt4enhXbDBmL2tVSnVDUT09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.12.3/MegaLoad_1.12.3_x64-setup.nsis.zip"
     }
   }
 }
