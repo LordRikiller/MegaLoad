@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-10T04:48:23Z",
+  "updated_at": "2026-09-11T21:27:51Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -134,11 +134,11 @@
     },
     {
       "name": "MiniQoL",
-      "version": "1.6.0",
-      "download_url": "https://github.com/LordRikiller/MiniQoL/releases/download/v1.6.0/MiniQoL.dll",
+      "version": "2.0.0",
+      "download_url": "https://github.com/LordRikiller/MiniQoL/releases/download/v2.0.0/MiniQoL.dll",
       "dll_name": "MiniQoL.dll",
       "plugin_folder": "MiniQoL",
-      "description": "Standalone replacement for parts of the Mega series — do NOT run it alongside MegaBuilder, MegaFarming or MegaMegingjord, as it re-implements their features and would double-patch the same methods. (MegaPortals is fine to run with it.) Bundles: build-piece grid snap (F7 toggles, F6 cycles 0.25/0.5/1/2/4m, furniture snaps to the piece you point at including angled/octagon builds); mass farming (hold the hotkey to mass-harvest pickables, pickable-items and beehives within radius, or grid-plant a configurable WxL block, with FarmGridSize where 0 follows the F6 build grid and spacing auto-widens so bushes never overlap); and Sea Floor Walking (press Minus [-] to stop swimming and walk the ocean floor — hotkey only, no Megingjord belt or gear needed, and the camera stops clipping above the waterline). — v1.5.0 MOVED the Home Portal network out to the standalone MegaPortals mod; install that to keep it. Your hubs and your Home Portal settings carry over automatically. Renamed from FarmBuild in v1.4.0.",
+      "description": "Standalone replacement for two Mega-series features — do NOT run it alongside MegaBuilder or MegaFarming, as it re-implements their features and would double-patch the same methods. (MegaPortals is fine to run with it.) Two features only: build-piece grid snap (F7 toggles, F6 cycles 0.25/0.5/1/2/4m, furniture snaps to the piece you point at including angled/octagon builds); and grid planting (hold the hotkey while planting to fill a configurable WxL block, with ghost previews marking every cell that won't take). Strict grid sizing means a plant needs just one grid cell of room to grow — 0.25m for crops, 0.5m for trees — so anything you plant on the grid actually grows instead of sitting on 'lacking space'. Per-cell cultivated-ground, biome and open-sky checks, so a grid straddling a zone seam can't plant into bare dirt. PlantGridSize pins the plant grid independently of the F7 toggle. — v2.0.0 REMOVED mass harvest (still in MegaFarming) and Sea Floor Walking (still in MegaMegingjord), and renamed the config section, so grid-planting settings reset on upgrade. v1.5.0 moved the Home Portal network out to the standalone MegaPortals mod. Renamed from FarmBuild in v1.4.0.",
       "standalone": true
     },
     {
