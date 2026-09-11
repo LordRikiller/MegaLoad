@@ -147,6 +147,29 @@ const CREATURE_ATTACK_PATTERNS = [
   /^frostresist_ragdoll/i, /^tentaroot/i, /^dvergr_/i,
   /^blobtar_/i, /^abomination_/i, /^thungur/i,
   /^BonemawSerpent_/i, /^SeekerBrute_/i, /^TrainingDummy/i,
+
+  // ─── Valheim 1.0 / Deep North ───
+  // Boss "aspect" summons and the Frozen King's attack set. These are attack
+  // definitions, not items, but they carry real display names ("dragon breath",
+  // "Fader Roar") so the name-based internal check never caught them.
+  /^aspect_/i, /^FrozenKing_/i,
+  // Deep North creature attacks.
+  /^Barka_/i, /^moose_/i, /^spiritmoose_/i, /^trollsnow_/i, /^Frysling_/i,
+  /^Writhan_/i, /^Elaking_/i, /^Seal_attack/i, /^JotunWitch_/i,
+  // Jotun NPC weapons - all localise to "Club", none are obtainable.
+  /^Axe1h_JotunWarrior/i, /^Axe2h_JotunWarrior/i, /^Sword2h_JotunWarrior/i,
+  /^JotunWarriorSword2h/i, /^JotunWarrior_/i,
+  // Jotun hair prefabs are typed as Armor and localise to "Iron plate armor".
+  /^JotunHair/i,
+  // The existing /^greydwarf_/ has no `i` flag, so the capitalised 1.0 variant
+  // slipped past it.
+  /^Greydwarf_throw/i,
+
+  // NPC loadout duplicates. Every FW_/SP_ prefab mirrors a real item (FW_SwordBlackmetal
+  // -> SwordBlackmetal) and none of them have a recipe - verified against the dump, all
+  // 53 strip to an existing prefab. They are equipment handed to world NPCs, and they
+  // showed up as duplicate "Black Metal Sword" / "Bronze Axe" rows.
+  /^FW_/, /^SP_/,
 ];
 
 // Specific prefabs to blacklist (NPC weapons, duplicates, world objects)
@@ -733,6 +756,33 @@ const RAW_MATERIAL_BIOME = {
   "SpiceMistlands": "Mistlands",   // Bog Witch — Herbs of the Hidden Hills, after The Queen
 
   // ─── Ashlands (tier 7) ───
+  // ─── Deep North (tier 9, Valheim 1.0) ───
+  // Only materials with real evidence: frost-named 1.0 additions, Frigid Kiln /
+  // Frost Foundry products, and anything explicitly named DeepNorth. Ambiguous new
+  // items (Kale, Oat, Poteitr, Glowworm, Hook) are deliberately left unassigned
+  // rather than guessed at — a wrong biome is worse than a blank one.
+  "FaderEmber": "Ashlands",           // Fader is the Ashlands final boss
+  "CookedMooseMeat": "Deep North",
+  "CookedSealBlubber": "Deep North",
+  "MooseMeat": "Deep North",
+  "Ice": "Deep North",
+  "Frostwood": "Deep North",            // "Timberwood"
+  "FirConeFrost": "Deep North",         // "Timberwood Cone"
+  "FrostCore": "Deep North",
+  "FrozenFuel": "Deep North",           // "Liquid Frost" — Frigid Kiln product
+  "GoldOre": "Deep North",              // "Petrified Tissue"
+  "Gold": "Deep North",                 // "Bloodgold"
+  "SpiceDeepNorth": "Deep North",
+  "BarkaBranch": "Deep North",
+  "WrithanRoots": "Deep North",
+  "MooseHide": "Deep North",
+  "MooseSinew": "Deep North",
+  "SealHide": "Deep North",
+  "SealBlubber": "Deep North",
+  "NornThread": "Deep North",
+  "HatefulBlood": "Deep North",
+  "CrownJewel": "Deep North",
+
   "FlametalNew": "Ashlands",
   "Blackwood": "Ashlands",
   "SulfurStone": "Ashlands",
@@ -1566,6 +1616,26 @@ function getItemBiomeTier(prefab) {
   // Mark as resolving (cycle detection)
   _biomeTierCache[prefab] = _RESOLVING;
 
+  // 1a. Frost Foundry casting moulds (Valheim 1.0). Every Mold* prefab is a pattern
+  //     for Nord/Deep North gear cast at the Frost Foundry, so they are Deep North
+  //     regardless of how they are obtained. The armour moulds drop from Jotun and
+  //     resolve via creature drops anyway; the weapon ones are world pickups with no
+  //     drop entry, which is why a rule beats listing them.
+  if (/^Mold/i.test(prefab)) {
+    const tier = BIOME_TIER["Deep North"] ?? -1;
+    _biomeTierCache[prefab] = tier;
+    return tier;
+  }
+
+  // 1b. Prefabs that name the biome themselves (ArmorDeepNorth*, HelmetDN*, Lantern_DN).
+  //     These are Frost Foundry outputs cast from moulds rather than crafted from a
+  //     recipe, so nothing upstream resolves a tier for them.
+  if (/DeepNorth/i.test(prefab) || /^(Helmet|Armor)DN/i.test(prefab) || /_DN$/i.test(prefab)) {
+    const tier = BIOME_TIER["Deep North"] ?? -1;
+    _biomeTierCache[prefab] = tier;
+    return tier;
+  }
+
   // 1. Check raw material map
   if (RAW_MATERIAL_BIOME[prefab]) {
     const tier = BIOME_TIER[RAW_MATERIAL_BIOME[prefab]] ?? -1;
@@ -2335,6 +2405,15 @@ function guessCreatureBiome(prefab) {
   if (BIOME_OVERRIDE[prefab]) return BIOME_OVERRIDE[prefab][0];
   
   const p = prefab.toLowerCase();
+  // ── Deep North (Valheim 1.0). MUST come before the generic patterns: "trollsnow"
+  //    contains "troll" and would otherwise be filed under Black Forest. ──
+  if (p.includes("trollsnow")) return "Deep North";   // Snow Troll, not a BF troll
+  if (p.includes("jotun") || p.includes("moose") || p.includes("elaking") ||
+      p.includes("seal") || p.includes("writhan") || p.includes("frozenking") ||
+      p.includes("barka") || p.includes("frysling") || p.includes("frostwisp") ||
+      p.startsWith("aspect_")) return "Deep North";
+  if (p === "hen") return "Meadows";                  // Chicken's adult form
+
   // ── Specific overrides BEFORE generic patterns (order matters!) ──
   if (p.includes("unbjorn")) return "Plains";        // Vile — Plains, not Ashlands
   if (p === "bjorn") return "Black Forest";            // Bear — Black Forest, not Ashlands
