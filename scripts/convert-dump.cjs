@@ -1830,8 +1830,22 @@ function mapStation(stationToken) {
 // ── Build stats array for an item ──
 function buildStats(item) {
   const stats = [];
-  const d = item.damages;
-  const dpl = item.damagesPerLevel;
+  // Staves and bombs carry no damage on the item — it lives on the projectile
+  // their attack fires. Valheim 1.0's Orb of Ahri, Frost Orbs, Spirit Caller and
+  // Dynamite all read as "no damage" off the item alone. Older staves (Fireball,
+  // Ice Shards) happen to duplicate the numbers onto the item, which is why this
+  // never showed up before. Prefer the item's own damage; fall back to the
+  // projectile's. Needs MegaDataExtractor 1.8.0+ — absent on older dumps.
+  const itemDamage = item.damages;
+  const itemHasDamage = itemDamage && Object.keys(itemDamage).some(
+    (k) => k !== "pickaxe" && k !== "chop" && itemDamage[k] > 0
+  );
+  const usingProjectile = !itemHasDamage && !!item.projectileDamage;
+  const d = usingProjectile ? item.projectileDamage : itemDamage;
+  // A projectile has no per-level table of its own; upgrades scale it elsewhere.
+  const dpl = usingProjectile
+    ? { damage: 0, blunt: 0, slash: 0, pierce: 0, fire: 0, frost: 0, lightning: 0, poison: 0, spirit: 0 }
+    : item.damagesPerLevel;
   const isWeapon = ["OneHandedWeapon", "TwoHandedWeapon", "TwoHandedWeaponLeft", "Bow", "Torch"].includes(item.itemType);
   const isArmor = ["Chest", "Legs", "Helmet", "Shoulder", "Shield", "Trinket", "Utility"].includes(item.itemType);
   const isShield = item.itemType === "Shield";
@@ -1839,17 +1853,24 @@ function buildStats(item) {
   const hasDamage = d.slash > 0 || d.pierce > 0 || d.blunt > 0 || d.fire > 0 || d.frost > 0 ||
     d.lightning > 0 || d.poison > 0 || d.spirit > 0 || d.damage > 0;
   
+  // A per-level bonus is meaningless on an item that cannot be upgraded. The
+  // Crown of Valheim ships with armorPerLevel = 2 but maxQuality = 1, so it read
+  // "50 (+2/lvl)" for an upgrade that can never happen. Trust maxQuality, not the
+  // per-level field.
+  const upgradable = (item.maxQuality || 1) > 1;
+  const perLvl = (v) => (upgradable && v > 0 ? ` (+${v}/lvl)` : "");
+
   // Damage stats — only for weapons/tools with actual damage
   if (isWeapon || hasDamage) {
-    if (d.slash > 0) stats.push({ label: "Slash", value: `${d.slash}` + (dpl.slash > 0 ? ` (+${dpl.slash}/lvl)` : "") });
-    if (d.pierce > 0) stats.push({ label: "Pierce", value: `${d.pierce}` + (dpl.pierce > 0 ? ` (+${dpl.pierce}/lvl)` : "") });
-    if (d.blunt > 0) stats.push({ label: "Blunt", value: `${d.blunt}` + (dpl.blunt > 0 ? ` (+${dpl.blunt}/lvl)` : "") });
-    if (d.fire > 0) stats.push({ label: "Fire", value: `${d.fire}` + (dpl.fire > 0 ? ` (+${dpl.fire}/lvl)` : "") });
-    if (d.frost > 0) stats.push({ label: "Frost", value: `${d.frost}` + (dpl.frost > 0 ? ` (+${dpl.frost}/lvl)` : "") });
-    if (d.lightning > 0) stats.push({ label: "Lightning", value: `${d.lightning}` + (dpl.lightning > 0 ? ` (+${dpl.lightning}/lvl)` : "") });
-    if (d.poison > 0) stats.push({ label: "Poison", value: `${d.poison}` + (dpl.poison > 0 ? ` (+${dpl.poison}/lvl)` : "") });
-    if (d.spirit > 0) stats.push({ label: "Spirit", value: `${d.spirit}` + (dpl.spirit > 0 ? ` (+${dpl.spirit}/lvl)` : "") });
-    if (d.damage > 0) stats.push({ label: "Damage", value: `${d.damage}` + (dpl.damage > 0 ? ` (+${dpl.damage}/lvl)` : "") });
+    if (d.slash > 0) stats.push({ label: "Slash", value: `${d.slash}` + perLvl(dpl.slash) });
+    if (d.pierce > 0) stats.push({ label: "Pierce", value: `${d.pierce}` + perLvl(dpl.pierce) });
+    if (d.blunt > 0) stats.push({ label: "Blunt", value: `${d.blunt}` + perLvl(dpl.blunt) });
+    if (d.fire > 0) stats.push({ label: "Fire", value: `${d.fire}` + perLvl(dpl.fire) });
+    if (d.frost > 0) stats.push({ label: "Frost", value: `${d.frost}` + perLvl(dpl.frost) });
+    if (d.lightning > 0) stats.push({ label: "Lightning", value: `${d.lightning}` + perLvl(dpl.lightning) });
+    if (d.poison > 0) stats.push({ label: "Poison", value: `${d.poison}` + perLvl(dpl.poison) });
+    if (d.spirit > 0) stats.push({ label: "Spirit", value: `${d.spirit}` + perLvl(dpl.spirit) });
+    if (d.damage > 0) stats.push({ label: "Damage", value: `${d.damage}` + perLvl(dpl.damage) });
   }
 
   // Chop/pickaxe (for tools)
@@ -1857,11 +1878,11 @@ function buildStats(item) {
   if (d.pickaxe > 0) stats.push({ label: "Pickaxe", value: `${d.pickaxe}` });
 
   // Armor — only for armor/shield/utility items
-  if (isArmor && item.armor > 0) stats.push({ label: "Armor", value: `${item.armor}` + (item.armorPerLevel > 0 ? ` (+${item.armorPerLevel}/lvl)` : "") });
+  if (isArmor && item.armor > 0) stats.push({ label: "Armor", value: `${item.armor}` + perLvl(item.armorPerLevel) });
 
   // Block — only for weapons/shields with a real skill type (excludes bombs/throwables)
   if ((isWeapon || isShield) && hasSkill && item.blockPower > 0 && hasDamage) {
-    stats.push({ label: "Block", value: `${item.blockPower}` + (item.blockPowerPerLevel > 0 ? ` (+${item.blockPowerPerLevel}/lvl)` : "") });
+    stats.push({ label: "Block", value: `${item.blockPower}` + perLvl(item.blockPowerPerLevel) });
   }
   if ((isWeapon || isShield) && hasSkill && item.timedBlockBonus > 1 && hasDamage) {
     stats.push({ label: "Parry Bonus", value: `${item.timedBlockBonus}x` });
