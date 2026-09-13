@@ -645,6 +645,41 @@ const CREATURE_TROPHY_OVERRIDE: Record<string, string> = {
   "BlobLava": "TrophySurtling",
   "SeekerBrood": "TrophySeeker",
   "GoblinBrute_Hildir": "TrophyGoblinBrute",
+
+  // ── Valheim 1.0 / Deep North ──
+  // The seven Aspects are spectral echoes of the Forsaken and drop nothing at
+  // all, so the trophy fallback found nothing and every one of them rendered as
+  // the generic skull. Point each at the boss it echoes.
+  "Aspect_Eikthyr": "TrophyEikthyr",
+  "Aspect_Elder": "TrophyTheElder",
+  "Aspect_Bonemass": "TrophyBonemass",
+  "Aspect_Moder": "TrophyDragonQueen",
+  "Aspect_Yagluth": "TrophyGoblinKing",
+  "Aspect_SeekerQueen": "TrophySeekerQueen",
+  "Aspect_Fader": "TrophyFader",
+
+  // Kall Fimbulbringer is the one Forsaken who drops no trophy — Sacrificial
+  // Blood is what he leaves behind, so that stands in for him. Both phases.
+  "FrozenKing": "FrozenKingDrop",
+  "FrozenKing_p3": "FrozenKingDrop",
+
+  "FrostWisp": "Wisp",
+  "Frysling": "FrostCore",
+  "Seal_Pup": "TrophySeal",
+  "GoblinDeepNorth": "TrophyGoblin",
+
+  // ── Trophy-less elsewhere ──
+  // Fallen Warrior drops no trophy despite looking like it should; the orbs are
+  // what it actually gives up.
+  "FallenWarrior": "OrbFrostFire",
+  "TrollFrost": "TrophyFrostTroll",
+  "Ghost_old": "TrophyGhost",
+  "Ghost_Void": "TrophyGhost",
+  "BlobMorkMini": "TrophyBlob_Morkhalla",
+
+  // Deliberately NOT mapped: Bat, Bat_Swamp and ShadowPerson. Nothing in the
+  // icon set resembles them, and a wrong icon in a reference tool is worse than
+  // an honest generic skull.
 };
 
 /** Get the icon ID for a creature (trophy fallback if no direct icon) */

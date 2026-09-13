@@ -364,12 +364,16 @@ function findCreatureName(prefab) {
     "Charred_Melee_Fader": "Summoned Charred Warrior",
     "Draugr_Elite": "Draugr Elite",
     "Draugr_Ranged": "Draugr Archer",
-    "Dverger": "Dvergr Rogue",
-    "DvergerAshlands": "Dvergr Rogue",
+    // Not one Dvergr prefab has a localisation key, so these names come entirely
+    // from here. Distinguish them: four different mages all reading "Dvergr Mage"
+    // told you nothing about which one throws fire at you.
+    "Dverger": "Dvergr Rogue (Mistlands)",
+    "DvergerAshlands": "Dvergr Rogue (Ashlands)",
+    "DvergerDeepNorth": "Dvergr Rogue (Deep North)",  // 1.0, 1500 HP
     "DvergerMage": "Dvergr Mage",
-    "DvergerMageFire": "Dvergr Mage",
-    "DvergerMageIce": "Dvergr Mage",
-    "DvergerMageSupport": "Dvergr Mage",
+    "DvergerMageFire": "Dvergr Mage (Fire)",
+    "DvergerMageIce": "Dvergr Mage (Frost)",
+    "DvergerMageSupport": "Dvergr Mage (Support)",
     "Fenring_Cultist": "Cultist",
     "Fenring_Cultist_Hildir": "Geirrhafa",
     "gd_king": "The Elder",
@@ -2544,6 +2548,7 @@ function guessCreatureBiome(prefab) {
   if (p === "blobtar") return "Plains";                // Growth — Plains, not Swamp
   if (p === "skeleton_poison") return "Swamp";         // Rancid Remains — Swamp crypts
   if (p === "dvergerashlands") return "Ashlands";      // Ashlands-specific Dvergr
+  if (p === "dvergerdeepnorth") return "Deep North";   // 1.0 Deep North Dvergr
   // Base Dvergr (rogues + mages) are Mistlands
   if (p.startsWith("dverger") || p.startsWith("dvergr")) return "Mistlands";
   
