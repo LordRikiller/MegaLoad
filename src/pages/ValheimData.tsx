@@ -2168,7 +2168,11 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                         <span className="text-xs text-zinc-500 shrink-0 pt-0.5">Resistant to</span>
                         <div className="flex flex-wrap gap-1 justify-end">
                           {item.resistantTo.map((d) => (
-                            <DetailChip key={d} label={d} tone="orange" />
+                            <DetailChip
+                              key={d}
+                              label={item.veryResistantTo?.includes(d) ? `${d} (very)` : d}
+                              tone="orange"
+                            />
                           ))}
                         </div>
                       </div>
@@ -2177,15 +2181,24 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                       <div className="flex items-start justify-between gap-3 py-1.5 border-b border-zinc-800/30">
                         <span className="text-xs text-zinc-500 shrink-0 pt-0.5">Weak to</span>
                         <div className="flex flex-wrap gap-1 justify-end">
-                          {item.weakTo.map((d) => (
-                            <DetailChip
-                              key={d}
-                              label={d}
-                              tone="emerald"
-                              title={`Filter to creatures weak to ${d}`}
-                              onClick={() => filterWeakTo(d)}
-                            />
-                          ))}
+                          {item.weakTo.map((d) => {
+                            // Valheim grades weakness in two tiers; "very" is the
+                            // one worth building a loadout around.
+                            const very = item.veryWeakTo?.includes(d);
+                            return (
+                              <DetailChip
+                                key={d}
+                                label={very ? `${d} (very)` : d}
+                                tone="emerald"
+                                title={
+                                  very
+                                    ? `Very weak to ${d} — filter to creatures weak to ${d}`
+                                    : `Filter to creatures weak to ${d}`
+                                }
+                                onClick={() => filterWeakTo(d)}
+                              />
+                            );
+                          })}
                         </div>
                       </div>
                     )}

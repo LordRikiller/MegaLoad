@@ -324,6 +324,18 @@ function getBiomesFromDrops(prefab) {
 }
 
 function findCreatureName(prefab) {
+  // Names that must WIN over localisation, rather than fill in where it has no
+  // answer. Only for prefabs the game deliberately gives a shared name. Declared
+  // in here, not at module scope: findCreatureName runs during module setup and a
+  // top-level const would still be in its temporal dead zone.
+  const CREATURE_NAME_FORCE = {
+    // Both of Kall Fimbulbringer's prefabs localise to "Kall Fimbulbringer", so
+    // the creature list carried two identical rows with different health. The
+    // base prefab is phases 1-2 (10,000 HP); _p3 is the final phase (30,000 HP).
+    "FrozenKing_p3": "Kall Fimbulbringer (Final Phase)",
+  };
+  if (CREATURE_NAME_FORCE[prefab]) return CREATURE_NAME_FORCE[prefab];
+
   // Try common localization patterns
   const patterns = [
     `enemy_${prefab.toLowerCase()}`,
@@ -2086,7 +2098,10 @@ const CREATURE_BLACKLIST = new Set([
   "TrainingDummy", "DvergerTest", "Lox_Calf", "Boar_piggy",
   // Chicken is the juvenile (chick) form — hidden like other juveniles
   // (Lox_Calf/Boar_piggy/Wolf_cub). The adult Hen is surfaced as the tameable.
-  "Wolf_cub", "Chicken", "gd_king",
+  "Wolf_cub", "Chicken",
+  // NOT "gd_king" — that reads like a greydwarf variant ("gd_") but it is The
+  // Elder's prefab name, and blacklisting it left him as the only Forsaken
+  // missing from the creature list. enemy_gdking localises to "The Elder".
   "Goblin_Gem",  // Destructible gemstone node, not a creature
 ]);
 const CREATURE_SKIP_PATTERNS = [
@@ -2232,6 +2247,8 @@ for (const cd of creatureDrops) {
   const weak = [];
   const immune = [];
   const neutral = [];
+  const veryWeak = [];
+  const veryResist = [];
   if (cd.damageModifiers) {
     const dm = cd.damageModifiers;
     // All damage types including tool damage (chop / pickaxe)
@@ -2245,6 +2262,13 @@ for (const cd of creatureDrops) {
       if (mod === "Immune" || mod === "Ignore") immune.push(label);
       else if (mod === "Resistant" || mod === "VeryResistant") resist.push(label);
       else if (mod === "Weak" || mod === "VeryWeak") weak.push(label);
+      // Valheim grades these in two tiers and flattening them lost real
+      // information — The Elder is VERY weak to fire where a Skeleton is merely
+      // weak, and Bonemass is VERY resistant to pierce. These parallel lists keep
+      // weakTo/resistantTo intact (the damage-type filters read those) while
+      // letting the UI mark the stronger tier.
+      if (mod === "VeryWeak") veryWeak.push(label);
+      else if (mod === "VeryResistant") veryResist.push(label);
     }
   }
 
@@ -2292,6 +2316,8 @@ for (const cd of creatureDrops) {
     ...(immune.length > 0 ? { immuneTo: immune } : {}),
     ...(resist.length > 0 ? { resistantTo: resist } : {}),
     ...(weak.length > 0 ? { weakTo: weak } : {}),
+    ...(veryWeak.length > 0 ? { veryWeakTo: veryWeak } : {}),
+    ...(veryResist.length > 0 ? { veryResistantTo: veryResist } : {}),
     ...(neutral.length > 0 ? { neutralTo: neutral } : {}),
     wikiUrl: WIKI_MAP[cd.creature] ? WIKI_MAP[cd.creature][0] : "",
     wikiGroup: WIKI_MAP[cd.creature] && WIKI_MAP[cd.creature][1] ? WIKI_MAP[cd.creature][1] : "",
@@ -3208,6 +3234,8 @@ export interface ValheimItem {
   immuneTo?: string[];   // Creatures only — damage types ignored/immune
   resistantTo?: string[]; // Creatures only — resistant damage types
   weakTo?: string[];     // Creatures only — weak-to damage types
+  veryWeakTo?: string[];      // Subset of weakTo graded "VeryWeak" by the game
+  veryResistantTo?: string[]; // Subset of resistantTo graded "VeryResistant"
   neutralTo?: string[];  // Creatures only — normal-damage types
   baits?: { id: string; name: string }[];   // Fish only — bait variants that catch this fish (MegaBug 20260621-133714)
   catches?: { id: string; name: string }[]; // Fishing bait only — fish this bait attracts (reverse of baits)
