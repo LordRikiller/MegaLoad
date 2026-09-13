@@ -228,7 +228,12 @@ function isInternalItem(item) {
 // Filter for build pieces — skip world-spawned containers, NPC pieces, and deprecated pieces
 function isWorldPiece(prefab) {
   if (/^TreasureChest_/i.test(prefab)) return true;
-  if (/^loot_chest_/i.test(prefab)) return true;
+  // Every loot_* prefab is a world-placed container that reuses a real piece's
+  // Piece component, so it inherits that piece's name and showed up as a
+  // duplicate — loot_deepNorth_TimberHall and loot_deepNorth_Granary both
+  // rendered as a second and third "Barrel". Broadened from loot_chest_ so new
+  // ones don't have to be caught by hand.
+  if (/^loot_/i.test(prefab)) return true;
   if (/^Placeable_Hard/i.test(prefab)) return true;    // World rock objects
   if (/^OLD_/i.test(prefab)) return true;               // Deprecated building pieces
   if (/^Ashlands_Arch/i.test(prefab)) return true;      // Ashlands ruin geometry (wrong name)
@@ -245,6 +250,11 @@ const WORLD_PIECE_PREFABS = new Set([
   "BogWitch_Fire_Pit",     // NPC campfire at Bog Witch
   "Candle_resin_bogwitch", // Bog Witch decoration
   "sign_notext",           // World-placed sign variant
+  // A second prefab rendering as "Longship". Unlike VikingShip it has no
+  // localisation token (its name is the literal string "Longship") and an empty
+  // description, which is the signature of an internal prefab — the real ship is
+  // VikingShip ($ship_longship), and the Drakkar is VikingShip_Ashlands.
+  "Trailership",
 ]);
 
 // ── Vendor-only items: these have fake recipes in the dump but can only be bought ──
@@ -2327,12 +2337,61 @@ for (const cd of creatureDrops) {
   seenIds.add(cd.creature);
 }
 
+/**
+ * Stats for a build piece: what it adds to Rested, and whether it keeps monsters
+ * out.
+ *
+ * Comfort alone is misleading without the GROUP. Valheim only counts the best
+ * piece in each comfort group, so five chairs is still one chair's worth — the
+ * group is the part that decides whether placing another one does anything.
+ * Pieces with no group (Maypole, Yule tree) stack freely with everything else.
+ */
+function buildPieceStats(p) {
+  const stats = [];
+  if (p.comfort > 0) {
+    stats.push({ label: "Comfort", value: `${p.comfort}` });
+    const group = p.comfortGroup && p.comfortGroup !== "None" ? p.comfortGroup : null;
+    stats.push({
+      label: "Comfort Group",
+      value: group ? group : "Ungrouped (always counts)",
+    });
+  }
+  // Spawn suppression. SpawnSystem.IsSpawnPointGood rejects any spawn point
+  // inside a PlayerBase area outright, so this is a hard exclusion zone rather
+  // than a reduced spawn rate. Needs MegaDataExtractor 1.9.0+.
+  const area = p.effectArea;
+  if (area && area.radius > 0) {
+    const blocks = (area.type || "").split(",").map((t) => t.trim());
+    if (blocks.includes("PlayerBase") || blocks.includes("NoMonsters")) {
+      stats.push({ label: "No-Spawn Radius", value: `${area.radius}m` });
+      stats.push({
+        label: "No-Spawn Shape",
+        value:
+          area.shape === "Sphere"
+            ? "Spherical"
+            : area.shape === "Capsule"
+              ? `Cylindrical${area.height > 0 ? ` (${area.height}m tall)` : ""}`
+              : "Box",
+      });
+    }
+  }
+  return stats;
+}
+
 // Process build pieces
 for (const p of pieces) {
   if (seenIds.has(p.prefab)) continue;
   if (isWorldPiece(p.prefab)) continue;
   
-  const name = loc(p.name);
+  // A few pieces share one localisation token across differently sized variants,
+  // so they all render with the same name. The pots get Small/Medium/Large from
+  // the game; the Yuleklapps don't, so size them the same way by hand.
+  const PIECE_NAME_FORCE = {
+    piece_gift1: "Small Yuleklapp",   // 1 slot
+    piece_gift2: "Medium Yuleklapp",  // 2 slots
+    piece_gift3: "Large Yuleklapp",   // 3 slots
+  };
+  const name = PIECE_NAME_FORCE[p.prefab] || loc(p.name);
   if (!name || name.startsWith("$")) continue;
   if (name === "yourare dead") continue; // Internal
   
@@ -2367,7 +2426,7 @@ for (const p of pieces) {
     upgradeCosts: [],
     drops: [],
     worldSources: [],
-    stats: p.comfort > 0 ? [{ label: "Comfort", value: `${p.comfort}` }] : [],
+    stats: buildPieceStats(p),
     wikiUrl: WIKI_MAP[p.prefab] ? WIKI_MAP[p.prefab][0] : "",
     wikiGroup: WIKI_MAP[p.prefab] && WIKI_MAP[p.prefab][1] ? WIKI_MAP[p.prefab][1] : "",
     ...(isPlantablePiece ? { plantable: true } : {}),
