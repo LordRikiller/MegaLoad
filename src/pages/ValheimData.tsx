@@ -2311,6 +2311,27 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
               </div>
             )}
 
+            {/* Summons — staves that call something up rather than dealing damage
+                themselves. Without this the stat block just looks empty. */}
+            {item.summons && item.summons.length > 0 && (
+              <div className="glass rounded-xl p-5 border border-zinc-800/50">
+                <h2 className="text-sm font-semibold text-zinc-200 mb-3">Summons</h2>
+                <div className="grid grid-cols-1 gap-1">
+                  {item.summons.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleNavigate(s.id)}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-800/40 transition-colors text-left"
+                    >
+                      <ItemIcon id={s.id} type="Creature" size={24} />
+                      <span className="text-xs text-zinc-300">{s.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Drops + Tames With moved to right column for creatures */}
 
             {/* Dropped By / World Sources */}

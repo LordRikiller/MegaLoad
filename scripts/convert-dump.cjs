@@ -1867,6 +1867,9 @@ function buildStats(item) {
     (k) => k !== "pickaxe" && k !== "chop" && itemDamage[k] > 0
   );
   const usingProjectile = !itemHasDamage && !!item.projectileDamage;
+  // Damage that comes from an Aoe is an explosion, not a hit — say so, and give
+  // the radius, because "140 blunt" means something different over 3 metres.
+  const isBlast = usingProjectile && item.projectileDamageFrom === "Aoe";
   const d = usingProjectile ? item.projectileDamage : itemDamage;
   // A projectile has no per-level table of its own; upgrades scale it elsewhere.
   const dpl = usingProjectile
@@ -1904,6 +1907,9 @@ function buildStats(item) {
   if (d.pickaxe > 0) stats.push({ label: "Pickaxe", value: `${d.pickaxe}` });
 
   // Armor — only for armor/shield/utility items
+  if (isBlast && item.projectileDamageRadius > 0) {
+    stats.push({ label: "Blast Radius", value: `${item.projectileDamageRadius}m` });
+  }
   if (isArmor && item.armor > 0) stats.push({ label: "Armor", value: `${item.armor}` + perLvl(item.armorPerLevel) });
 
   // Block — only for weapons/shields with a real skill type (excludes bombs/throwables)
@@ -2093,6 +2099,22 @@ for (const item of items) {
     drops: drops,
     worldSources: worldSources,
     stats: stats,
+    // Summon staves — Dead Raiser, Spirit Caller, Frost Orbs — carry no damage
+    // anywhere, because the thing they call up does the hitting. Naming the
+    // summon is the useful answer; an empty stat block is not.
+    ...(item.summons && item.summons.length
+      ? {
+          summons: item.summons.map((p) => {
+            // These are variant prefabs of real creatures — Bjorn_spiritcaller,
+            // Skeleton_Friendly, Troll_Summoned — and none are localised, so the
+            // raw name leaks through as "Bjorn spiritcaller". Resolve the base
+            // creature and mark it as summoned.
+            const base = p.replace(/_(spiritcaller|Friendly|Summoned)$/i, "");
+            const resolved = loc(findCreatureName(base)) || findCreatureName(base) || base;
+            return { id: p, name: base === p ? resolved : `${resolved} (summoned)` };
+          }),
+        }
+      : {}),
     wikiUrl: WIKI_MAP[item.prefab] ? WIKI_MAP[item.prefab][0] : "",
     wikiGroup: WIKI_MAP[item.prefab] && WIKI_MAP[item.prefab][1] ? WIKI_MAP[item.prefab][1] : "",
     // Set effect mechanics — only present on the chest piece of each set,
@@ -3303,6 +3325,7 @@ export interface ValheimItem {
   neutralTo?: string[];  // Creatures only — normal-damage types
   baits?: { id: string; name: string }[];   // Fish only — bait variants that catch this fish (MegaBug 20260621-133714)
   catches?: { id: string; name: string }[]; // Fishing bait only — fish this bait attracts (reverse of baits)
+  summons?: { id: string; name: string }[]; // Summon staves — what the cast calls up
   storageSlots?: number; // Containers only — inventory slots (e.g. Barrel = 12)
   storageGrid?: string;  // Containers only — the slot grid, e.g. "6x2"
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
