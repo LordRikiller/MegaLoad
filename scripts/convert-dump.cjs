@@ -1879,8 +1879,26 @@ function buildStats(item) {
   const isArmor = ["Chest", "Legs", "Helmet", "Shoulder", "Shield", "Trinket", "Utility"].includes(item.itemType);
   const isShield = item.itemType === "Shield";
   const hasSkill = item.skillType && item.skillType !== "None";
-  const hasDamage = d.slash > 0 || d.pierce > 0 || d.blunt > 0 || d.fire > 0 || d.frost > 0 ||
-    d.lightning > 0 || d.poison > 0 || d.spirit > 0 || d.damage > 0;
+  // Valheim's ItemDrop prefab ships a placeholder 10-point hit that Iron Gate
+  // never zeroed on things you hold but don't swing: 71 of 72 trophies, 25
+  // helmets, 16 shields and all 114 beards/hairstyles. It is leftover template
+  // data, not balance —
+  //   · flat 10 whether it's a Bronze Helmet or the Crown of Valheim, a Banded
+  //     Shield or a Flametal Tower Shield;
+  //   · parked in `blunt` on some prefabs and the generic `damage` on others;
+  //   · absent on 32 helmets, 7 shields and TrophyKvastur, which behave no
+  //     differently from their stat-carrying twins.
+  // Publishing it as "Blunt 10" told players a trophy is a weapon. Suppress a
+  // lone 10 on anything that has no attack of its own; a real value (Torch 4
+  // blunt + 15 fire, Fishing Rod 5, the 80/85 on Jotun gear) still comes
+  // through, and weapon types are never touched.
+  const DAMAGE_FIELDS = ["damage", "blunt", "slash", "pierce", "fire", "frost",
+    "lightning", "poison", "spirit"];
+  const damageTotal = DAMAGE_FIELDS.reduce((sum, k) => sum + (d[k] || 0), 0);
+  const placeholderDamage = !isWeapon && !usingProjectile && damageTotal === 10 &&
+    (d.blunt === 10 || d.damage === 10) && !(d.chop > 0) && !(d.pickaxe > 0);
+  const hasDamage = !placeholderDamage && (d.slash > 0 || d.pierce > 0 || d.blunt > 0 ||
+    d.fire > 0 || d.frost > 0 || d.lightning > 0 || d.poison > 0 || d.spirit > 0 || d.damage > 0);
   
   // A per-level bonus is meaningless on an item that cannot be upgraded. The
   // Crown of Valheim ships with armorPerLevel = 2 but maxQuality = 1, so it read
@@ -1912,11 +1930,16 @@ function buildStats(item) {
   }
   if (isArmor && item.armor > 0) stats.push({ label: "Armor", value: `${item.armor}` + perLvl(item.armorPerLevel) });
 
-  // Block — only for weapons/shields with a real skill type (excludes bombs/throwables)
-  if ((isWeapon || isShield) && hasSkill && item.blockPower > 0 && hasDamage) {
+  // Block — shields always block; weapons only when they're a real melee weapon
+  // (the hasDamage test is what keeps bombs and throwables out). Gating shields
+  // on damage too meant the six that carry no placeholder 10 — Wood, Roots,
+  // Iron Square and the bronze/iron/gold bucklers — published no Block or Parry
+  // at all, hiding the 2.5x parry that is the whole point of a buckler.
+  const canBlock = isShield || (isWeapon && hasSkill && hasDamage);
+  if (canBlock && hasSkill && item.blockPower > 0) {
     stats.push({ label: "Block", value: `${item.blockPower}` + perLvl(item.blockPowerPerLevel) });
   }
-  if ((isWeapon || isShield) && hasSkill && item.timedBlockBonus > 1 && hasDamage) {
+  if (canBlock && hasSkill && item.timedBlockBonus > 1) {
     stats.push({ label: "Parry Bonus", value: `${item.timedBlockBonus}x` });
   }
 
