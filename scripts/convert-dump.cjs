@@ -28,6 +28,39 @@ if (rawText.charCodeAt(0) === 0xFEFF) rawText = rawText.substring(1);
 const raw = JSON.parse(rawText);
 const { items, recipes, creatureDrops, pieces, localization } = raw;
 
+// ── 1.0 Idols: refinement requirement, not a crafting cost ──────────────
+// Valheim 1.0 appends the Forge of Potential refinement Idol to 271 recipes as a
+// Piece.Requirement with m_upgraderResource = true (amount 1, recover false). The
+// game never charges it on the normal craft; it is what the Forge consumes when you
+// "Attempt Refinement". Pull those out of the resource lists BEFORE anything reads
+// them (ingredients, upgrade costs, biome-tier inference, craft-material rollups)
+// and remember which Idol refines which item so the entry can show it separately.
+// MegaDataExtractor 1.12.0+ emits `upgraderResource`; older dumps are recognised by
+// the prefab + recover:false shape every one of the 271 shares.
+const IDOL_PREFAB = /^Upgrader(\d+)(Armor|Weapon)$/;
+const REFINEMENT_BY_ITEM = {};
+function isRefinementResource(r) {
+  if (!r || !r.item) return false;
+  if (r.upgraderResource === true) return true;
+  return IDOL_PREFAB.test(r.item) && r.recover === false;
+}
+let refinementSplits = 0;
+for (const r of recipes || []) {
+  if (!Array.isArray(r.resources)) continue;
+  const kept = [];
+  for (const res of r.resources) {
+    if (isRefinementResource(res)) {
+      if (r.item && !REFINEMENT_BY_ITEM[r.item]) REFINEMENT_BY_ITEM[r.item] = res.item;
+      refinementSplits++;
+    } else kept.push(res);
+  }
+  r.resources = kept;
+}
+for (const p of pieces || []) {
+  if (!Array.isArray(p.resources)) continue;
+  p.resources = p.resources.filter(res => !isRefinementResource(res));
+}
+
 // ── Plantable taxonomy ─────────────────────────────────────
 // Plantables are items the player places via the Cultivator (or seeds/produce
 // that loop back into a Cultivator placement). The 17 sapling BuildPieces are
@@ -106,9 +139,14 @@ const FORAGED_AS_MATERIAL = new Set([
 function loc(token) {
   if (!token) return "";
   let text = token;
-  if (token.startsWith("$")) {
-    const key = token.substring(1);
-    text = localization[key] || token;
+  if (token.includes("$")) {
+    // Valheim's Localization.Localize replaces EVERY $key inside a string, not just a
+    // whole-string token. 1.0's Idols are named
+    //   "$item_upgrader_tier0 $item_upgrader_armor $item_upgrader_name"  -> "Wooden Protection Idol"
+    // A whole-string lookup missed, the raw token survived, and the item was dropped
+    // downstream as "localisation failed" - all 16 Idols vanished from Valheim Data and
+    // every 1.0 recipe listed its refinement Idol as a raw $-string. Keys are [A-Za-z0-9_].
+    text = token.replace(/\$([A-Za-z0-9_]+)/g, (m, key) => (localization[key] != null ? localization[key] : m));
   }
   return stripRichText(text);
 }
@@ -517,6 +555,10 @@ function mapSubcategory(gameType, prefab, shared) {
 
   // Fireworks rockets sit in Misc with their own subcategory so they group together.
   if (prefab.startsWith("FireworksRocket")) return "Fireworks";
+
+  // 1.0 Idols (Upgrader<tier>Armor / Upgrader<tier>Weapon) - Forge of Potential refinement
+  // materials. Game-typed Material; give them their own subcategory so the 16 group together.
+  if (IDOL_PREFAB.test(prefab)) return "Idol";
 
   // Bukeperries — typed Material per mapItemType override; keep its subcategory
   // consistent with other foraged/dropped materials so it groups with them on
@@ -1712,6 +1754,14 @@ function getItemBiomeTier(prefab) {
 
 // Compute the biome(s) for an item for display.
 // Returns a single-element array with the computed biome, or the override list.
+// 1.0 Idols: chest loot, one tier per biome (game8 Idols reference / in-game tier names
+// Wooden, Bronze, Iron, Silver, Black Metal, Black Marble, Flametal, Bloodgold).
+const IDOL_TIER_BIOME = ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Mistlands", "Ashlands", "Deep North"];
+IDOL_TIER_BIOME.forEach((biome, tier) => {
+  BIOME_OVERRIDE[`Upgrader${tier}Armor`] = [biome];
+  BIOME_OVERRIDE[`Upgrader${tier}Weapon`] = [biome];
+});
+
 function guessBiomes(prefab, recipePrefab) {
   // Hard overrides (fish, meads, cooked meats, etc.)
   if (BIOME_OVERRIDE[prefab]) {
@@ -1820,6 +1870,8 @@ function getSource(prefab, recipe, itemDrops) {
   if (worldTypes.has("Destructible")) sources.push("Destructible");
   if (worldTypes.has("Pickup")) sources.push("Pickup");
   if (worldTypes.has("Chest")) sources.push("Chest Loot");
+  // Idols have no recipe and no drop table in the dump - they are chest loot only.
+  if (IDOL_PREFAB.test(prefab) && !sources.includes("Chest Loot")) sources.push("Chest Loot");
 
   const p = prefab.toLowerCase();
   if ((p.includes("ore") || (p.includes("scrap") && !p.includes("leather"))) && !sources.includes("Mining")) sources.push("Mining");
@@ -2144,6 +2196,9 @@ for (const item of items) {
     // populated by MegaDataExtractor v1.5.0+. `null` for non-chest pieces and
     // for non-armor items. Frontend looks it up by walking the set on demand.
     setEffect: item.setEffect || null,
+    refinement: REFINEMENT_BY_ITEM[item.prefab]
+      ? { id: REFINEMENT_BY_ITEM[item.prefab], name: loc(findItemName(REFINEMENT_BY_ITEM[item.prefab])) }
+      : null,
   };
   
   converted.push(entry);
@@ -3354,6 +3409,7 @@ export interface ValheimItem {
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
   setEffect?: SetEffect | null; // Armor only — set bonus mechanics on the chest piece
+  refinement?: { id: string; name: string } | null; // Idol the Forge of Potential consumes to refine this item (1.0); not a crafting cost
 }
 
 export const VALHEIM_ITEMS: ValheimItem[] = [\n`;
@@ -3378,6 +3434,7 @@ for (const item of VALHEIM_ITEMS) {
 `;
 
 fs.writeFileSync(OUTPUT_PATH, ts, "utf-8");
+console.log(`Refinement Idols split out of ${refinementSplits} recipe resource lists (${Object.keys(REFINEMENT_BY_ITEM).length} items carry a refinement Idol)`);
 console.log(`\nWritten to: ${OUTPUT_PATH}`);
 console.log(`File size: ${(fs.statSync(OUTPUT_PATH).size / 1024).toFixed(1)} KB`);
 
