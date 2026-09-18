@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-18T22:21:52Z",
+  "updated_at": "2026-09-18T23:42:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -68,11 +68,11 @@
     },
     {
       "name": "MegaFactory",
-      "version": "1.8.2",
-      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.8.2/MegaFactory.dll",
+      "version": "1.9.0",
+      "download_url": "https://github.com/LordRikiller/MegaFactory/releases/download/v1.9.0/MegaFactory.dll",
       "dll_name": "MegaFactory.dll",
       "plugin_folder": "MegaFactory",
-      "description": "Smart factory: same-type stations sharing nearby chests form a cluster and auto-divide the work - drop 4 smelters next to Tin/Copper/Silver/Iron and they each pick one ore, blast furnaces split Black Metal/Flametal, no work orders needed (SmartDistribution config, default on - toggle off for manual work orders). Spare stations double up on the busiest stockpile; surplus stations are idled so output can't overfill storage. Manual work orders now alternate (round-robin) between multiple loaded orders so every metal progresses together instead of finishing one before the next (AlternateWorkOrders config, default on). Smelter & Blast Furnace now show what's currently loaded per ore - on hover and in the Shift+E work-order panel. Auto-feeds Kiln/Smelter/Blast Furnace/Windmill/Spinning Wheel/Eitr Refinery in the background regardless of player distance, leaves 1 of each item type per container. With MegaStuff pull-to-chest on, stations freeze when output storage is full and auto-resume when space frees."
+      "description": "Smart factory: same-type stations sharing nearby chests form a cluster and auto-divide the work - drop 4 smelters next to Tin/Copper/Silver/Iron and they each pick one ore, blast furnaces split Black Metal/Flametal, no work orders needed (SmartDistribution config, default on - toggle off for manual work orders). Spare stations double up on the busiest stockpile; surplus stations are idled so output can't overfill storage. Manual work orders now alternate (round-robin) between multiple loaded orders so every metal progresses together instead of finishing one before the next (AlternateWorkOrders config, default on). Smelter & Blast Furnace now show what's currently loaded per ore - on hover and in the Shift+E work-order panel. Auto-feeds Kiln/Smelter/Blast Furnace/Windmill/Spinning Wheel/Eitr Refinery in the background regardless of player distance, leaves 1 of each item type per container. With MegaStuff pull-to-chest on, stations freeze when output storage is full and auto-resume when space frees. v1.9.0 — Frigid Kiln work orders: Shift+E now opens the panel on a kiln (the intercept never knew the prefab) and takes an order in Liquid Frost units, feeding only the Ice those units need and stopping when done; no order = topped up as before. New DeliverToChests (default on) drops the kiln's Liquid Frost straight into a nearby chest so the Frost Foundry's fuel top-up can actually find it - closes the Ice → Liquid Frost → Foundry chain. Kiln output is credited and toasted (was silently skipped), and Smart Distribution idles the kiln when Liquid Frost storage is full like every other single-output station."
     },
     {
       "name": "MegaTrainer",
