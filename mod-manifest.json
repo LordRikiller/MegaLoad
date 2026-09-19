@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-19T03:46:10Z",
+  "updated_at": "2026-09-19T06:54:00Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -159,11 +159,11 @@
     },
     {
       "name": "MegaCommander",
-      "version": "1.0.2",
-      "download_url": "https://github.com/LordRikiller/MegaCommander/releases/download/v1.0.2/MegaCommander.dll",
+      "version": "1.0.3",
+      "download_url": "https://github.com/LordRikiller/MegaCommander/releases/download/v1.0.3/MegaCommander.dll",
       "dll_name": "MegaCommander.dll",
       "plugin_folder": "MegaCommander",
-      "description": "Admin and dev console commands — devcommands, aliases, key binds, autocomplete and server tooling (fork of JereKuusela's Server Devcommands) v1.0.2 — stands down with a clear error if the original Server Devcommands is also installed: both carry the same Player.Update transpiler, and two copies made HarmonyX drop every mod's Player.Update patch (MegaStuff auto-pickup/quick deposit, MegaBuilder grid keys)."
+      "description": "Admin and dev console commands — devcommands, aliases, key binds, autocomplete and server tooling (fork of JereKuusela's Server Devcommands) v1.0.2 — stands down with a clear error if the original Server Devcommands is also installed: both carry the same Player.Update transpiler, and two copies made HarmonyX drop every mod's Player.Update patch (MegaStuff auto-pickup/quick deposit, MegaBuilder grid keys). v1.0.3 — takes over from the original instead of standing down: if Server Devcommands is also installed, its Harmony patches are removed and its component disabled before MegaCommander loads, so a stale original (1.109 on Valheim 1.0 threw a NullReference every physics tick from its teleport postfix and killed auto-pickup) can no longer break the game. Uninstall the original anyway."
     }
   ]
 }
