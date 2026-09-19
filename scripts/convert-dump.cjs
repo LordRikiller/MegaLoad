@@ -1132,6 +1132,7 @@ const BIOME_OVERRIDE = {
   "TrophyKvastur": ["Swamp"],
 
   // ─── Creatures missing biomes ───
+  "gd_king": ["Black Forest"],    // The Elder — the only Forsaken guessCreatureBiome can't place; without a biome the Best Weapon examples went uncapped (Deep North gear for a Black Forest boss)
   "Deer": ["Meadows", "Black Forest"],
   "Draugr": ["Meadows", "Swamp", "Mountain"],
   "Draugr_Ranged": ["Meadows", "Swamp", "Mountain"],
@@ -3314,6 +3315,108 @@ console.log("Type breakdown:", typeCounts);
   );
 }
 
+// ── Boss Callers ────────────────────────────────────────────────────────────
+// What each Forsaken wants brought to its altar lives on the altar's
+// OfferingBowl, not on the boss: m_bossItem x m_bossItems, plus whether the
+// offering is used at the bowl or placed on the altar's item stands (Moder,
+// Yagluth). MegaDataExtractor 1.13.0+ dumps that as the `altars` section; a
+// hand-kept list had nothing for Valheim 1.0's Kall Fimbulbringer, which is why
+// this reads the game instead. Each boss gets a `bossCaller`, and the caller
+// item gets the boss in `summons` so the link works both ways (the Summons
+// panel already exists for staves). MegaBug 20260920-065816-54ed6c16.
+{
+  // Two sources, same shape. The extractor sees what the game has in memory at
+  // the main menu (Kall's piece-based bowl, keyed dungeon doors). The six
+  // classic altars sit inside location prefabs that 1.0 soft-references and
+  // never loads at the menu, so tools/unitypy/dump_altars.py reads those
+  // straight out of the asset bundles into a sidecar next to the dump. Merge,
+  // extractor first, deduped on kind+prefab+boss+item.
+  const SIDECAR_PATH = process.env.APPDATA
+    ? path.join(process.env.APPDATA, "MegaLoad", "valheim_altars_bundles.json")
+    : "";
+  const sidecar = SIDECAR_PATH && fs.existsSync(SIDECAR_PATH)
+    ? (JSON.parse(fs.readFileSync(SIDECAR_PATH, "utf-8").replace(/^﻿/, "")).altars ?? [])
+    : [];
+  const altarKey = (a) => `${a.kind}|${a.prefab}|${a.boss ?? ""}|${a.item}`;
+  const seenAltars = new Set();
+  const altars = [];
+  for (const a of [...(raw.altars ?? []), ...sidecar]) {
+    if (!a || !a.item) continue;
+    const k = altarKey(a);
+    if (seenAltars.has(k)) continue;
+    seenAltars.add(k);
+    altars.push(a);
+  }
+  if (!sidecar.length) {
+    console.log("  No altar sidecar (tools/unitypy/dump_altars.py) — the six classic Forsaken altars will have no Boss Caller");
+  }
+  const byId = new Map(converted.map((e) => [e.id, e]));
+  // Keyed doors carry no boss reference, so the one boss gated by a door is
+  // mapped by hand: the Sealbreaker (DvergrKey) opens the Infested Citadel and
+  // that is The Queen's fight. Other keyed doors (crypts, Hildir's) are not
+  // boss gates and are skipped.
+  const KEY_DOOR_BOSS = { DvergrKey: "SeekerQueen" };
+  // Kall Fimbulbringer has TWO bowls: one at the boss-room gate whose "boss" is
+  // the gate-destroying VFX prefab, and the real one inside. The gate bowl is a
+  // step on the way in, not the summon, so it is filed as the gate.
+  const GATE_BOWL_BOSS = { vfx_LastBossGate_destroyed: "FrozenKing" };
+  const isGate = (a) => a.kind === "door" || GATE_BOWL_BOSS[a.boss] !== undefined;
+  const bossOf = (a) => (a.kind === "door" ? KEY_DOOR_BOSS[a.item] : (GATE_BOWL_BOSS[a.boss] ?? a.boss));
+  // Summoning bowls first, gates second, so a gate can never overwrite a caller
+  // (the Queen has both: three Seeker Soldier trophies in the bowl, the
+  // Sealbreaker on the door).
+  const ordered = [...altars.filter((a) => !isGate(a)), ...altars.filter(isGate)];
+  let tagged = 0;
+  const unmatched = [];
+  for (const a of ordered) {
+    if (!a || !a.item) continue;
+    const bossId = bossOf(a);
+    if (!bossId) continue;
+    const boss = byId.get(bossId);
+    if (!boss) { unmatched.push(`${a.prefab} -> ${bossId}`); continue; }
+    const caller = byId.get(a.item);
+    const callerName = caller ? caller.name : loc(findItemName(a.item));
+    const amount = a.amount > 0 ? a.amount : 1;
+    const altarName = loc(a.name) || (a.kind === "door" ? "Gate" : "Altar");
+    if (isGate(a)) {
+      // A gate BOWL shares its name with the real one ("Strange Bowl" twice for
+      // Kall), so name the step by what it opens instead.
+      const gateName = a.kind === "door" ? altarName : "boss-room gate";
+      if (boss.bossCaller) {
+        if (!boss.bossCaller.gate) boss.bossCaller.gate = { id: a.item, name: callerName, amount, altar: gateName };
+      } else {
+        boss.bossCaller = { id: a.item, name: callerName, amount, method: "key", altar: gateName, location: a.location || "" };
+        tagged++;
+      }
+      continue;
+    }
+    if (boss.bossCaller && boss.bossCaller.method !== "key") continue; // first summoning bowl wins
+    boss.bossCaller = {
+      id: a.item,
+      name: callerName,
+      amount,
+      method: a.useItemStands ? "stands" : "offer",
+      altar: altarName,
+      location: a.location || "",
+    };
+    if (caller) {
+      const existing = caller.summons ?? [];
+      if (!existing.some((s) => s.id === boss.id)) {
+        caller.summons = [...existing, { id: boss.id, name: boss.name, amount }];
+      }
+    }
+    tagged++;
+  }
+  if (unmatched.length) {
+    console.log(`  Altars naming a boss that is not in the creature list: ${unmatched.join(", ")}`);
+  }
+  console.log(
+    altars.length
+      ? `Boss Callers: ${tagged} bosses tagged from ${altars.length} altars/doors`
+      : "Boss Callers: dump has no `altars` section — re-run MegaDataExtractor 1.13.0+ in-game"
+  );
+}
+
 let ts = `// @ts-nocheck — generated data, array literal too large for TS union inference
 // ── Valheim Item Database ──────────────────────────────────
 // Auto-generated from game data dump (assembly_valheim.dll via MegaDataExtractor)
@@ -3337,6 +3440,20 @@ export interface ItemDrop {
 export interface ItemStat {
   label: string;
   value: string;
+}
+
+// What a Forsaken's altar wants. Read off the altar's OfferingBowl by
+// MegaDataExtractor 1.13.0+ (\`altars\` section): the item and count, and whether
+// it is offered at the bowl or placed on the altar's item stands. The Queen has
+// no bowl — her gate is a keyed door — so hers is method "key".
+export interface BossCaller {
+  id: string;        // Boss Caller item prefab (e.g. "DragonEgg")
+  name: string;      // Display name (e.g. "Dragon Egg")
+  amount: number;    // How many the altar wants
+  method: "offer" | "stands" | "key"; // offer = use at the bowl · stands = place on the item stands · key = unlocks the gate
+  altar: string;     // Altar / gate display name (e.g. "Sacrificial Altar")
+  location: string;  // Location prefab the altar lives in (e.g. "Dragonqueen"), "" if unknown
+  gate?: { id: string; name: string; amount: number; altar: string }; // A separate step on the way in — The Queen's Sealbreaker door, Kall's gate bowl — when the game keys it to something other than the summon itself
 }
 
 export interface UpgradeCost {
@@ -3420,7 +3537,8 @@ export interface ValheimItem {
   neutralTo?: string[];  // Creatures only — normal-damage types
   baits?: { id: string; name: string }[];   // Fish only — bait variants that catch this fish (MegaBug 20260621-133714)
   catches?: { id: string; name: string }[]; // Fishing bait only — fish this bait attracts (reverse of baits)
-  summons?: { id: string; name: string }[]; // Summon staves — what the cast calls up
+  summons?: { id: string; name: string; amount?: number }[]; // Summon staves — what the cast calls up; Boss Callers — the Forsaken they call (amount = how many the altar wants)
+  bossCaller?: BossCaller; // Bosses only — what to bring to the altar and how many (OfferingBowl.m_bossItem x m_bossItems; MegaDataExtractor 1.13.0+)
   storageSlots?: number; // Containers only — inventory slots (e.g. Barrel = 12)
   storageGrid?: string;  // Containers only — the slot grid, e.g. "6x2"
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)

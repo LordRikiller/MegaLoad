@@ -302,11 +302,18 @@ function copyItemName(item: ValheimItem, e?: React.MouseEvent) {
 // Turn a creature's damage modifiers into a plain "use this" recommendation.
 // The three physical damage types map to melee weapon categories; elemental
 // weaknesses are surfaced as a bonus tip with how to deliver them.
+//
+// "Any melee weapon" on its own was not enough — a player reading the Moder
+// page asked what melee actually covers (MegaBug 20260920-065816-54ed6c16). So
+// every recommendation now spells out the weapon families AND names real gear
+// from the item database, capped at the creature's biome tier so a Mountain
+// boss suggests Mountain-era weapons rather than Ashlands ones.
 const WEAPON_BY_PHYSICAL: Record<string, string> = {
   Slash: "swords, axes or knives",
-  Pierce: "spears, atgeirs or arrows",
-  Blunt: "maces, clubs or sledgehammers",
+  Pierce: "spears, atgeirs, arrows or bolts",
+  Blunt: "maces, sledgehammers or fists",
 };
+const ANY_MELEE_FAMILIES = "swords, axes, knives, maces, sledgehammers, spears, atgeirs or fists";
 const ELEMENTAL_TIP: Record<string, string> = {
   Fire: "fire arrows or a fire staff",
   Frost: "frost arrows, Frostner or the frost staff",
@@ -317,11 +324,87 @@ const ELEMENTAL_TIP: Record<string, string> = {
 const PHYSICAL_TYPES = ["Slash", "Pierce", "Blunt"];
 const ELEMENTAL_TYPES = ["Fire", "Frost", "Lightning", "Poison", "Spirit"];
 
+// Weapon subcategories that count as "melee" for the any-melee case, and the
+// full set that may appear as a named example (keeps bombs, shovels and
+// snowballs — subcategory "Weapon" — out of the suggestions).
+const MELEE_FAMILIES = new Set(["Sword", "Axe", "Knife", "Mace", "Spear", "Polearm", "Fist"]);
+const EXAMPLE_FAMILIES = new Set([...MELEE_FAMILIES, "Bow", "Staff", "Arrow", "Bolt"]);
+
+/** Leading number of a damage stat: "35 (+6/lvl)" → 35, missing → 0. */
+function statDamage(item: ValheimItem, label: string): number {
+  const stat = item.stats.find((s) => s.label === label);
+  if (!stat) return 0;
+  const n = parseFloat(stat.value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Biome tier of an item's earliest biome; items with no biome sort last. */
+function biomeTier(item: ValheimItem): number {
+  const order = BIOME_ORDER as readonly string[];
+  const tiers = item.biomes.map((b) => order.indexOf(b)).filter((t) => t >= 0);
+  return tiers.length ? Math.min(...tiers) : order.length;
+}
+
+/**
+ * Real gear that deals the given damage type(s), strongest first, limited to what
+ * a player fighting this creature can plausibly have — nothing from a later biome
+ * than the creature's own. Falls back to the uncapped list when the cap leaves
+ * nothing (an early biome with only later-tier elemental options, say).
+ */
+function weaponExamples(creature: ValheimItem, damageTypes: string[], meleeOnly: boolean, limit = 3): ValheimItem[] {
+  const order = BIOME_ORDER as readonly string[];
+  const capTiers = creature.biomes.map((b) => order.indexOf(b)).filter((t) => t >= 0);
+  const cap = capTiers.length ? Math.max(...capTiers) : order.length;
+  const pool = VALHEIM_ITEMS.filter((i) => {
+    if (i.type !== "Weapon" && i.type !== "Ammo") return false;
+    if (!EXAMPLE_FAMILIES.has(i.subcategory)) return false;
+    if (meleeOnly && !MELEE_FAMILIES.has(i.subcategory)) return false;
+    return true;
+  });
+  const score = (i: ValheimItem) => damageTypes.reduce((sum, t) => sum + statDamage(i, t), 0);
+  const scored = pool.map((i) => ({ i, s: score(i), t: biomeTier(i) })).filter((x) => x.s > 0);
+  // Within the cap: strongest first. Past the cap (nothing qualifies — Bonemass
+  // is weak to Frost but the first frost weapon is a Mountain arrow): nearest
+  // tier first, so the suggestion is the next thing to go and get, not the
+  // Deep North's finest.
+  const capped = scored.filter((x) => x.t <= cap).sort((a, b) => b.s - a.s || a.i.name.localeCompare(b.i.name));
+  const beyond = scored.filter((x) => x.t > cap).sort((a, b) => a.t - b.t || b.s - a.s || a.i.name.localeCompare(b.i.name));
+  const chosen = (capped.length ? capped : beyond).map((x) => x.i);
+  // One entry per display name — upgraded variants share a name and would
+  // otherwise crowd out a genuinely different weapon.
+  const seen = new Set<string>();
+  return chosen.filter((i) => (seen.has(i.name) ? false : (seen.add(i.name), true))).slice(0, limit);
+}
+
+/** A row of named-gear chips (icon + name) that open the item when clicked. */
+function WeaponExamples({ items, onOpen }: { items: ValheimItem[]; onOpen: (id: string) => void }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+      <span className="text-[10px] text-zinc-500 uppercase tracking-wide">e.g.</span>
+      {items.map((w) => (
+        <button
+          key={w.id}
+          type="button"
+          onClick={() => onOpen(w.id)}
+          title={`Open ${w.name}`}
+          className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-md border border-zinc-700/40 bg-zinc-800/60 hover:bg-zinc-800 hover:border-brand-500/30 transition-colors"
+        >
+          <ItemIcon id={w.id} type={w.type} size={16} />
+          <span className="text-[11px] text-zinc-200">{w.name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 type WeaponAdvice = {
   types: string[];          // physical type(s) tied for best
   rank: 0 | 1 | 2 | 3;      // 3 weak · 2 neutral · 1 resistant · 0 immune
   anyMelee: boolean;        // all three physical equal and ≥ neutral
-  elemental: { type: string; tip: string }[];
+  examples: ValheimItem[];  // named gear for the physical recommendation (tier-capped)
+  tierCap: string;          // biome the examples were capped at ("" if unknown)
+  elemental: { type: string; tip: string; examples: ValheimItem[] }[];
 };
 
 function recommendWeapon(item: ValheimItem): WeaponAdvice | null {
@@ -334,10 +417,14 @@ function recommendWeapon(item: ValheimItem): WeaponAdvice | null {
     : 2; // neutral / unspecified
   const rank = Math.max(...PHYSICAL_TYPES.map(rankOf)) as 0 | 1 | 2 | 3;
   const types = PHYSICAL_TYPES.filter((t) => rankOf(t) === rank);
+  const anyMelee = types.length === 3 && rank >= 2;
+  const examples = rank === 0 ? [] : weaponExamples(item, types, anyMelee, anyMelee ? 4 : 3);
   const elemental = ELEMENTAL_TYPES
     .filter((t) => item.weakTo?.includes(t))
-    .map((t) => ({ type: t, tip: ELEMENTAL_TIP[t] }));
-  return { types, rank, anyMelee: types.length === 3 && rank >= 2, elemental };
+    .map((t) => ({ type: t, tip: ELEMENTAL_TIP[t], examples: weaponExamples(item, [t], false) }));
+  const order = BIOME_ORDER as readonly string[];
+  const tierCap = item.biomes.filter((b) => order.includes(b)).sort((a, b) => order.indexOf(b) - order.indexOf(a))[0] ?? "";
+  return { types, rank, anyMelee, examples, tierCap, elemental };
 }
 
 function DetailChip({
@@ -2105,9 +2192,13 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                       Shrugs off every physical weapon — go elemental.
                     </p>
                   ) : advice.anyMelee ? (
-                    <p className="text-xs text-zinc-300 leading-relaxed">
-                      No physical weakness — <span className="text-zinc-100 font-medium">any melee weapon</span> does the job.
-                    </p>
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-zinc-300 leading-relaxed">
+                        No physical weakness — <span className="text-zinc-100 font-medium">any melee weapon</span> does the job:
+                        {" "}{ANY_MELEE_FAMILIES}.
+                      </p>
+                      <WeaponExamples items={advice.examples} onOpen={handleNavigate} />
+                    </div>
                   ) : (
                     <div className="space-y-1.5">
                       {advice.types.map((t) => (
@@ -2116,6 +2207,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                           <span className="text-xs text-zinc-300 pt-0.5">{WEAPON_BY_PHYSICAL[t]}</span>
                         </div>
                       ))}
+                      <WeaponExamples items={advice.examples} onOpen={handleNavigate} />
                       <p className="text-[10px] text-zinc-500 pt-0.5">
                         {advice.rank === 3
                           ? "Weak point — hits extra hard."
@@ -2126,13 +2218,21 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                     </div>
                   )}
                   {advice.elemental.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-zinc-800/40 space-y-1">
+                    <div className="mt-3 pt-3 border-t border-zinc-800/40 space-y-2">
                       {advice.elemental.map((e) => (
-                        <p key={e.type} className="text-xs text-zinc-400 leading-relaxed">
-                          <span className="text-emerald-400 font-medium">Weak to {e.type}</span> — {e.tip}.
-                        </p>
+                        <div key={e.type} className="space-y-1">
+                          <p className="text-xs text-zinc-400 leading-relaxed">
+                            <span className="text-emerald-400 font-medium">Weak to {e.type}</span> — {e.tip}.
+                          </p>
+                          <WeaponExamples items={e.examples} onOpen={handleNavigate} />
+                        </div>
                       ))}
                     </div>
+                  )}
+                  {advice.tierCap && (advice.examples.length > 0 || advice.elemental.some((e) => e.examples.length > 0)) && (
+                    <p className="text-[10px] text-zinc-600 mt-3 pt-2 border-t border-zinc-800/40">
+                      Examples are gear you can have by the {advice.tierCap} — click one to open it.
+                    </p>
                   )}
                 </div>
               );
@@ -2325,7 +2425,10 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                       className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-800/40 transition-colors text-left"
                     >
                       <ItemIcon id={s.id} type="Creature" size={24} />
-                      <span className="text-xs text-zinc-300">{s.name}</span>
+                      <span className="text-xs text-zinc-300 flex-1">{s.name}</span>
+                      {s.amount != null && s.amount > 0 && (
+                        <span className="text-[10px] text-zinc-500" title="How many the altar wants">x{s.amount}</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -2466,6 +2569,55 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                 </div>
               </div>
             )}
+
+            {/* Boss Caller — what to bring to the altar and how many. Read off the
+                altar's OfferingBowl by MegaDataExtractor 1.13.0+; the Queen's is her
+                keyed door. MegaBug 20260920-065816-54ed6c16. */}
+            {item.bossCaller && (() => {
+              const bc = item.bossCaller;
+              const them = bc.amount === 1 ? "it" : "them";
+              const how =
+                bc.method === "stands" ? `Place ${them} on the item stands at the ${bc.altar}.`
+                : bc.method === "key" ? `Unlocks the ${bc.altar} — the fight is inside.`
+                : `Offer ${them} at the ${bc.altar}.`;
+              return (
+                <div className="glass rounded-xl p-5 border border-amber-500/20 bg-amber-500/[0.02]">
+                  <h2 className="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-2">
+                    <Landmark className="w-4 h-4" />
+                    Boss Caller
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate(bc.id)}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                  >
+                    <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                      <ItemIcon id={bc.id} size={24} />
+                    </div>
+                    <span className="text-xs text-brand-400 hover:underline flex-1">{bc.name}</span>
+                    <span className="text-xs text-zinc-100 font-semibold">x{bc.amount}</span>
+                  </button>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed px-3 pt-1">{how}</p>
+                  {bc.gate && (
+                    <div className="mt-3 pt-3 border-t border-zinc-800/40">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wide px-3 mb-1">On the way in</p>
+                      <button
+                        type="button"
+                        onClick={() => handleNavigate(bc.gate!.id)}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                      >
+                        <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                          <ItemIcon id={bc.gate.id} size={24} />
+                        </div>
+                        <span className="text-xs text-brand-400 hover:underline flex-1">{bc.gate.name}</span>
+                        <span className="text-xs text-zinc-100 font-semibold">x{bc.gate.amount}</span>
+                      </button>
+                      <p className="text-[11px] text-zinc-400 leading-relaxed px-3 pt-1">Opens the {bc.gate.altar}.</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Drops (creatures) */}
             {item.drops.length > 0 && (
