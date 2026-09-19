@@ -1357,14 +1357,34 @@ fn merge_profile_bundle(local: SyncProfileBundle, remote: SyncProfileBundle) -> 
         &remote.removed_mods,
     );
 
-    // Thunderstore set + profile name still follow the bundle-level watermark
-    // (ts mirror is a separate path; the name is cosmetic). Ties keep local.
+    // Profile name is cosmetic and still follows the bundle-level watermark.
     let local_meta_wins = local.mods_updated_at >= remote.mods_updated_at;
-    let (ts_mods, profile_name) = if local_meta_wins {
-        (local.thunderstore_mods, local.profile_name)
+    let profile_name = if local_meta_wins { local.profile_name } else { remote.profile_name };
+
+    // Thunderstore set: UNION of both sides minus anything the per-mod merge just
+    // tombstoned. It used to be one side's whole list picked by bundle watermark -
+    // so a peer that still listed a mod the other device had uninstalled won the
+    // list whenever its bundle was newer for ANY reason, the pull-side ts mirror
+    // reinstalled it, the reinstall stamped a fresh present watermark, and the
+    // uninstall was undone on the next cycle (Server Devcommands kept coming back
+    // on Lady Emz's laptop after she deleted it; it also landed on Milord's box).
+    // A tombstone is the authoritative "we do not have this" and must win here.
+    let tombstoned: std::collections::HashSet<String> =
+        removed_mods.iter().map(|r| r.name.clone()).collect();
+    let mut ts_map: HashMap<String, SyncThunderstoreMod> = HashMap::new();
+    let (first, second) = if local_meta_wins {
+        (local.thunderstore_mods, remote.thunderstore_mods)
     } else {
-        (remote.thunderstore_mods, remote.profile_name)
+        (remote.thunderstore_mods, local.thunderstore_mods)
     };
+    for t in first.into_iter().chain(second.into_iter()) {
+        if tombstoned.contains(&t.folder_name) || tombstoned.contains(&t.full_name) {
+            continue;
+        }
+        ts_map.entry(t.full_name.clone()).or_insert(t);
+    }
+    let mut ts_mods: Vec<SyncThunderstoreMod> = ts_map.into_values().collect();
+    ts_mods.sort_by(|a, b| a.full_name.cmp(&b.full_name));
 
     // Bundle-level watermark = max across the merged per-mod entries (legacy).
     let mods_updated_at = mods
@@ -1827,6 +1847,22 @@ fn sync_pull_bundle_impl(profile_id: String, bepinex_path: String) -> Result<Syn
     // clean slate rather than trusting a now-stale signature.
     invalidate_push_cache(&profile_id);
 
+    // Thunderstore mirror list for the frontend: drop anything our ledger holds a
+    // tombstone for (including what this very pull just mirror-uninstalled). The
+    // frontend feeds this straight into sync_install_thunderstore_mods, which
+    // installs whatever is missing locally - handing it a tombstoned mod is how a
+    // deleted mod kept resurrecting itself.
+    let mut mirror_ts: Vec<SyncThunderstoreMod> = Vec::new();
+    for t in remote.thunderstore_mods {
+        let dead = |n: &str| state.mods.get(n).map(|r| r.removed).unwrap_or(false)
+            || uninstalled_mods.iter().any(|u| u == n);
+        if dead(&t.folder_name) || dead(&t.full_name) {
+            app_log(&format!("Sync pull: not mirroring TS mod {} - tombstoned", t.full_name));
+            continue;
+        }
+        mirror_ts.push(t);
+    }
+
     let result = SyncPullResult {
         profile_name: remote.profile_name,
         toggled_mods,
@@ -1834,7 +1870,7 @@ fn sync_pull_bundle_impl(profile_id: String, bepinex_path: String) -> Result<Syn
         uninstalled_mods,
         configs_updated,
         missing_mods,
-        thunderstore_mods: remote.thunderstore_mods,
+        thunderstore_mods: mirror_ts,
         last_updated: remote.last_updated,
     };
 
