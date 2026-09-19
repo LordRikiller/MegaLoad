@@ -214,13 +214,14 @@ const CREATURE_ATTACK_PATTERNS = [
 const BLACKLISTED_PREFABS = new Set([
   "GoblinSword",         // NPC fuling weapon
   "SwordIronFire",       // Duplicate Dyrnwyn (quest version, no recipe)
-  "StoneRock",           // Internal rock object
   "Charred_Melee_Dyrnwyn", // NPC creature variant
   "Charred_Melee_Fader",   // NPC creature variant
   "Charred_Melee",         // NPC creature variant
   "SledgeCheat",         // Debug cheat weapon
   "SwordCheat",          // Debug cheat weapon
-  "Tankard_dvergr",      // NPC dvergr item
+  // NOT blacklisted any more (2026-09-19, tickets 20260817-190211-e99de789 + 20260912-073235-dea27a8a):
+  //   StoneRock      - "Rock", the pickable pet-rock stone you carry to place the Mysterious Rock piece
+  //   Tankard_dvergr - Dvergr Tankard, a Mistlands pickup (Dvergr towers/lighthouses, Infested Mine chests)
   "Mistile_kamikaze",    // Creature kamikaze attack
   "PlayerUnarmed",       // Internal bare-hands weapon
   "RottenMeat",          // Decay product — not obtainable from a biome, zero food stats
@@ -272,7 +273,8 @@ function isWorldPiece(prefab) {
   // rendered as a second and third "Barrel". Broadened from loot_chest_ so new
   // ones don't have to be caught by hand.
   if (/^loot_/i.test(prefab)) return true;
-  if (/^Placeable_Hard/i.test(prefab)) return true;    // World rock objects
+  // Placeable_HardRock is NOT world geometry: it is the placed Mysterious Rock (pet rock), built for
+  // 1 Rock (StoneRock) + 1 Coal - same shape as Placeable_Stone. Ticket 20260912-073235-dea27a8a.
   if (/^OLD_/i.test(prefab)) return true;               // Deprecated building pieces
   if (/^Ashlands_Arch/i.test(prefab)) return true;      // Ashlands ruin geometry (wrong name)
   if (/^Ashlands_WallBlock/i.test(prefab)) return true;  // Ashlands ruin geometry (wrong name)
@@ -486,7 +488,7 @@ function mapItemType(gameType, prefab, shared) {
   if (FORAGED_AS_MATERIAL.has(prefab)) return "Material";
 
   // Drinking items — not weapons, decorative/celebratory
-  if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin") return "Misc";
+  if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin" || prefab === "Tankard_dvergr") return "Misc";
 
   // Hildir cosmetic clothing + Midsummer Crown — appearance only, no armour stats
   if (/^ArmorDress\d+$/.test(prefab) || /^ArmorTunic\d+$/.test(prefab) ||
@@ -575,7 +577,7 @@ function mapSubcategory(gameType, prefab, shared) {
   }
 
   // Drinking items — decorative
-  if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin") return "Misc";
+  if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin" || prefab === "Tankard_dvergr") return "Misc";
 
   // Hildir cosmetic clothing + Midsummer Crown
   if (/^ArmorDress\d+$/.test(prefab) || /^ArmorTunic\d+$/.test(prefab)) return "Dress";
@@ -670,6 +672,7 @@ const RAW_MATERIAL_BIOME = {
   // ─── Meadows (tier 0) ───
   "Wood": "Meadows",
   "Stone": "Meadows",
+  "StoneRock": "Meadows",   // pet-rock "Rock" — earliest biome it spawns in
   "Resin": "Meadows",
   "Flint": "Meadows",
   "LeatherScraps": "Meadows",
@@ -1049,6 +1052,7 @@ const BIOME_OVERRIDE = {
   "FineWood": ["Meadows", "Black Forest", "Swamp", "Plains"],   // +BF/Swamp (Shipwrecks dot the shores of BF, Swamp and Plains — drop Finewood when destroyed)
   "RoundLog": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains"],   // +Swamp (Pine trees grow at Swamp/Black Forest borders)
   "Stone": ["Meadows", "Black Forest", "Swamp", "Mountain", "Plains", "Ashlands"],
+  "StoneRock": ["Meadows", "Black Forest", "Swamp", "Mountain"],   // "Rock" (pet rock) — large pickable stone, >=1000 m from centre at 5-20 m altitude (wiki Mysterious_Rock)
   "DeerHide": ["Meadows", "Black Forest", "Plains"],
   "DeerMeat": ["Meadows", "Black Forest"],   // Deer creature spawns in both Meadows and BF, drops meat in both
   "Flint": ["Meadows", "Black Forest"],
@@ -1112,6 +1116,7 @@ const BIOME_OVERRIDE = {
   // Serving Tray (Feaster) is deliberately NOT here — the witch sells it, but it
   // is also Workbench-craftable from 6 Deer Hide, so Meadows is correct (Rule 8).
   "TankardOdin": [],                      // DLC-only beta supporter item — no biome
+  "Tankard_dvergr": ["Mistlands"],        // Dvergr Tankard — pickup in Dvergr towers/lighthouses + Infested Mine chests; never craftable
   "AxeHead1": ["Meadows"],                // Found in Abandoned House ruins (variant 6) in Meadows
 
   // ─── Trophies (biome of the creature) ───
@@ -1483,6 +1488,17 @@ const WORLD_DROPS = {
   "Lantern": [
     {source: "Dvergr Structure", biome: "Mistlands", type: "Pickup"},
   ],
+  // Dvergr Tankard — sits on tables in Dvergr Guard Towers / Lighthouses (rare); also Infested Mine chests via CHEST_LOOT.
+  "Tankard_dvergr": [
+    {source: "Dvergr Structure", biome: "Mistlands", type: "Pickup"},
+  ],
+  // "Rock" (pet rock) — large pickable stone, >=1000 m from world centre at 5-20 m altitude; 22 of them at the Big Rock Clearing.
+  "StoneRock": [
+    {source: "Ground Spawn", biome: "Meadows", type: "Pickup"},
+    {source: "Ground Spawn", biome: "Black Forest", type: "Pickup"},
+    {source: "Ground Spawn", biome: "Swamp", type: "Pickup"},
+    {source: "Ground Spawn", biome: "Mountain", type: "Pickup"},
+  ],
 };
 
 // ── Chest Loot Tables ──
@@ -1528,7 +1544,8 @@ const CHEST_LOOT = {
     // Verified: Infested Mine treasure-room chests contain coins, sausages, minor meads, jute, soft tissue.
     // BlackCore REMOVED (found on stands/poles in mines, not chests).
     // DvergrNeedle REMOVED (only from Dvergr Component Crates in surface settlements).
-    items: ["Coins", "Softtissue", "JuteRed", "Sausages", "MeadHealthMinor", "MeadStaminaMinor", "MeadTasty"],
+    // Tankard_dvergr ADDED (rare Infested Mine chest loot per wiki Dvergr_Tankard). Ticket 20260817-190211-e99de789.
+    items: ["Coins", "Softtissue", "JuteRed", "Sausages", "MeadHealthMinor", "MeadStaminaMinor", "MeadTasty", "Tankard_dvergr"],
   },
   "Charred Fortress Chest": {
     biome: "Ashlands",

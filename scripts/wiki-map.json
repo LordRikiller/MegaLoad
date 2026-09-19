@@ -965,6 +965,16 @@
   "Tankard": [
     "https://valheim.fandom.com/wiki/Tankard"
   ],
+  "Tankard_dvergr": [
+    "https://valheim.fandom.com/wiki/Dvergr_Tankard"
+  ],
+  "StoneRock": [
+    "https://valheim.fandom.com/wiki/Mysterious_Rock",
+    "Mysterious Rock"
+  ],
+  "Placeable_HardRock": [
+    "https://valheim.fandom.com/wiki/Mysterious_Rock"
+  ],
   "AxeBerzerkrLightning": [
     "https://valheim.fandom.com/wiki/Thundering_berserkir_axes"
   ],
