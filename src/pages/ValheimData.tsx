@@ -2017,7 +2017,9 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                         <ShoppingCart className="w-3.5 h-3.5 text-amber-400" />
                         <span className="text-xs text-zinc-300">
                           Buy for {vendorSell.entry.price > 0
-                            ? `${vendorSell.entry.price} ${vendorSell.entry.currency}`
+                            ? `${vendorSell.entry.price} ${vendorSell.entry.currency}${
+                                vendorSell.entry.stack && vendorSell.entry.stack > 1 ? ` for ${vendorSell.entry.stack}` : ""
+                              }`
                             : vendorSell.entry.currency}
                         </span>
                       </div>
@@ -3639,7 +3641,9 @@ function VendorDetailView({ vendorName, onBack }: { vendorName: string; onBack: 
                         className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                       />
                       <span className="text-[10px] text-amber-400 font-medium shrink-0">
-                        {entry.price > 0 ? `${entry.price} coins` : entry.currency}
+                        {entry.price > 0
+                          ? `${entry.price} coins${entry.stack && entry.stack > 1 ? ` for ${entry.stack}` : ""}`
+                          : entry.currency}
                       </span>
                     </div>
                   );

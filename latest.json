@@ -1,11 +1,11 @@
 {
-  "version": "1.17.0",
-  "notes": "Every Forsaken's page in Valheim Data now has a Boss Caller panel: the item, how many, and whether you offer it at the bowl or hang it on the altar's item stands - with a separate \"on the way in\" step where the game gates the fight (the Queen's Sealbreaker door, Kall's outer bowl). It is read straight from each altar's OfferingBowl in the game files rather than the wiki, so it reflects 1.0: the Queen takes three Seeker Soldier Trophies, Kall Fimbulbringer three Malicious Blood at the gate and three more inside. Boss Caller items link back to the boss they summon.\n\nBest Weapon no longer stops at \"any melee weapon\": it spells out the weapon families (swords, axes, knives, maces, sledgehammers, spears, atgeirs, fists) and names real gear you can have by that boss's biome - Moder gets Crystal Battleaxe, Fang Spear and Silver Sword, with Fire Arrows for the fire weakness - each one clickable. When nothing exists at that tier it points at the nearest later tier instead of the strongest weapon in the game.\n\nAlso: The Elder gains his missing Black Forest biome. Asked for by Lady Emz (MegaBug 20260920-065816-54ed6c16).",
-  "pub_date": "2026-09-19T21:48:16.000Z",
+  "version": "1.18.0",
+  "notes": "Vendor pages now come straight from the game's trader data instead of a hand-typed list, so Valheim Data finally shows everything Haldor, Hildir and the Bog Witch actually sell in 1.0. New on Haldor's shelf: Wider Pockets (1000 coins, after Moder) and Deeper Pockets (2000 coins, after The Queen) - one extra inventory row each, bought once per character. The Bog Witch's Seasoning of the Gourd (after Kall Fimbulbringer) and Crown of Roots (after a Writhan kill) are now listed as her stock with the right biomes rather than as world pickups.\n\nEvery trader item shows its unlock (\"Defeat Moder\", \"Return Hildir's Brass Chest\") and how many the price buys (\"10 coins for 20\" bait). Item pages say who sells them; the two Pockets have their own pages under Misc > Vendor Upgrade.\n\nTicket 20260920-173906-47d3c70b.",
+  "pub_date": "2026-09-20T07:50:40.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUhuVSt0dDhDQWoyWHF5ZS9GOWJUNjQyYVZyUk91V3VXdS8rS2Y4d2FMaFc3VlQ4dEF0ejFDT20wbER5UUNBWFFFb3o2VW40MzlEUDBsek1TcE1hSEFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5ODU0MzY0CWZpbGU6TWVnYUxvYWRfMS4xNy4wX3g2NC1zZXR1cC5uc2lzLnppcApHb0hNSVV0bFFIUG5IdUtJaXJHNTRkWVlVbmVPelBtd1gvdWhqVHE3dk5EK3NhRHRVdCt3WDNnUFVYYTAxRmN2K1Y1MkNQZTB6cm15cndaU1B3ZS9CUT09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.17.0/MegaLoad_1.17.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUVzS3RJbGRPZU15aWs0YWc2a2xTWnY0bWQ1UVlaN2I2alIreXRwV1B0aG5YTkJtRTNjNVhTcjBoZWRUQno5VXFDKzZaUExuSEZDUWxZUHFINFRyakFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5ODkwNTQ2CWZpbGU6TWVnYUxvYWRfMS4xOC4wX3g2NC1zZXR1cC5uc2lzLnppcApFd2ZLOEVGSkdTM1B6OWZVWDZBdk5RTXQ1L0lpUzE0Mm1NUEdQUDlubDhhai9BUnYrRG94MkhENkhGbENFWXU1SGlNa0FoNXFCN3J2OHNLME5KenhDdz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.18.0/MegaLoad_1.18.0_x64-setup.nsis.zip"
     }
   }
 }

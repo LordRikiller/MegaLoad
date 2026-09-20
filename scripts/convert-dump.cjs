@@ -3417,6 +3417,122 @@ console.log("Type breakdown:", typeCounts);
   );
 }
 
+// ── Vendor stock ────────────────────────────────────────────────────────────
+// What each trader sells lives on the NPC prefab's Trader component, dumped by
+// MegaDataExtractor 1.13.0+ as `traders`. Every sold item gets a `vendors` entry
+// (vendor, price, stack, unlock) and "Vendor" in its sources, and the stores
+// derive each vendor's sells list from that instead of a hand-typed list — which
+// is how 1.0's Wider/Deeper Pockets, Seasoning of the Gourd and the Crown of
+// Roots went missing. A TradeItem with no prefab is a key purchase (the Pockets:
+// buying sets a unique player key and bumps `invrows`); those become synthetic
+// entries so they show in the list and on the vendor page.
+// Biome follows the vendor rule: max(vendor's biome, unlock gate's biome) for
+// anything vendor-exclusive. MegaBug 20260920-173906-47d3c70b.
+{
+  const traders = raw.traders ?? [];
+  const byId = new Map(converted.map((e) => [e.id, e]));
+  const TRADER_VENDOR = { Haldor: "Haldor", Hildir: "Hildir", BogWitch: "Bog Witch" };
+  const VENDOR_BIOME = { Haldor: "Black Forest", Hildir: "Meadows", "Bog Witch": "Swamp" };
+  const TIER = ["Meadows", "Black Forest", "Ocean", "Swamp", "Mountain", "Plains", "Mistlands", "Ashlands", "Deep North"];
+  const tierOf = (b) => TIER.indexOf(b);
+  const higher = (...bs) => bs.filter((b) => b && tierOf(b) >= 0).sort((a, b) => tierOf(b) - tierOf(a))[0] ?? null;
+
+  // Global keys → what the player has to do. `defeated_<x>` names a creature
+  // prefab (lowercased, underscores dropped); Hildir1..3 are her returned chests.
+  const creatureByKey = new Map();
+  for (const e of converted) {
+    if (e.type === "Creature") creatureByKey.set(e.id.toLowerCase().replace(/_/g, ""), e);
+  }
+  // Keys that don't spell the prefab: the Queen's key predates her rename, and
+  // Kall's is set by his final phase but the player fights "Kall Fimbulbringer".
+  const KEY_ALIAS = { queen: "seekerqueen", frozenkingp3: "frozenking" };
+  const unlockFor = (key) => {
+    if (!key) return null;
+    const boss = /^defeated_(.+)$/i.exec(key);
+    if (boss) {
+      const k = boss[1].toLowerCase().replace(/_/g, "");
+      const c = creatureByKey.get(KEY_ALIAS[k] ?? k);
+      if (c) return { text: `${c.subcategory === "Boss" ? "Defeat" : "Kill a"} ${c.name}`, biome: c.biomes[0] ?? null };
+      return { text: `Defeat ${boss[1]}`, biome: null };
+    }
+    const chest = /^Hildir(\d)$/.exec(key);
+    if (chest) return { text: `Return ${loc(findItemName(`chest_hildir${chest[1]}`))}`, biome: null };
+    return { text: key.replace(/_/g, " "), biome: null };
+  };
+
+  let offers = 0, synthetic = 0;
+  const unmatched = [];
+  for (const t of traders) {
+    const vendor = TRADER_VENDOR[t.prefab] ?? loc(t.name) ?? t.prefab;
+    for (const it of t.items ?? []) {
+      const unlock = unlockFor(it.requiredGlobalKey);
+      const offer = { vendor, price: it.price, stack: it.stack > 0 ? it.stack : 1, ...(unlock ? { requirement: unlock.text } : {}) };
+      if (it.prefab) {
+        const e = byId.get(it.prefab);
+        if (!e) { unmatched.push(`${vendor}: ${it.prefab}`); continue; }
+        e.vendors = [...(e.vendors ?? []).filter((v) => v.vendor !== vendor), offer];
+        // Vendor-exclusive = no recipe and nothing in the world drops it. The
+        // extractor's fallback source for those reads as world loot ("Pickup"),
+        // and their biome is the vendor rule, never the item's theme.
+        const exclusive = e.recipe.length === 0 && e.worldSources.length === 0 && e.drops.length === 0;
+        if (exclusive) {
+          e.source = ["Vendor"];
+          const best = higher(VENDOR_BIOME[vendor], unlock?.biome);
+          if (best && (e.biomes.length === 0 || tierOf(e.biomes[0]) < tierOf(best))) e.biomes = [best];
+        } else if (!e.source.includes("Vendor")) {
+          e.source = [...e.source, "Vendor"];
+        }
+        offers++;
+        continue;
+      }
+      // Key purchase — no item behind it.
+      const id = it.buyKey || it.incrementKey;
+      if (!id) continue;
+      const grants = it.incrementKey === "invrows"
+        ? `+${it.incrementAmount} inventory row${it.incrementAmount === 1 ? "" : "s"}`
+        : it.incrementKey ? `${it.incrementKey} +${it.incrementAmount}` : "";
+      const entry = {
+        id,
+        token: it.name || "",
+        name: loc(it.name) || id,
+        type: "Misc",
+        subcategory: "Vendor Upgrade",
+        description: loc(it.tooltip) || "",
+        biomes: [higher(VENDOR_BIOME[vendor], unlock?.biome) ?? VENDOR_BIOME[vendor]].filter(Boolean),
+        source: ["Vendor"],
+        station: "",
+        stationLevel: 0,
+        maxQuality: 1,
+        stack: 1,
+        weight: 0,
+        value: 0,
+        recipe: [],
+        upgradeCosts: [],
+        drops: [],
+        worldSources: [],
+        stats: [
+          { label: "Price", value: `${it.price} coins` },
+          ...(grants ? [{ label: "Grants", value: grants }] : []),
+          // Trader.GetAvailableItems hides the entry once the player holds the
+          // unique buy key, so it can be bought exactly once per character.
+          ...(it.buyKey ? [{ label: "Purchase", value: "Once per character" }] : []),
+        ],
+        vendors: [offer],
+        wikiUrl: "",
+        wikiGroup: "",
+      };
+      if (!byId.has(id)) { converted.push(entry); byId.set(id, entry); synthetic++; }
+      offers++;
+    }
+  }
+  if (unmatched.length) console.log(`  Trader stock not in the item list: ${unmatched.join(", ")}`);
+  console.log(
+    traders.length
+      ? `Vendors: ${offers} offers across ${traders.length} traders (${synthetic} key purchases added as items)`
+      : "Vendors: dump has no `traders` section — re-run MegaDataExtractor 1.13.0+ in-game; vendor pages fall back to the legacy list"
+  );
+}
+
 let ts = `// @ts-nocheck — generated data, array literal too large for TS union inference
 // ── Valheim Item Database ──────────────────────────────────
 // Auto-generated from game data dump (assembly_valheim.dll via MegaDataExtractor)
@@ -3454,6 +3570,17 @@ export interface BossCaller {
   altar: string;     // Altar / gate display name (e.g. "Sacrificial Altar")
   location: string;  // Location prefab the altar lives in (e.g. "Dragonqueen"), "" if unknown
   gate?: { id: string; name: string; amount: number; altar: string }; // A separate step on the way in — The Queen's Sealbreaker door, Kall's gate bowl — when the game keys it to something other than the summon itself
+}
+
+// One trader's offer for an item: Trader.TradeItem off the NPC prefab. \`requirement\`
+// is the m_requiredGlobalKey turned into words ("Defeat Moder", "Return Hildir's
+// Brass Chest"); a key purchase (the Pockets) has no item prefab and is emitted as
+// its own synthetic entry with subcategory "Vendor Upgrade".
+export interface VendorOffer {
+  vendor: string;        // "Haldor" | "Hildir" | "Bog Witch"
+  price: number;         // coins
+  stack: number;         // how many the price buys (Fishing Bait = 20)
+  requirement?: string;  // unlock condition, absent when always in stock
 }
 
 export interface UpgradeCost {
@@ -3539,6 +3666,7 @@ export interface ValheimItem {
   catches?: { id: string; name: string }[]; // Fishing bait only — fish this bait attracts (reverse of baits)
   summons?: { id: string; name: string; amount?: number }[]; // Summon staves — what the cast calls up; Boss Callers — the Forsaken they call (amount = how many the altar wants)
   bossCaller?: BossCaller; // Bosses only — what to bring to the altar and how many (OfferingBowl.m_bossItem x m_bossItems; MegaDataExtractor 1.13.0+)
+  vendors?: VendorOffer[]; // Sold by a trader — read off the NPC's Trader component (MegaDataExtractor 1.13.0+); the stores derive each vendor's stock from this
   storageSlots?: number; // Containers only — inventory slots (e.g. Barrel = 12)
   storageGrid?: string;  // Containers only — the slot grid, e.g. "6x2"
   wikiUrl: string;      // Verified wiki URL (empty if no page exists)

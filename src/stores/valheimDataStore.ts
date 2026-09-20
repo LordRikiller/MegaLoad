@@ -13,6 +13,7 @@ export interface VendorItem {
   price: number;    // cost in coins or specific currency
   currency: string; // "Coins", "Coins + ForsakenKill", etc.
   requirement?: string; // e.g. "Defeat Eikthyr" unlock condition
+  stack?: number;   // how many the price buys (Fishing Bait = 20)
 }
 
 export interface VendorBuyback {
@@ -29,7 +30,8 @@ export interface Vendor {
   buys: VendorBuyback[];
 }
 
-export const VENDORS: Record<string, Vendor> = {
+// Hand-kept stock, pre-1.0 - kept only as the fallback for sellsFor() below.
+const LEGACY_VENDORS: Record<string, Vendor> = {
   Haldor: {
     name: "Haldor",
     description: "A Dvergr merchant found in the Black Forest. He sells useful tools and cosmetics for coins, with additional items unlocking as the world progresses.",
@@ -145,6 +147,40 @@ export const VENDORS: Record<string, Vendor> = {
     ],
   },
 };
+
+/**
+ * Vendor stock comes from the game data: convert-dump.cjs reads each NPC's Trader
+ * component into the items' `vendors` entries (MegaDataExtractor 1.13.0+), so a
+ * trader's sells list is derived from VALHEIM_ITEMS at access time - it follows the
+ * hot-swapped dataset, and 1.0's Wider/Deeper Pockets, Seasoning of the Gourd and
+ * Crown of Roots appear without anyone retyping a list. The hand-kept lists above
+ * are only the fallback for a dataset that predates the `vendors` field.
+ * MegaBug 20260920-173906-47d3c70b.
+ */
+function sellsFor(vendorName: string, legacy: VendorItem[]): VendorItem[] {
+  const out: VendorItem[] = [];
+  for (const item of VALHEIM_ITEMS) {
+    for (const offer of item.vendors ?? []) {
+      if (offer.vendor !== vendorName) continue;
+      out.push({
+        id: item.id,
+        price: offer.price,
+        currency: "Coins",
+        stack: offer.stack,
+        ...(offer.requirement ? { requirement: offer.requirement } : {}),
+      });
+    }
+  }
+  return out.length ? out : legacy;
+}
+
+export const VENDORS: Record<string, Vendor> = Object.fromEntries(
+  Object.entries(LEGACY_VENDORS).map(([key, v]) => {
+    const { sells: legacy, ...rest } = v;
+    const vendor: Vendor = { ...rest, get sells() { return sellsFor(v.name, legacy); } };
+    return [key, vendor];
+  }),
+);
 
 // ── Armor Sets ───────────────────────────────────────────────
 export interface ArmorSetBonus {
