@@ -24,6 +24,7 @@ import {
   openFolder,
   type StarterMod,
 } from "../lib/tauri-api";
+import { StandaloneConfirm, standaloneConflicts } from "../components/StandaloneConfirm";
 
 export function Profiles() {
   const {
@@ -105,11 +106,20 @@ export function Profiles() {
     }
   };
 
+  // A standalone mod (MiniQoL) can't share a profile with the Mega series, so the
+  // two sides are mutually exclusive: ticking it clears the rest, and ticking any
+  // Mega mod clears it.
   const toggleStarter = (name: string) => {
+    const standaloneNames = new Set(starterMods.filter((m) => m.standalone).map((m) => m.name));
     setSelectedStarters((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      if (prev.has(name)) {
+        const next = new Set(prev);
+        next.delete(name);
+        return next;
+      }
+      if (standaloneNames.has(name)) return new Set([name]);
+      const next = new Set([...prev].filter((n) => !standaloneNames.has(n)));
+      next.add(name);
       return next;
     });
   };
@@ -142,6 +152,7 @@ export function Profiles() {
   const syncEnabled = useSyncStore((s) => s.enabled);
   const pushAllProfiles = useSyncStore((s) => s.pushAllProfiles);
   const [togglingMod, setTogglingMod] = useState<string | null>(null);
+  const [pendingStandalone, setPendingStandalone] = useState<{ mod: StarterMod; removing: string[] } | null>(null);
 
   const active = profiles.find((p) => p.id === activeProfileId);
 
@@ -154,7 +165,21 @@ export function Profiles() {
   const normMod = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const installedNorm = new Set(installedMods.map((m) => normMod(m.name)));
 
-  const toggleActiveMod = async (mod: StarterMod) => {
+  // Installing across the standalone line deletes the other side (enforced in
+  // install_mod_update) — confirm before that happens.
+  const toggleActiveMod = (mod: StarterMod) => {
+    if (!active || togglingMod) return;
+    if (!installedNorm.has(normMod(mod.name))) {
+      const removing = standaloneConflicts(mod, starterMods, (n) => installedNorm.has(normMod(n)));
+      if (removing.length > 0) {
+        setPendingStandalone({ mod, removing });
+        return;
+      }
+    }
+    applyActiveMod(mod);
+  };
+
+  const applyActiveMod = async (mod: StarterMod) => {
     if (!active || togglingMod) return;
     const isInstalled = installedNorm.has(normMod(mod.name));
     setTogglingMod(mod.name);
@@ -167,10 +192,14 @@ export function Profiles() {
         setToast(`Removed ${formatModName(mod.name)} from "${active.name}"`);
       } else {
         setInstallProgress(`Installing ${formatModName(mod.name)}...`);
-        await installModUpdate(active.bepinex_path, mod.name, mod.download_url, mod.version);
+        const msg = await installModUpdate(active.bepinex_path, mod.name, mod.download_url, mod.version);
         await fetchInstalledMods(active.bepinex_path);
         setInstallProgress("");
-        setToast(`Installed ${formatModName(mod.name)} into "${active.name}"`);
+        setToast(
+          msg.includes("(removed")
+            ? `Installed ${formatModName(mod.name)} — removed the other side (standalone)`
+            : `Installed ${formatModName(mod.name)} into "${active.name}"`
+        );
       }
       // Mirror the change to other devices (no-op if sync is off/unchanged).
       if (syncEnabled) {
@@ -217,6 +246,17 @@ export function Profiles() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <StandaloneConfirm
+        open={!!pendingStandalone}
+        installing={pendingStandalone?.mod ?? null}
+        removing={pendingStandalone?.removing ?? []}
+        onCancel={() => setPendingStandalone(null)}
+        onConfirm={() => {
+          const p = pendingStandalone;
+          setPendingStandalone(null);
+          if (p) applyActiveMod(p.mod);
+        }}
+      />
       {/* Toast */}
       {toast && (
         <div className="fixed top-14 right-6 z-50 px-4 py-2.5 rounded-lg bg-brand-500/90 text-zinc-950 text-sm font-medium shadow-xl animate-in slide-in-from-top-2 duration-300">
@@ -369,7 +409,7 @@ export function Profiles() {
                   disabled={!!togglingMod}
                   title={
                     mod.standalone
-                      ? `${formatModName(mod.name)} replaces Mega-series features — install it on its own profile, not alongside them.`
+                      ? `${formatModName(mod.name)} replaces Mega-series features, so it runs on its own — installing it removes the other Mega mods from the profile.`
                       : undefined
                   }
                   className={cn(
@@ -402,7 +442,7 @@ export function Profiles() {
                     {mod.standalone && (
                       <p className="text-[10px] text-amber-400/90 mt-0.5 leading-tight flex items-center gap-1">
                         <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                        Standalone — not with Mega mods
+                        Standalone — removes other Mega mods
                       </p>
                     )}
                     {mod.description && (
@@ -475,7 +515,7 @@ export function Profiles() {
                       onClick={() => toggleStarter(mod.name)}
                       title={
                         mod.standalone
-                          ? `${formatModName(mod.name)} replaces Mega-series features — install it on its own profile, not alongside them.`
+                          ? `${formatModName(mod.name)} replaces Mega-series features, so it runs on its own — installing it removes the other Mega mods from the profile.`
                           : undefined
                       }
                       className={cn(
@@ -504,7 +544,7 @@ export function Profiles() {
                         {mod.standalone && (
                           <p className="text-[10px] text-amber-400/90 mt-0.5 leading-tight flex items-center gap-1">
                             <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                            Standalone — not with Mega mods
+                            Standalone — removes other Mega mods
                           </p>
                         )}
                         {mod.description && (

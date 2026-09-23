@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { cn, formatModName } from "../lib/utils";
 import { iconForModName } from "../lib/modIcons";
+import { StandaloneConfirm, standaloneConflicts } from "../components/StandaloneConfirm";
 
 export function Browse() {
   const { activeProfile } = useProfileStore();
@@ -68,6 +69,7 @@ export function Browse() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ourMods, setOurMods] = useState<StarterMod[]>([]);
   const [installingOurMod, setInstallingOurMod] = useState<string | null>(null);
+  const [pendingStandalone, setPendingStandalone] = useState<{ mod: StarterMod; removing: string[] } | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -153,12 +155,19 @@ export function Browse() {
     return mod ? mod.status !== "not-installed" : false;
   };
 
-  const handleInstallOurMod = async (mod: StarterMod) => {
+  // Installing across the standalone line deletes the other side — confirm first.
+  const handleInstallOurMod = (mod: StarterMod) => {
+    const removing = standaloneConflicts(mod, ourMods, isOurModInstalled);
+    if (removing.length > 0) setPendingStandalone({ mod, removing });
+    else installOurMod(mod);
+  };
+
+  const installOurMod = async (mod: StarterMod) => {
     if (!profile?.bepinex_path) return;
     setInstallingOurMod(mod.name);
     try {
-      await installModUpdate(profile.bepinex_path, mod.name, mod.download_url, mod.version);
-      setToast(`${mod.name} installed!`);
+      const msg = await installModUpdate(profile.bepinex_path, mod.name, mod.download_url, mod.version);
+      setToast(msg.includes("(removed") ? msg : `${mod.name} installed!`);
       // Refresh update state so installed status updates
       checkUpdates(profile.bepinex_path, true);
     } catch (e) {
@@ -229,6 +238,17 @@ export function Browse() {
 
   return (
     <div className="relative flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <StandaloneConfirm
+        open={!!pendingStandalone}
+        installing={pendingStandalone?.mod ?? null}
+        removing={pendingStandalone?.removing ?? []}
+        onCancel={() => setPendingStandalone(null)}
+        onConfirm={() => {
+          const p = pendingStandalone;
+          setPendingStandalone(null);
+          if (p) installOurMod(p.mod);
+        }}
+      />
       {/* Toast */}
       {toast && (
         <div className="fixed top-14 right-6 z-50 px-4 py-2.5 rounded-lg bg-brand-500/90 text-zinc-950 text-sm font-medium shadow-xl animate-in slide-in-from-top-2 duration-300 max-w-sm">

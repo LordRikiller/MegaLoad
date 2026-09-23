@@ -1,11 +1,11 @@
 {
-  "version": "1.18.0",
-  "notes": "Vendor pages now come straight from the game's trader data instead of a hand-typed list, so Valheim Data finally shows everything Haldor, Hildir and the Bog Witch actually sell in 1.0. New on Haldor's shelf: Wider Pockets (1000 coins, after Moder) and Deeper Pockets (2000 coins, after The Queen) - one extra inventory row each, bought once per character. The Bog Witch's Seasoning of the Gourd (after Kall Fimbulbringer) and Crown of Roots (after a Writhan kill) are now listed as her stock with the right biomes rather than as world pickups.\n\nEvery trader item shows its unlock (\"Defeat Moder\", \"Return Hildir's Brass Chest\") and how many the price buys (\"10 coins for 20\" bait). Item pages say who sells them; the two Pockets have their own pages under Misc > Vendor Upgrade.\n\nTicket 20260920-173906-47d3c70b.",
-  "pub_date": "2026-09-20T07:50:40.000Z",
+  "version": "1.19.0",
+  "notes": "MiniQoL is standalone, so MegaLoad now keeps it on a profile of its own. Installing MiniQoL deletes the other Mega mods from that profile, and installing a Mega mod into a MiniQoL profile removes MiniQoL. You get a confirm box first listing exactly what goes. Your configs are kept, so switching back restores your settings. Thunderstore mods are never touched.\n\nOn Create Profile, ticking MiniQoL clears the other starter mods and ticking a Mega mod clears MiniQoL. Updates never delete anything.\n\nTicket 20260924-083000-standalone.",
+  "pub_date": "2026-09-23T22:12:25.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUVzS3RJbGRPZU15aWs0YWc2a2xTWnY0bWQ1UVlaN2I2alIreXRwV1B0aG5YTkJtRTNjNVhTcjBoZWRUQno5VXFDKzZaUExuSEZDUWxZUHFINFRyakFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5ODkwNTQ2CWZpbGU6TWVnYUxvYWRfMS4xOC4wX3g2NC1zZXR1cC5uc2lzLnppcApFd2ZLOEVGSkdTM1B6OWZVWDZBdk5RTXQ1L0lpUzE0Mm1NUEdQUDlubDhhai9BUnYrRG94MkhENkhGbENFWXU1SGlNa0FoNXFCN3J2OHNLME5KenhDdz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.18.0/MegaLoad_1.18.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBNSENyS1BoQ3NrSzh1bHZpTm1CZ2RNSnNlK1hkWk5rUDZQZ0JNR2JaN09UWHVWNmhVYlZMb2RIRnVLeWpqdVhVVHhJaU5zUzZIVmdxKzAyamtjb3dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMjAxNDY5CWZpbGU6TWVnYUxvYWRfMS4xOS4wX3g2NC1zZXR1cC5uc2lzLnppcAp5dmVzM3VDR09OelZRSHd2UmdPaDErNEkzWUhGc2l3dnlGQUsxZFQwaEcvYU1XcWo3VFNMaE1vQ3U3Y0pMV3V3ZDJvTXBRM2swc1F6dFhvb3k1ODNDdz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.19.0/MegaLoad_1.19.0_x64-setup.nsis.zip"
     }
   }
 }

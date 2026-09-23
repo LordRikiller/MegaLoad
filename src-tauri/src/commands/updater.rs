@@ -406,12 +406,30 @@ pub fn get_starter_mods() -> Result<Vec<StarterMod>, String> {
 }
 
 /// Install a single mod update by downloading the DLL.
+///
+/// A FRESH install also enforces the standalone rule (see `enforce_standalone`):
+/// installing a standalone mod deletes every other manifest mod from the profile,
+/// and installing a Mega mod deletes any standalone one. Updates of a mod that is
+/// already there never evict anything.
 #[command(async)]
 pub fn install_mod_update(
     bepinex_path: String,
     mod_name: String,
     download_url: String,
     version: String,
+) -> Result<String, String> {
+    install_mod_update_inner(bepinex_path, mod_name, download_url, version, true)
+}
+
+/// `enforce` = false for sync mirroring: a pull replicates the other device's
+/// profile exactly, and that device already enforced the rule when it installed.
+/// Enforcing mid-loop would make the result depend on install order.
+fn install_mod_update_inner(
+    bepinex_path: String,
+    mod_name: String,
+    download_url: String,
+    version: String,
+    enforce: bool,
 ) -> Result<String, String> {
     // Validate download URL is HTTPS from an allowed host
     validate_download_url(&download_url)?;
@@ -451,6 +469,7 @@ pub fn install_mod_update(
     };
 
     let dll_path = mod_dir.join(&dll_name);
+    let fresh_install = !dll_path.exists();
 
     // Download the DLL via MegaWorker. The manifest's `download_url` was
     // rewritten in `fetch_manifest()` so we should already have a Worker URL,
@@ -481,11 +500,73 @@ pub fn install_mod_update(
     record_update("mod", &mod_name, old_version.as_deref(), &version);
     app_log(&format!("Updated {} to v{}", mod_name, version.trim_start_matches('v')));
 
-    Ok(format!(
-        "Updated {} to v{}",
-        mod_name,
-        version.trim_start_matches('v')
-    ))
+    let removed = match (enforce && fresh_install, manifest.as_ref(), manifest_mod) {
+        (true, Some(m), Some(mm)) => enforce_standalone(&bepinex_path, m, mm),
+        _ => Vec::new(),
+    };
+
+    let mut msg = format!("Updated {} to v{}", mod_name, version.trim_start_matches('v'));
+    if !removed.is_empty() {
+        msg.push_str(&format!(" (removed {} - standalone)", removed.join(", ")));
+    }
+    Ok(msg)
+}
+
+/// A standalone mod (MiniQoL) re-implements Mega-series features, so a profile
+/// holds EITHER that one standalone mod OR our other mods, never both. Called
+/// after `installed` lands: a standalone install deletes every other manifest
+/// mod (enabled or disabled), a Mega install deletes any standalone mod. Only
+/// the DLL folders go - configs in BepInEx/config are kept, so switching back
+/// restores settings. Non-manifest (Thunderstore/manual) mods are never touched.
+/// The next sync snapshot tombstones the deletions, so other devices follow.
+/// Returns the names removed.
+fn enforce_standalone(bepinex_path: &str, manifest: &ModManifest, installed: &ManifestMod) -> Vec<String> {
+    let bases = [
+        PathBuf::from(bepinex_path).join("plugins"),
+        PathBuf::from(bepinex_path).join("disabled_plugins"),
+    ];
+    let mut removed = Vec::new();
+    for m in &manifest.mods {
+        if m.name == installed.name || (!installed.standalone && !m.standalone) {
+            continue;
+        }
+        if sanitize_path_component(&m.plugin_folder).is_err() || sanitize_path_component(&m.dll_name).is_err() {
+            continue;
+        }
+        let mut hit = false;
+        for base in &bases {
+            let dir = base.join(&m.plugin_folder);
+            if dir.is_dir() {
+                match fs::remove_dir_all(&dir) {
+                    Ok(_) => hit = true,
+                    Err(e) => app_log(&format!("Standalone: failed to remove {}: {}", dir.display(), e)),
+                }
+            }
+            let loose = base.join(&m.dll_name);
+            if loose.is_file() {
+                match fs::remove_file(&loose) {
+                    Ok(_) => hit = true,
+                    Err(e) => app_log(&format!("Standalone: failed to remove {}: {}", loose.display(), e)),
+                }
+            }
+        }
+        if hit {
+            removed.push(m.name.clone());
+        }
+    }
+    if !removed.is_empty() {
+        let mut versions = load_installed_versions(bepinex_path);
+        for name in &removed {
+            versions.remove(name);
+        }
+        save_installed_versions(bepinex_path, &versions);
+        app_log(&format!(
+            "Standalone: installing {} removed {}",
+            installed.name,
+            removed.join(", ")
+        ));
+    }
+    removed
 }
 
 /// Check for updates and install all available updates in one go.
@@ -779,17 +860,22 @@ fn sync_install_all_mods_impl(bepinex_path: String) -> Result<u32, String> {
     let mut installed: u32 = 0;
 
     for m in &manifest.mods {
+        // The whole catalogue is the Mega series; a standalone mod can't join it.
+        if m.standalone {
+            continue;
+        }
         let dll_path = plugins_dir.join(&m.plugin_folder).join(&m.dll_name);
         if dll_path.exists() {
             continue; // Already installed
         }
 
         app_log(&format!("Sync: installing {} v{}", m.name, m.version));
-        match install_mod_update(
+        match install_mod_update_inner(
             bepinex_path.clone(),
             m.name.clone(),
             m.download_url.clone(),
             m.version.clone(),
+            false,
         ) {
             Ok(_) => installed += 1,
             Err(e) => app_log(&format!("Sync: failed to install {}: {}", m.name, e)),
@@ -825,11 +911,12 @@ pub fn install_named_mods(bepinex_path: &str, names: &[String]) -> Result<Vec<St
             continue;
         }
         app_log(&format!("Sync: installing {} v{}", m.name, m.version));
-        match install_mod_update(
+        match install_mod_update_inner(
             bepinex_path.to_string(),
             m.name.clone(),
             m.download_url.clone(),
             m.version.clone(),
+            false,
         ) {
             Ok(_) => installed.push(name.clone()),
             Err(e) => app_log(&format!("Sync: failed to install {}: {}", name, e)),
@@ -933,4 +1020,65 @@ pub fn record_app_update(from_version: String, to_version: String) -> Result<(),
     record_update("app", "MegaLoad", Some(&from_version), &to_version);
     app_log(&format!("App updated: v{} → v{}", from_version, to_version));
     Ok(())
+}
+
+#[cfg(test)]
+mod standalone_tests {
+    use super::*;
+
+    fn m(name: &str, standalone: bool) -> ManifestMod {
+        ManifestMod {
+            name: name.into(),
+            version: "1.0.0".into(),
+            download_url: String::new(),
+            dll_name: format!("{}.dll", name),
+            plugin_folder: name.into(),
+            description: None,
+            hidden: false,
+            standalone,
+        }
+    }
+
+    fn profile(tag: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!("megaload-standalone-{}-{}", tag, std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let bep = root.join("BepInEx");
+        for (base, name) in [("plugins", "MegaQoL"), ("disabled_plugins", "MegaBuilder"), ("plugins", "MiniQoL"), ("plugins", "Jotunn")] {
+            let d = bep.join(base).join(name);
+            fs::create_dir_all(&d).unwrap();
+            fs::write(d.join(format!("{}.dll", name)), b"x").unwrap();
+        }
+        bep
+    }
+
+    fn manifest() -> ModManifest {
+        ModManifest {
+            schema_version: 1,
+            updated_at: String::new(),
+            mods: vec![m("MegaQoL", false), m("MegaBuilder", false), m("MiniQoL", true)],
+        }
+    }
+
+    #[test]
+    fn standalone_install_evicts_every_other_manifest_mod() {
+        let bep = profile("a");
+        let mf = manifest();
+        let mut removed = enforce_standalone(bep.to_str().unwrap(), &mf, &mf.mods[2]);
+        removed.sort();
+        assert_eq!(removed, vec!["MegaBuilder", "MegaQoL"]);
+        assert!(!bep.join("plugins/MegaQoL").exists());
+        assert!(!bep.join("disabled_plugins/MegaBuilder").exists());
+        assert!(bep.join("plugins/MiniQoL/MiniQoL.dll").exists());
+        assert!(bep.join("plugins/Jotunn/Jotunn.dll").exists(), "non-manifest mods are never touched");
+    }
+
+    #[test]
+    fn mega_install_evicts_only_the_standalone_mod() {
+        let bep = profile("b");
+        let mf = manifest();
+        let removed = enforce_standalone(bep.to_str().unwrap(), &mf, &mf.mods[0]);
+        assert_eq!(removed, vec!["MiniQoL"]);
+        assert!(bep.join("disabled_plugins/MegaBuilder/MegaBuilder.dll").exists());
+        assert!(bep.join("plugins/Jotunn/Jotunn.dll").exists());
+    }
 }
