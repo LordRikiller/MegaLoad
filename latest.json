@@ -1,11 +1,11 @@
 {
-  "version": "1.19.0",
-  "notes": "MiniQoL is standalone, so MegaLoad now keeps it on a profile of its own. Installing MiniQoL deletes the other Mega mods from that profile, and installing a Mega mod into a MiniQoL profile removes MiniQoL. You get a confirm box first listing exactly what goes. Your configs are kept, so switching back restores your settings. Thunderstore mods are never touched.\n\nOn Create Profile, ticking MiniQoL clears the other starter mods and ticking a Mega mod clears MiniQoL. Updates never delete anything.\n\nTicket 20260924-083000-standalone.",
-  "pub_date": "2026-09-23T22:12:25.000Z",
+  "version": "1.19.1",
+  "notes": "MegaPortals now stays put when you install MiniQoL. It's a separate mod, not something MiniQoL re-implements, so it's safe on a MiniQoL profile and is never removed in either direction. On Create Profile you can tick MegaPortals alongside MiniQoL.\n\nTicket 20260924-083000-standalone.",
+  "pub_date": "2026-09-24T00:00:07.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBNSENyS1BoQ3NrSzh1bHZpTm1CZ2RNSnNlK1hkWk5rUDZQZ0JNR2JaN09UWHVWNmhVYlZMb2RIRnVLeWpqdVhVVHhJaU5zUzZIVmdxKzAyamtjb3dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMjAxNDY5CWZpbGU6TWVnYUxvYWRfMS4xOS4wX3g2NC1zZXR1cC5uc2lzLnppcAp5dmVzM3VDR09OelZRSHd2UmdPaDErNEkzWUhGc2l3dnlGQUsxZFQwaEcvYU1XcWo3VFNMaE1vQ3U3Y0pMV3V3ZDJvTXBRM2swc1F6dFhvb3k1ODNDdz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.19.0/MegaLoad_1.19.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJ0d2hJV0lhdmhuTVZ1QmJxR0RsVXJZRlZieGJSVzBvK2VYZE1mMEtkeEhjK2hkNVBGNTZoTURVMTZGeHc1dFcwL1h5aDdpNVk2c3ZrcWpuQjR5eHdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMjA3OTk0CWZpbGU6TWVnYUxvYWRfMS4xOS4xX3g2NC1zZXR1cC5uc2lzLnppcApnWHNGQmFWQUZUOUkybkVBQWt4Qi84WG5qSWMvVDluV1V3TEthbGVEODVUN3dJUjRKSHhqM0lkeFBma09IbDE1RnVtMFRlelNUTW9UOUdSOTMyWTZEUT09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.19.1/MegaLoad_1.19.1_x64-setup.nsis.zip"
     }
   }
 }

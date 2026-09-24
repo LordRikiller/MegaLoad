@@ -242,6 +242,8 @@ export interface StarterMod {
    * and skip them in "Select all" — the user must opt in deliberately.
    */
   standalone: boolean;
+  /** Safe beside a standalone mod (MegaPortals) — never evicted either way. */
+  standalone_compatible?: boolean;
 }
 
 export const getStarterMods = () =>

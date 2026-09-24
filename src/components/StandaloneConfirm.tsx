@@ -13,7 +13,14 @@ export function standaloneConflicts(
   isInstalled: (name: string) => boolean
 ): string[] {
   return catalogue
-    .filter((m) => m.name !== target.name && (target.standalone || m.standalone) && isInstalled(m.name))
+    .filter(
+      (m) =>
+        m.name !== target.name &&
+        !target.standalone_compatible &&
+        !m.standalone_compatible &&
+        (target.standalone || m.standalone) &&
+        isInstalled(m.name)
+    )
     .map((m) => m.name);
 }
 

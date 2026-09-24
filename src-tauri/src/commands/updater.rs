@@ -67,6 +67,11 @@ struct ManifestMod {
     /// by default and must skip them in "Select all" — see `Profiles.tsx`.
     #[serde(default)]
     standalone: bool,
+    /// A Mega mod that is safe beside a standalone mod (MegaPortals: MiniQoL
+    /// doesn't re-implement it). `enforce_standalone` never evicts these, in
+    /// either direction.
+    #[serde(default)]
+    standalone_compatible: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -386,6 +391,8 @@ pub struct StarterMod {
     /// See `ManifestMod::standalone` — the UI uses this to keep the mod off the
     /// default-selected set instead of hiding it.
     pub standalone: bool,
+    /// See `ManifestMod::standalone_compatible`.
+    pub standalone_compatible: bool,
 }
 
 #[command(async)]
@@ -401,6 +408,7 @@ pub fn get_starter_mods() -> Result<Vec<StarterMod>, String> {
             download_url: m.download_url,
             description: m.description,
             standalone: m.standalone,
+            standalone_compatible: m.standalone_compatible,
         })
         .collect())
 }
@@ -517,7 +525,8 @@ fn install_mod_update_inner(
 /// after `installed` lands: a standalone install deletes every other manifest
 /// mod (enabled or disabled), a Mega install deletes any standalone mod. Only
 /// the DLL folders go - configs in BepInEx/config are kept, so switching back
-/// restores settings. Non-manifest (Thunderstore/manual) mods are never touched.
+/// restores settings. Non-manifest (Thunderstore/manual) mods are never touched,
+/// nor are `standalone_compatible` ones (MegaPortals).
 /// The next sync snapshot tombstones the deletions, so other devices follow.
 /// Returns the names removed.
 fn enforce_standalone(bepinex_path: &str, manifest: &ModManifest, installed: &ManifestMod) -> Vec<String> {
@@ -527,7 +536,11 @@ fn enforce_standalone(bepinex_path: &str, manifest: &ModManifest, installed: &Ma
     ];
     let mut removed = Vec::new();
     for m in &manifest.mods {
-        if m.name == installed.name || (!installed.standalone && !m.standalone) {
+        if m.name == installed.name
+            || (!installed.standalone && !m.standalone)
+            || m.standalone_compatible
+            || installed.standalone_compatible
+        {
             continue;
         }
         if sanitize_path_component(&m.plugin_folder).is_err() || sanitize_path_component(&m.dll_name).is_err() {
@@ -1036,6 +1049,7 @@ mod standalone_tests {
             description: None,
             hidden: false,
             standalone,
+            standalone_compatible: name == "MegaPortals",
         }
     }
 
@@ -1043,7 +1057,7 @@ mod standalone_tests {
         let root = std::env::temp_dir().join(format!("megaload-standalone-{}-{}", tag, std::process::id()));
         let _ = fs::remove_dir_all(&root);
         let bep = root.join("BepInEx");
-        for (base, name) in [("plugins", "MegaQoL"), ("disabled_plugins", "MegaBuilder"), ("plugins", "MiniQoL"), ("plugins", "Jotunn")] {
+        for (base, name) in [("plugins", "MegaQoL"), ("disabled_plugins", "MegaBuilder"), ("plugins", "MiniQoL"), ("plugins", "Jotunn"), ("plugins", "MegaPortals")] {
             let d = bep.join(base).join(name);
             fs::create_dir_all(&d).unwrap();
             fs::write(d.join(format!("{}.dll", name)), b"x").unwrap();
@@ -1055,7 +1069,7 @@ mod standalone_tests {
         ModManifest {
             schema_version: 1,
             updated_at: String::new(),
-            mods: vec![m("MegaQoL", false), m("MegaBuilder", false), m("MiniQoL", true)],
+            mods: vec![m("MegaQoL", false), m("MegaBuilder", false), m("MiniQoL", true), m("MegaPortals", false)],
         }
     }
 
@@ -1070,6 +1084,16 @@ mod standalone_tests {
         assert!(!bep.join("disabled_plugins/MegaBuilder").exists());
         assert!(bep.join("plugins/MiniQoL/MiniQoL.dll").exists());
         assert!(bep.join("plugins/Jotunn/Jotunn.dll").exists(), "non-manifest mods are never touched");
+        assert!(bep.join("plugins/MegaPortals/MegaPortals.dll").exists(), "standalone_compatible survives");
+    }
+
+    #[test]
+    fn compatible_install_evicts_nothing() {
+        let bep = profile("c");
+        let mf = manifest();
+        let removed = enforce_standalone(bep.to_str().unwrap(), &mf, &mf.mods[3]);
+        assert!(removed.is_empty());
+        assert!(bep.join("plugins/MiniQoL/MiniQoL.dll").exists());
     }
 
     #[test]

@@ -108,16 +108,18 @@ export function Profiles() {
 
   // A standalone mod (MiniQoL) can't share a profile with the Mega series, so the
   // two sides are mutually exclusive: ticking it clears the rest, and ticking any
-  // Mega mod clears it.
+  // Mega mod clears it. standalone_compatible mods (MegaPortals) sit on both sides.
   const toggleStarter = (name: string) => {
     const standaloneNames = new Set(starterMods.filter((m) => m.standalone).map((m) => m.name));
+    const compatibleNames = new Set(starterMods.filter((m) => m.standalone_compatible).map((m) => m.name));
     setSelectedStarters((prev) => {
       if (prev.has(name)) {
         const next = new Set(prev);
         next.delete(name);
         return next;
       }
-      if (standaloneNames.has(name)) return new Set([name]);
+      if (compatibleNames.has(name)) return new Set([...prev, name]);
+      if (standaloneNames.has(name)) return new Set([...prev].filter((n) => compatibleNames.has(n)).concat(name));
       const next = new Set([...prev].filter((n) => !standaloneNames.has(n)));
       next.add(name);
       return next;
@@ -409,7 +411,7 @@ export function Profiles() {
                   disabled={!!togglingMod}
                   title={
                     mod.standalone
-                      ? `${formatModName(mod.name)} replaces Mega-series features, so it runs on its own — installing it removes the other Mega mods from the profile.`
+                      ? `${formatModName(mod.name)} replaces Mega-series features, so it runs on its own — installing it removes the other Mega mods from the profile (MegaPortals stays).`
                       : undefined
                   }
                   className={cn(
@@ -515,7 +517,7 @@ export function Profiles() {
                       onClick={() => toggleStarter(mod.name)}
                       title={
                         mod.standalone
-                          ? `${formatModName(mod.name)} replaces Mega-series features, so it runs on its own — installing it removes the other Mega mods from the profile.`
+                          ? `${formatModName(mod.name)} replaces Mega-series features, so it runs on its own — installing it removes the other Mega mods from the profile (MegaPortals stays).`
                           : undefined
                       }
                       className={cn(

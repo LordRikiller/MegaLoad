@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-23T21:57:05Z",
+  "updated_at": "2026-09-23T23:56:39Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -147,7 +147,8 @@
       "download_url": "https://github.com/LordRikiller/MegaPortals/releases/download/v1.1.0/MegaPortals.dll",
       "dll_name": "MegaPortals.dll",
       "plugin_folder": "MegaPortals",
-      "description": "Hub-and-spoke portal teleport network. Build a stone \"Home Portal Hub\" from the Hammer (Misc tab) and name it, e.g. \"home\", then name your ordinary portals \"home>Label\" to link them as spokes. Walk into a spoke to travel to its hub; walk into the hub to pick a destination from a sortable Name/Biome/Distance table — click a header to sort, hub pinned top, names sort symbols before digits before letters, and the biome shows for every destination on the map (not just loaded zones). SpokeToSpoke lets spokes reach sibling spokes directly. PortalNameMaxLength raises vanilla's 10-character portal name cap. Configurable hub build cost. — This feature MOVED here out of MegaQoL (v1.18.0) and MiniQoL (v1.5.0); update those at the same time or two mods will patch the same portal methods. Hubs you have already built keep working: MegaPortals registers the legacy MegaQoL_PortalHub and FarmBuild_PortalHub prefab names alongside its own, and adopts your existing Home Portal settings on first run."
+      "description": "Hub-and-spoke portal teleport network. Build a stone \"Home Portal Hub\" from the Hammer (Misc tab) and name it, e.g. \"home\", then name your ordinary portals \"home>Label\" to link them as spokes. Walk into a spoke to travel to its hub; walk into the hub to pick a destination from a sortable Name/Biome/Distance table — click a header to sort, hub pinned top, names sort symbols before digits before letters, and the biome shows for every destination on the map (not just loaded zones). SpokeToSpoke lets spokes reach sibling spokes directly. PortalNameMaxLength raises vanilla's 10-character portal name cap. Configurable hub build cost. — This feature MOVED here out of MegaQoL (v1.18.0) and MiniQoL (v1.5.0); update those at the same time or two mods will patch the same portal methods. Hubs you have already built keep working: MegaPortals registers the legacy MegaQoL_PortalHub and FarmBuild_PortalHub prefab names alongside its own, and adopts your existing Home Portal settings on first run.",
+      "standalone_compatible": true
     },
     {
       "name": "MegaArrow",
