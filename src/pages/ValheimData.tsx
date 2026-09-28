@@ -134,6 +134,16 @@ function statAtLevel(value: string, level: number): string {
   return Number.isInteger(computed) ? `${computed}` : computed.toFixed(1);
 }
 
+/** Parse a typed upgrade level. Any whole number >= 1, no upper cap: the Forge of
+ *  Potential (1.0) takes items past their recipe max quality with Idols. Returns
+ *  null for anything that isn't a usable level (blank, 0, decimals, overflow). */
+function parseLevelInput(raw: string): number | null {
+  const t = raw.trim();
+  if (!/^\d+$/.test(t)) return null;
+  const n = Number(t);
+  return Number.isSafeInteger(n) && n >= 1 ? n : null;
+}
+
 /** Check if an item has per-level stats (items: "/lvl", creatures: "Nlvl") */
 function hasPerLevelStats(item: ValheimItem): boolean {
   return item.maxQuality > 1 && item.stats.some((s) => s.value.includes("lvl"));
@@ -1767,6 +1777,8 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
   const { setSelectedItem, setActiveType, setActiveSubcategory, setActiveBiome, cartItems, addToCart, removeFromCart, setOnlyTameable, pushSelection, clearNavHistory } = useValheimDataStore();
   const character = usePlayerDataStore((s) => s.character);
   const [statsLevel, setStatsLevel] = useState(1);
+  // What's in the level box while the user is typing; null = mirror statsLevel.
+  const [levelDraft, setLevelDraft] = useState<string | null>(null);
   const [cartLevel, setCartLevel] = useState(item.maxQuality || 1);
   const usedIn = getUsedIn(item.id);
   const droppedBy = getDroppedBy(item.id);
@@ -1774,6 +1786,10 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
   const vendorSell = getVendorForItem(item.id);
   const vendorBuy = getVendorBuyPrice(item.id);
   const showLevelTabs = hasPerLevelStats(item);
+  // Items (not creature star tabs) also get a free-entry level box: the Forge of
+  // Potential upgrades past maxQuality with Idols, and there's no known ceiling.
+  const showLevelInput = showLevelTabs && item.type !== "Creature";
+  const pastRecipeMax = showLevelInput && statsLevel > item.maxQuality;
   const relatedItems = getRelatedItems(item);
   const wikiUrl = getWikiUrl(item);
 
@@ -1798,6 +1814,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
     const target = getItemById(id);
     if (target) {
       setStatsLevel(1);
+      setLevelDraft(null);
       pushSelection({ item: target, station: null, factory: null, vendor: null });
     }
   };
@@ -2105,7 +2122,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-zinc-200">Stats</h2>
                   {showLevelTabs && (
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
                       {Array.from({ length: item.maxQuality }, (_, i) => i + 1).map((lv) => {
                         const isCreature = item.type === "Creature";
                         const label = isCreature
@@ -2126,9 +2143,37 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                           </button>
                         );
                       })}
+                      {showLevelInput && (
+                        <label className="flex items-center gap-1 ml-1" title="Any level — the Forge of Potential upgrades past the recipe max with Idols">
+                          <span className="text-[10px] text-zinc-500">Lv</span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            aria-label="Upgrade level"
+                            value={levelDraft ?? String(statsLevel)}
+                            onChange={(e) => {
+                              setLevelDraft(e.target.value);
+                              const lv = parseLevelInput(e.target.value);
+                              if (lv !== null) setStatsLevel(lv);
+                            }}
+                            onBlur={() => setLevelDraft(null)}
+                            className={cn(
+                              "w-16 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-900/60 border text-zinc-200 focus:outline-none focus:ring-1 focus:ring-brand-500/25 transition-colors",
+                              pastRecipeMax ? "border-amber-500/40 text-amber-300" : "border-zinc-800 focus:border-brand-500/50"
+                            )}
+                          />
+                        </label>
+                      )}
                     </div>
                   )}
                 </div>
+                {pastRecipeMax && (
+                  <p className="text-[10px] text-amber-400/90 leading-relaxed mb-2">
+                    Lv {statsLevel} is past this item's recipe max (Lv {item.maxQuality}) — reached at the Forge of Potential with Idols. Costs are not listed beyond level {item.maxQuality}.
+                  </p>
+                )}
                 <div className="space-y-0">
                   {displayStats.map((stat, i) => {
                     // Attack Types row ("Swing attack Types", value "Blunt 60, Slash 30") →

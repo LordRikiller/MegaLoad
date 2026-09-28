@@ -1,11 +1,11 @@
 {
-  "version": "1.19.1",
-  "notes": "MegaPortals now stays put when you install MiniQoL. It's a separate mod, not something MiniQoL re-implements, so it's safe on a MiniQoL profile and is never removed in either direction. On Create Profile you can tick MegaPortals alongside MiniQoL.\n\nTicket 20260924-083000-standalone.",
-  "pub_date": "2026-09-24T00:00:07.000Z",
+  "version": "1.20.0",
+  "notes": "New look, and item stats at any level.\n\nMegaLoad has a new icon, shared with MegaServer, MegaApp and the Valhalla portal: a grausten runestone with the Mannaz rune raised on it in black marble, in MegaLoad's house gold. At taskbar sizes it switches to a flat version that stays readable at 16 px.\n\nValheim Data: an item's Stats card now has a level box next to the Lv 1..N tabs. Type any level and the damage, armour and block values follow. Since 1.0 the Forge of Potential takes gear past its recipe max with Idols, and there's no known cap. Past the recipe max you get a note saying so, and upgrade costs aren't listed, because there's no recipe for those levels.",
+  "pub_date": "2026-09-28T13:05:06.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUJ0d2hJV0lhdmhuTVZ1QmJxR0RsVXJZRlZieGJSVzBvK2VYZE1mMEtkeEhjK2hkNVBGNTZoTURVMTZGeHc1dFcwL1h5aDdpNVk2c3ZrcWpuQjR5eHdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMjA3OTk0CWZpbGU6TWVnYUxvYWRfMS4xOS4xX3g2NC1zZXR1cC5uc2lzLnppcApnWHNGQmFWQUZUOUkybkVBQWt4Qi84WG5qSWMvVDluV1V3TEthbGVEODVUN3dJUjRKSHhqM0lkeFBma09IbDE1RnVtMFRlelNUTW9UOUdSOTMyWTZEUT09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.19.1/MegaLoad_1.19.1_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU02WGZmNlBqU3BUcHV3aDNxMy9aTWRBRFowWGlOZEJHd21TdFJCSFk3Ly9zb3JYK21CSmlLNk1iQVdrMXNrRDlBRTF1ME14SWR5RkIwYXNvR0VuT1FNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjAwNjY5CWZpbGU6TWVnYUxvYWRfMS4yMC4wX3g2NC1zZXR1cC5uc2lzLnppcApwSHRaVnMySGtWQXpITFZuSnJ1K0ZwY2pVTnFLY09OZE01TEVYcWFzdTFiZ21laFpXOW9UT2Z2aHdJTnh1VkV4cUUwWGlzaWR1WjFUMUIyQmUrYnlEdz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.20.0/MegaLoad_1.20.0_x64-setup.nsis.zip"
     }
   }
 }
