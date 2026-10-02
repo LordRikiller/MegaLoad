@@ -94,28 +94,6 @@ const PLANTABLE_FLAG = new Set([
   "MushroomJotunPuffs", "MushroomMagecap",
 ]);
 
-// Items that are primary-typed Material but can ALSO be eaten directly for
-// a Health/Stamina/Eitr buff (foraged plants, raw berries, raw vegetables,
-// wild mushrooms). Stamped with eatable=true so they surface under the Food
-// filter alongside cooked dishes, while staying under Material as their main
-// home. Mirrors the existing plantable=true / Plantable filter pattern.
-//
-// Excluded:
-//   - Dandelion + Thistle + Toadstool — recipe-only, not directly eaten.
-//   - Pukeberries (Bukeperries) — gives no food buff, debuff-clear only.
-//   - Raw meats (RawMeat/DeerMeat/BjornMeat) — can't be eaten raw in vanilla.
-const EATABLE_FLAG = new Set([
-  // Wild foraged
-  "Mushroom", "MushroomYellow",
-  "Blueberries", "Raspberry", "Cloudberry",
-  "RoyalJelly", "Fiddleheadfern",
-  "MushroomJotunPuffs", "MushroomMagecap", "MushroomSmokePuff",
-  // Farmed / cultivated raw produce
-  "Honey", "Carrot", "Turnip", "Onion", "Vineberry",
-  // Animal husbandry — raw eggs give Health/Stamina buffs when eaten directly
-  // (and ChickenEgg / VoltureEgg are also recipe ingredients).
-  "ChickenEgg", "VoltureEgg", "AsksvinEgg",
-]);
 
 // Foraged + farmed plants/mushrooms/berries typed Material despite the game
 // dump tagging them Consumable. Matches the wiki Materials → Nature nav. See
@@ -2758,12 +2736,17 @@ for (const entry of converted) {
 }
 
 // ── Eatable flag on raw foraged plants / berries / mushrooms ──
-// These are primary-typed Material (raw resources) but can also be eaten
-// directly for a Health/Stamina buff. Stamped with eatable=true so they
-// surface under the Food filter while staying under Material as their main
-// home. Mirrors the plantable flag pattern above.
+// Material-typed items you can eat straight from the inventory (berries,
+// mushrooms, Honey, Carrot...). Stamped eatable=true so they also surface
+// under the Food filter. Read from the game, not a hand list: the item must
+// be itemType "Consumable" AND give Health, Stamina or Eitr. That rules out
+// the eggs (itemType Misc — the Asksvin Egg hatches, the others get cooked),
+// Turnip (Material), and Bukeperries / Toadstool (Consumable, zero food).
+const dumpItemByPrefab = Object.fromEntries(items.map((i) => [i.prefab, i]));
+const givesFood = (d) => !!d && d.itemType === "Consumable"
+  && ((d.food || 0) + (d.foodStamina || 0) + (d.foodEitr || 0)) > 0;
 for (const entry of converted) {
-  if (EATABLE_FLAG.has(entry.id)) {
+  if (entry.type === "Material" && givesFood(dumpItemByPrefab[entry.id])) {
     entry.eatable = true;
   }
 }
@@ -3713,12 +3696,11 @@ function usedForOf(id, stack = new Set()) {
 }
 
 const ITEM_CLASS_EXEMPT = new Set(["Creature", "WorldObject"]);
-// The dump's own itemType is the edibility truth: Bread, Kale and Raspberries
-// are "Consumable"; Bread Dough, raw Deer Meat and Raw Fish are "Material" and
-// only carry their cooked form's numbers.
-const dumpItemType = Object.fromEntries(items.map((i) => [i.prefab, i.itemType]));
+// Edibility is the game's: itemType "Consumable" with real food values
+// (givesFood above). Bread Dough, raw Deer Meat and Raw Fish are "Material"
+// and only carry their cooked form's numbers; eggs are "Misc".
 const isMeadBase = (id) => id.startsWith("MeadBase") || id === "BarleyWineBase";
-const isEdible = (e) => dumpItemType[e.id] === "Consumable"
+const isEdible = (e) => givesFood(dumpItemByPrefab[e.id])
   && (e.type === "Food" || e.type === "Material") && e.subcategory !== "Feast";
 // Something you use as-is: gear, pieces, food you can eat, a drinkable mead.
 const isUsable = (e) => NON_MATERIAL_TYPES.has(e.type) || e.type === "Plantable"
@@ -3968,9 +3950,9 @@ export interface ValheimItem {
                         // crop seeds, plantable produce/mushrooms. Surfaces these
                         // under the Plantable filter even when their primary
                         // type is Material/Food.
-  eatable?: boolean;    // True for raw foraged/farmed plants that can also be
+  eatable?: boolean;    // From the game (Consumable + real food values): raw foraged/farmed plants that can also be
                         // eaten directly for a Health/Stamina/Eitr buff (Mushroom,
-                        // Blueberries, Honey, Carrot, Turnip, Onion, JotunPuffs,
+                        // Blueberries, Honey, Carrot, Onion, JotunPuffs,
                         // Magecap, SmokePuff, RoyalJelly, Fiddlehead, Vineberry).
                         // Surfaces these under the Food filter while keeping
                         // their primary type as Material.
