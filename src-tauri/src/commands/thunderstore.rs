@@ -332,10 +332,27 @@ pub fn get_thunderstore_categories() -> Result<Vec<String>, String> {
     Ok(cats)
 }
 
-/// Install a mod from Thunderstore into the active profile.
-/// Downloads the zip, extracts DLLs into plugins/<folder_name>/.
+/// Install a mod from Thunderstore into the active profile — the player's own
+/// choice, so a previous deletion of it is lifted (see sync::clear_mod_tombstone).
+/// Sync mirroring calls `install_thunderstore_mod_inner`, which never does.
 #[command(async)]
 pub fn install_thunderstore_mod(
+    bepinex_path: String,
+    full_name: String,
+    download_url: String,
+    version: String,
+) -> Result<String, String> {
+    let folder = full_name.replace('/', "-");
+    let was_on_disk = ts_folder_on_disk(&bepinex_path, &folder);
+    let out = install_thunderstore_mod_inner(bepinex_path.clone(), full_name, download_url, version)?;
+    if !was_on_disk {
+        crate::commands::sync::clear_mod_tombstone(&bepinex_path, &[folder]);
+    }
+    Ok(out)
+}
+
+/// Downloads the zip, extracts DLLs into plugins/<folder_name>/.
+pub(crate) fn install_thunderstore_mod_inner(
     bepinex_path: String,
     full_name: String,
     download_url: String,
@@ -390,6 +407,15 @@ pub fn update_thunderstore_mod(
     validate_download_url(&download_url)?;
     sanitize_path_component(&folder_name)?;
 
+    // An update is only for a mod that is actually installed. If the folder is
+    // gone the mod was deleted — "updating" it would reinstall it (how a deleted
+    // Server devcommands came back on 2026-09-28). Forget the stale entry instead.
+    let Some(mod_dir) = ts_folder_path(&bepinex_path, &folder_name) else {
+        forget_ts_folder(&bepinex_path, &folder_name);
+        app_log(&format!("Not updating {} - it is no longer installed (deleted)", full_name));
+        return Err(format!("{} is no longer installed", full_name));
+    };
+
     // Get old version before overwriting
     let old_version = load_ts_state(&bepinex_path)
         .mods
@@ -398,10 +424,9 @@ pub fn update_thunderstore_mod(
         .map(|m| m.version.clone());
 
     let bytes = download_ts_file(&download_url)?;
-    let plugins_dir = PathBuf::from(&bepinex_path).join("plugins");
-    let mod_dir = plugins_dir.join(&folder_name);
 
-    // Remove old files before extracting new version
+    // Remove old files before extracting new version. mod_dir is wherever the
+    // mod lives — a disabled mod is updated in disabled_plugins/ and stays off.
     if mod_dir.exists() {
         let _ = fs::remove_dir_all(&mod_dir);
     }
@@ -554,6 +579,32 @@ fn save_ts_state(bepinex_path: &str, state: &TsInstalledState) {
     }
 }
 
+/// Where a Thunderstore mod folder lives: plugins/ or disabled_plugins/, or None.
+fn ts_folder_path(bepinex_path: &str, folder_name: &str) -> Option<PathBuf> {
+    if folder_name.is_empty() || sanitize_path_component(folder_name).is_err() {
+        return None;
+    }
+    let bep = PathBuf::from(bepinex_path);
+    [bep.join("plugins").join(folder_name), bep.join("disabled_plugins").join(folder_name)]
+        .into_iter()
+        .find(|p| p.is_dir())
+}
+
+fn ts_folder_on_disk(bepinex_path: &str, folder_name: &str) -> bool {
+    ts_folder_path(bepinex_path, folder_name).is_some()
+}
+
+/// Drop a Thunderstore folder from thunderstore_mods.json. Called when the mod
+/// is deleted by any route, so the update checker can't bring it back.
+pub(crate) fn forget_ts_folder(bepinex_path: &str, folder_name: &str) {
+    let mut state = load_ts_state(bepinex_path);
+    let before = state.mods.len();
+    state.mods.retain(|m| m.folder_name != folder_name);
+    if state.mods.len() != before {
+        save_ts_state(bepinex_path, &state);
+    }
+}
+
 fn save_ts_installed_mod(
     bepinex_path: &str,
     full_name: &str,
@@ -639,7 +690,7 @@ fn sync_install_thunderstore_mods_impl(
 
         app_log(&format!("Sync: installing TS mod {} v{}", remote.full_name, ver.version_number));
 
-        match install_thunderstore_mod(
+        match install_thunderstore_mod_inner(
             bepinex_path.clone(),
             remote.full_name.clone(),
             ver.download_url.clone(),
@@ -675,7 +726,19 @@ pub struct TsUpdateInfo {
 
 #[command(async)]
 pub fn check_thunderstore_updates(bepinex_path: String) -> Result<Vec<TsUpdateInfo>, String> {
-    let local_state = load_ts_state(&bepinex_path);
+    let mut local_state = load_ts_state(&bepinex_path);
+    // Only mods that are really installed can be updated. A tracking entry whose
+    // folder is gone is a deleted mod — drop it so nothing ever "updates" it
+    // back into existence.
+    let before = local_state.mods.len();
+    local_state.mods.retain(|m| ts_folder_on_disk(&bepinex_path, &m.folder_name));
+    if local_state.mods.len() != before {
+        app_log(&format!(
+            "Thunderstore: forgot {} deleted mod(s) from the update list",
+            before - local_state.mods.len()
+        ));
+        save_ts_state(&bepinex_path, &local_state);
+    }
     if local_state.mods.is_empty() {
         return Ok(Vec::new());
     }

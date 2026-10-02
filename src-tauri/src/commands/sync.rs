@@ -682,43 +682,29 @@ fn snapshot_bundle(profile_id: &str, profile_name: &str, bepinex_path: &str) -> 
     };
 
     // --- Mods: per-mod honest watermark ledger (present entries + tombstones) ---
-    // `mods` (from scan_profile_mods) is the current on-disk set. Reconcile it
-    // against the ledger: a mod's watermark bumps only when it first appears,
-    // is re-installed (was tombstoned), or its enabled state flips. A mod that
-    // vanished from disk is tombstoned. Both propagate per-mod (mirror sync).
-    let mut present_names: std::collections::HashSet<String> = std::collections::HashSet::new();
-    let mut mods_out: Vec<SyncModEntry> = Vec::with_capacity(mods.len());
-    for m in &mods {
-        present_names.insert(m.name.clone());
-        let updated_at = match state.mods.get(&m.name) {
-            Some(rev) if !rev.removed && rev.enabled == m.enabled => rev.updated_at.clone(),
-            _ => now.clone(), // new, re-installed (was tombstoned), or enabled flipped
-        };
-        state.mods.insert(
-            m.name.clone(),
-            ModRev {
-                file_name: m.file_name.clone(),
-                source: m.source.clone(),
-                enabled: m.enabled,
-                removed: false,
-                updated_at: updated_at.clone(),
-            },
-        );
-        let mut e = m.clone();
-        e.updated_at = updated_at;
-        mods_out.push(e);
-    }
-    // Tombstone mods the ledger knew as present but that are now gone from disk.
-    for (name, rev) in state.mods.iter_mut() {
-        if !present_names.contains(name) && !rev.removed {
-            rev.removed = true;
-            rev.updated_at = now.clone();
+    // A deleted mod stays deleted (Milord, 2026-10-03: "if a mod is deleted it
+    // must be gone forever"). See reconcile_mods_with_ledger.
+    let (mods_out, resurrected) = reconcile_mods_with_ledger(&mods, &mut state.mods, &now);
+    for m in &resurrected {
+        let folder = if m.source == "thunderstore" { m.name.clone() } else { String::new() };
+        match crate::commands::mods::delete_mod(
+            bepinex_path.to_string(),
+            folder,
+            m.file_name.clone(),
+            m.enabled,
+        ) {
+            Ok(_) => app_log(&format!(
+                "Sync: {} is deleted on this profile but was back on disk - removed it again",
+                m.name
+            )),
+            // Usually the DLL is locked because Valheim is running. The tombstone
+            // stands either way; the next snapshot tries again.
+            Err(e) => app_log(&format!(
+                "Sync: {} is deleted but still on disk and couldn't be removed yet ({}) - will retry",
+                m.name, e
+            )),
         }
     }
-    // GC tombstones past the retention window so the ledger + bundle can't grow
-    // without bound as mods come and go.
-    let gc_cutoff = iso_days_ago(TOMBSTONE_TTL_DAYS);
-    state.mods.retain(|_, rev| !(rev.removed && rev.updated_at < gc_cutoff));
     // Emit tombstones on the wire so peers can mirror the uninstall.
     let removed_mods: Vec<RemovedMod> = state
         .mods
@@ -753,6 +739,99 @@ fn snapshot_bundle(profile_id: &str, profile_name: &str, bepinex_path: &str) -> 
         trainer_state,
         mods_updated_at,
     })
+}
+
+/// Reconcile the mods on disk with the profile's per-mod ledger.
+///
+/// Returns (present entries to publish, mods that are on disk but DELETED here).
+///
+/// A deletion is permanent. A mod whose ledger entry is a tombstone and that is
+/// found back on disk is NOT a re-install — it is a resurrection (a mirror
+/// uninstall that failed because Valheim had the DLL locked, an old MegaLoad on
+/// another machine, an auto-updater working off a stale tracking file). It used
+/// to be stamped `now`, which made it newer than the deletion and pushed it back
+/// to every machine. Now it stays tombstoned, keeps its original watermark, is
+/// not published, and is handed back to the caller to delete again.
+///
+/// The only way to undo a deletion is an install the player chooses to make,
+/// which clears the tombstone first via `clear_mod_tombstone`.
+///
+/// Tombstones never expire: a mod that is gone stays gone however long a
+/// machine was offline.
+fn reconcile_mods_with_ledger(
+    on_disk: &[SyncModEntry],
+    ledger: &mut HashMap<String, ModRev>,
+    now: &str,
+) -> (Vec<SyncModEntry>, Vec<SyncModEntry>) {
+    let mut present_names: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut present: Vec<SyncModEntry> = Vec::with_capacity(on_disk.len());
+    let mut resurrected: Vec<SyncModEntry> = Vec::new();
+    for m in on_disk {
+        present_names.insert(m.name.clone());
+        if ledger.get(&m.name).map(|r| r.removed).unwrap_or(false) {
+            resurrected.push(m.clone());
+            continue;
+        }
+        let updated_at = match ledger.get(&m.name) {
+            Some(rev) if rev.enabled == m.enabled => rev.updated_at.clone(),
+            _ => now.to_string(), // new, or enabled flipped
+        };
+        ledger.insert(
+            m.name.clone(),
+            ModRev {
+                file_name: m.file_name.clone(),
+                source: m.source.clone(),
+                enabled: m.enabled,
+                removed: false,
+                updated_at: updated_at.clone(),
+            },
+        );
+        let mut e = m.clone();
+        e.updated_at = updated_at;
+        present.push(e);
+    }
+    // Tombstone mods the ledger knew as present but that are now gone from disk.
+    for (name, rev) in ledger.iter_mut() {
+        if !present_names.contains(name) && !rev.removed {
+            rev.removed = true;
+            rev.updated_at = now.to_string();
+        }
+    }
+    (present, resurrected)
+}
+
+/// The profile id a BepInEx path belongs to: `.../profiles/<id>/BepInEx`.
+fn profile_id_from_bepinex(bepinex_path: &str) -> Option<String> {
+    let p = Path::new(bepinex_path);
+    let parent = p.parent()?;
+    let id = parent.file_name()?.to_string_lossy().to_string();
+    if id.is_empty() { None } else { Some(id) }
+}
+
+/// The player deliberately installed `names` on the profile at `bepinex_path`:
+/// lift any deletion so the next snapshot publishes them as present (stamped
+/// now, so it beats the tombstone on every other machine too). Called ONLY from
+/// user-facing install commands — never from sync mirroring or an auto-update,
+/// which is exactly the distinction that keeps a deleted mod deleted.
+pub(crate) fn clear_mod_tombstone(bepinex_path: &str, names: &[String]) {
+    let Some(profile_id) = profile_id_from_bepinex(bepinex_path) else { return };
+    let mut state = load_profile_state(&profile_id);
+    let now = iso_now();
+    let mut changed = false;
+    for name in names {
+        if let Some(rev) = state.mods.get_mut(name) {
+            if rev.removed {
+                rev.removed = false;
+                rev.updated_at = now.clone();
+                changed = true;
+                app_log(&format!("Sync: {} reinstalled by the player - deletion lifted", name));
+            }
+        }
+    }
+    if changed {
+        save_profile_state(&profile_id, &state);
+        invalidate_push_cache(&profile_id);
+    }
 }
 
 /// Scan a profile's plugins/ + disabled_plugins/ into a mod list (enabled flag
@@ -3606,5 +3685,122 @@ mod profile_bundle_merge_tests {
         );
         assert!(p2.iter().any(|p| p.id == "P"), "a newer recreate must keep the profile");
         assert!(!r2.iter().any(|r| r.id == "P"), "the stale tombstone must not linger");
+    }
+}
+
+#[cfg(test)]
+mod deleted_mod_stays_deleted_tests {
+    use super::*;
+
+    fn on_disk(name: &str, enabled: bool) -> SyncModEntry {
+        SyncModEntry {
+            name: name.to_string(),
+            file_name: format!("{}.dll", name),
+            version: None,
+            enabled,
+            source: "thunderstore".to_string(),
+            updated_at: String::new(),
+        }
+    }
+
+    fn rev(enabled: bool, removed: bool, at: &str) -> ModRev {
+        ModRev {
+            file_name: "x.dll".to_string(),
+            source: "thunderstore".to_string(),
+            enabled,
+            removed,
+            updated_at: at.to_string(),
+        }
+    }
+
+    const NOW: &str = "2026-10-03T00:00:00Z";
+
+    #[test]
+    fn deleted_mod_back_on_disk_is_not_a_reinstall() {
+        // Server devcommands, 2026-10-03: deleted, then back on disk (a mirror
+        // uninstall that failed while Valheim had the DLL locked, or an update
+        // off a stale tracking file). It must stay deleted and NOT be re-stamped.
+        let mut ledger = HashMap::new();
+        ledger.insert("JereKuusela-Server_devcommands".to_string(), rev(true, true, "2026-09-18T22:35:34Z"));
+        let (present, resurrected) =
+            reconcile_mods_with_ledger(&[on_disk("JereKuusela-Server_devcommands", true)], &mut ledger, NOW);
+        assert!(present.is_empty(), "a deleted mod must never be published as present");
+        assert_eq!(resurrected.len(), 1, "it is handed back to be deleted again");
+        let r = &ledger["JereKuusela-Server_devcommands"];
+        assert!(r.removed, "the tombstone stands");
+        assert_eq!(r.updated_at, "2026-09-18T22:35:34Z", "the deletion keeps its own watermark, never now");
+    }
+
+    #[test]
+    fn mod_gone_from_disk_is_tombstoned_now() {
+        let mut ledger = HashMap::new();
+        ledger.insert("MiniQoL".to_string(), rev(true, false, "2026-09-01T00:00:00Z"));
+        let (present, resurrected) = reconcile_mods_with_ledger(&[], &mut ledger, NOW);
+        assert!(present.is_empty() && resurrected.is_empty());
+        assert!(ledger["MiniQoL"].removed);
+        assert_eq!(ledger["MiniQoL"].updated_at, NOW);
+    }
+
+    #[test]
+    fn new_mod_is_published_now_and_unchanged_mod_keeps_its_watermark() {
+        let mut ledger = HashMap::new();
+        ledger.insert("Old".to_string(), rev(true, false, "2026-09-01T00:00:00Z"));
+        let (present, _) =
+            reconcile_mods_with_ledger(&[on_disk("Old", true), on_disk("New", true)], &mut ledger, NOW);
+        let old = present.iter().find(|m| m.name == "Old").unwrap();
+        let new = present.iter().find(|m| m.name == "New").unwrap();
+        assert_eq!(old.updated_at, "2026-09-01T00:00:00Z");
+        assert_eq!(new.updated_at, NOW);
+    }
+
+    #[test]
+    fn enable_flip_bumps_the_watermark() {
+        let mut ledger = HashMap::new();
+        ledger.insert("Mod".to_string(), rev(true, false, "2026-09-01T00:00:00Z"));
+        let (present, _) = reconcile_mods_with_ledger(&[on_disk("Mod", false)], &mut ledger, NOW);
+        assert_eq!(present[0].updated_at, NOW);
+        assert!(!ledger["Mod"].enabled);
+    }
+
+    #[test]
+    fn a_deliberate_reinstall_beats_the_deletion_everywhere() {
+        // clear_mod_tombstone lifts the deletion (removed=false, stamped now);
+        // the next reconcile then publishes it, newer than any copy of the tombstone.
+        let mut ledger = HashMap::new();
+        ledger.insert("Mod".to_string(), rev(true, false, NOW)); // as left by clear_mod_tombstone
+        let (present, resurrected) = reconcile_mods_with_ledger(&[on_disk("Mod", true)], &mut ledger, NOW);
+        assert_eq!(present.len(), 1);
+        assert!(resurrected.is_empty());
+        let (merged, removed) = merge_mod_sets(
+            &present,
+            &[],
+            &[],
+            &[RemovedMod {
+                name: "Mod".to_string(),
+                file_name: "Mod.dll".to_string(),
+                enabled: true,
+                source: "thunderstore".to_string(),
+                updated_at: "2026-09-18T22:35:34Z".to_string(),
+            }],
+        );
+        assert_eq!(merged.len(), 1, "the reinstall wins over the older deletion");
+        assert!(removed.is_empty());
+    }
+
+    #[test]
+    fn deletions_never_expire() {
+        // A tombstone far older than the old 30-day window survives reconcile.
+        let mut ledger = HashMap::new();
+        ledger.insert("Gone".to_string(), rev(true, true, "2025-01-01T00:00:00Z"));
+        let _ = reconcile_mods_with_ledger(&[], &mut ledger, NOW);
+        assert!(ledger.contains_key("Gone") && ledger["Gone"].removed);
+    }
+
+    #[test]
+    fn profile_id_comes_from_the_bepinex_path() {
+        assert_eq!(
+            profile_id_from_bepinex(r"C:\Users\Rik\AppData\Roaming\MegaLoad\profiles\881964c09d38a511\BepInEx"),
+            Some("881964c09d38a511".to_string())
+        );
     }
 }

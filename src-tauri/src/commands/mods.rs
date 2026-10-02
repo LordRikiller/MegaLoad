@@ -265,6 +265,9 @@ pub fn delete_mod(bepinex_path: String, folder: String, file_name: String, enabl
     } else {
         let path = base.join(&folder);
         fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+        // A Thunderstore mod deleted from the Mods page used to stay listed in
+        // thunderstore_mods.json, and the update checker then reinstalled it.
+        crate::commands::thunderstore::forget_ts_folder(&bepinex_path, &folder);
     }
 
     Ok(())
@@ -296,6 +299,8 @@ pub fn install_mod(bepinex_path: String, source_path: String) -> Result<String, 
         let dest_dir = plugins_dir.join(&mod_name);
         fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
         fs::copy(source, dest_dir.join(&file_name)).map_err(|e| e.to_string())?;
+        // Installed by hand from a file — the player's choice, so lift any deletion.
+        crate::commands::sync::clear_mod_tombstone(&bepinex_path, &[mod_name.clone()]);
         Ok(mod_name)
     } else {
         Err("Only .dll files are supported".to_string())

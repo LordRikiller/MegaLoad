@@ -426,7 +426,18 @@ pub fn install_mod_update(
     download_url: String,
     version: String,
 ) -> Result<String, String> {
-    install_mod_update_inner(bepinex_path, mod_name, download_url, version, true)
+    // A FRESH install (the mod wasn't on disk) is the player choosing to have it,
+    // so it lifts a previous deletion. An update of a mod already on disk never
+    // does — that keeps an auto-update from resurrecting a deleted mod that is
+    // only still on disk because Valheim had it locked.
+    let bep = PathBuf::from(&bepinex_path);
+    let was_on_disk = bep.join("plugins").join(&mod_name).exists()
+        || bep.join("disabled_plugins").join(&mod_name).exists();
+    let out = install_mod_update_inner(bepinex_path.clone(), mod_name.clone(), download_url, version, true)?;
+    if !was_on_disk {
+        crate::commands::sync::clear_mod_tombstone(&bepinex_path, &[mod_name]);
+    }
+    Ok(out)
 }
 
 /// `enforce` = false for sync mirroring: a pull replicates the other device's
