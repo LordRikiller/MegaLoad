@@ -71,11 +71,15 @@ for (const p of pieces || []) {
 // so the Plantable filter still surfaces them.
 
 // Sapling BuildPieces — re-typed to Plantable + sub="Sapling". Read from the
-// game's own naming, not a hand list: every Cultivator crop, tree and vine is
-// `sapling_*` or `*_Sapling` (a hand list missed 1.0's Kale, Seed Kale, Oat and
-// Poteitr, which then counted as Building). The dump doesn't record the Plant
-// component; if it ever does, switch to that.
-const isPlantablePrefab = (prefab) => /^sapling_|_sapling$/i.test(prefab || "");
+// game: MegaDataExtractor 1.14.0+ writes a `plant` block on every piece that
+// carries a Plant component (a hand list had missed 1.0's Kale, Seed Kale, Oat
+// and Poteitr, which then counted as Building). Older dumps fall back to the
+// game's naming — every Cultivator crop, tree and vine is `sapling_*` or
+// `*_Sapling` — which matched the Plant component exactly when checked.
+const PLANT_PIECES = new Set((raw.pieces || []).filter((p) => p.plant).map((p) => p.prefab));
+const isPlantablePrefab = (prefab) => PLANT_PIECES.size > 0
+  ? PLANT_PIECES.has(prefab)
+  : /^sapling_|_sapling$/i.test(prefab || "");
 
 // Seeds + plantable produce — flagged plantable=true while keeping their
 // primary type for the Material/Food filters.
