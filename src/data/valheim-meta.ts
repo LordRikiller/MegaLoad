@@ -5,7 +5,7 @@ import type { ValheimMeta } from "./valheimMeta";
 
 export const BUNDLED_VALHEIM_META: ValheimMeta = {
   "schema": 1,
-  "generated": "2026-10-02T12:02:27.322Z",
+  "generated": "2026-10-02T19:30:07.350Z",
   "facets": [
     {
       "id": "itemClass",

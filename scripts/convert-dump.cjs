@@ -70,14 +70,12 @@ for (const p of pieces || []) {
 // (Material/Food) so they stay in those category filters, but get plantable=true
 // so the Plantable filter still surfaces them.
 
-// Sapling BuildPieces — re-typed to Plantable + sub="Sapling".
-const PLANTABLE_PIECES = new Set([
-  "sapling_barley", "sapling_carrot", "sapling_flax", "sapling_jotunpuffs",
-  "sapling_magecap", "sapling_onion", "sapling_seedcarrot", "sapling_seedonion",
-  "sapling_seedturnip", "sapling_turnip",
-  "Beech_Sapling", "Birch_Sapling", "FirTree_Sapling", "Oak_Sapling",
-  "PineTree_Sapling", "VineAsh_sapling", "VineGreen_sapling",
-]);
+// Sapling BuildPieces — re-typed to Plantable + sub="Sapling". Read from the
+// game's own naming, not a hand list: every Cultivator crop, tree and vine is
+// `sapling_*` or `*_Sapling` (a hand list missed 1.0's Kale, Seed Kale, Oat and
+// Poteitr, which then counted as Building). The dump doesn't record the Plant
+// component; if it ever does, switch to that.
+const isPlantablePrefab = (prefab) => /^sapling_|_sapling$/i.test(prefab || "");
 
 // Seeds + plantable produce — flagged plantable=true while keeping their
 // primary type for the Material/Food filters.
@@ -2546,7 +2544,7 @@ for (const p of pieces) {
   // Skip pieces with no recipe (internal/debug)
   if (recipeIngredients.length === 0) continue;
   
-  const isPlantablePiece = PLANTABLE_PIECES.has(p.prefab);
+  const isPlantablePiece = isPlantablePrefab(p.prefab);
   const entry = {
     id: p.prefab,
     token: p.name || "",
@@ -2729,8 +2727,15 @@ function mapPieceCategory(cat) {
 // These keep their primary type (Material/Food) so they remain in those
 // category filters, but get plantable=true so the Plantable filter picks
 // them up alongside the sapling pieces.
+// Anything a Plantable piece is planted FROM is plantable too (seeds, Barley,
+// Flax, the mushrooms), so 1.0's Kale Seeds / Oat Seeds / Seed Poteitr are
+// covered without editing PLANTABLE_FLAG.
+const plantedFrom = new Set();
 for (const entry of converted) {
-  if (PLANTABLE_FLAG.has(entry.id)) {
+  if (entry.type === "Plantable") for (const r of entry.recipe || []) plantedFrom.add(r.id);
+}
+for (const entry of converted) {
+  if (PLANTABLE_FLAG.has(entry.id) || plantedFrom.has(entry.id)) {
     entry.plantable = true;
   }
 }
@@ -3658,6 +3663,9 @@ for (const e of converted) {
 // Foundry turns each Cast into its Nord weapon, Scrap Bronze smelts to Bronze.
 for (const st of DUMP_STATIONS) {
   for (const c of st.conversions || []) {
+    // Skip routes into a RAW_OVERRIDES crop: Oats are harvested, so the 1.0
+    // Windmill's Oat Seeds → Oats entry must not make the seeds a food input.
+    if (RAW_OVERRIDES.has(c.to)) continue;
     if (c.from && c.to && c.from !== c.to && allById[c.from] && allById[c.to]) addConsumer(c.from, c.to);
   }
 }
