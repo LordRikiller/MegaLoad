@@ -1,0 +1,217 @@
+[
+  {
+    "name": "Charcoal Kiln",
+    "prefab": "charcoal_kiln",
+    "description": "Converts wood into coal. Accepts regular wood and fine wood. Essential for fuelling smelters and blast furnaces.",
+    "biome": "Black Forest",
+    "conversions": [
+      {
+        "inputId": "Wood",
+        "inputName": "Wood",
+        "outputId": "Coal",
+        "outputName": "Coal"
+      },
+      {
+        "inputId": "FineWood",
+        "inputName": "Fine Wood",
+        "outputId": "Coal",
+        "outputName": "Coal"
+      },
+      {
+        "inputId": "RoundLog",
+        "inputName": "Core Wood",
+        "outputId": "Coal",
+        "outputName": "Coal"
+      }
+    ],
+    "icon": "charcoal_kiln"
+  },
+  {
+    "name": "Smelter",
+    "prefab": "smelter",
+    "description": "Smelts basic ores into metal bars using coal as fuel. Processes copper, tin, iron, and silver ores.",
+    "biome": "Black Forest",
+    "fuels": [
+      {
+        "name": "Coal",
+        "id": "Coal"
+      }
+    ],
+    "conversions": [
+      {
+        "inputId": "CopperOre",
+        "inputName": "Copper Ore",
+        "outputId": "Copper",
+        "outputName": "Copper"
+      },
+      {
+        "inputId": "TinOre",
+        "inputName": "Tin Ore",
+        "outputId": "Tin",
+        "outputName": "Tin"
+      },
+      {
+        "inputId": "IronScrap",
+        "inputName": "Scrap Iron",
+        "outputId": "Iron",
+        "outputName": "Iron"
+      },
+      {
+        "inputId": "SilverOre",
+        "inputName": "Silver Ore",
+        "outputId": "Silver",
+        "outputName": "Silver"
+      },
+      {
+        "inputId": "CopperScrap",
+        "inputName": "Copper Scrap",
+        "outputId": "Copper",
+        "outputName": "Copper"
+      },
+      {
+        "inputId": "IronOre",
+        "inputName": "Iron Ore",
+        "outputId": "Iron",
+        "outputName": "Iron"
+      },
+      {
+        "inputId": "BronzeScrap",
+        "inputName": "Scrap Bronze",
+        "outputId": "Bronze",
+        "outputName": "Bronze"
+      }
+    ],
+    "icon": "smelter"
+  },
+  {
+    "name": "Blast Furnace",
+    "prefab": "blastfurnace",
+    "description": "An advanced furnace that smelts high-tier ores. Processes black metal scraps and flametal ore using coal.",
+    "biome": "Plains",
+    "fuels": [
+      {
+        "name": "Coal",
+        "id": "Coal"
+      }
+    ],
+    "conversions": [
+      {
+        "inputId": "BlackMetalScrap",
+        "inputName": "Black Metal Scrap",
+        "outputId": "BlackMetal",
+        "outputName": "Black Metal"
+      },
+      {
+        "inputId": "FlametalOreNew",
+        "inputName": "Flametal Ore",
+        "outputId": "FlametalNew",
+        "outputName": "Refined Flametal"
+      }
+    ],
+    "icon": "blastfurnace"
+  },
+  {
+    "name": "Spinning Wheel",
+    "prefab": "piece_spinningwheel",
+    "description": "Spins raw flax into linen thread. Required for crafting padded armour and some Plains-tier gear.",
+    "biome": "Plains",
+    "conversions": [
+      {
+        "inputId": "Flax",
+        "inputName": "Flax",
+        "outputId": "LinenThread",
+        "outputName": "Linen Thread"
+      }
+    ],
+    "icon": "piece_spinningwheel"
+  },
+  {
+    "name": "Windmill",
+    "prefab": "windmill",
+    "description": "Grinds barley into barley flour. Must be placed outdoors with wind exposure to function.",
+    "biome": "Plains",
+    "conversions": [
+      {
+        "inputId": "Barley",
+        "inputName": "Barley",
+        "outputId": "BarleyFlour",
+        "outputName": "Barley Flour"
+      }
+    ],
+    "icon": "windmill"
+  },
+  {
+    "name": "Eitr Refinery",
+    "prefab": "eitrrefinery",
+    "description": "Refines soft tissue and sap into refined Eitr — the magical essence needed for Mistlands-tier staffs and gear.",
+    "biome": "Mistlands",
+    "conversions": [
+      {
+        "inputId": "Sap",
+        "inputName": "Sap",
+        "outputId": "Eitr",
+        "outputName": "Refined Eitr"
+      },
+      {
+        "inputId": "Softtissue",
+        "inputName": "Soft Tissue",
+        "outputId": "Eitr",
+        "outputName": "Refined Eitr"
+      }
+    ],
+    "icon": "eitrrefinery"
+  },
+  {
+    "name": "Frost Foundry",
+    "prefab": "piece_FrostFoundry",
+    "description": "Deep North foundry that casts Bloodgold gear. Craft a Cast at the Black Forge from Bloodgold, Timberwood and the matching Mould, then let the foundry turn it into the finished Nord weapon, shield, armour or Intricate Key. Burns Liquid Frost.",
+    "biome": "Deep North",
+    "conversions": [],
+    "icon": "piece_FrostFoundry"
+  },
+  {
+    "name": "Shield Generator",
+    "prefab": "piece_shieldgenerator",
+    "description": "Creates a protective shield against weather and projectiles. Fuelled by bones — consumes Bone Fragments or Charred Bones to maintain its barrier.",
+    "biome": "Mistlands",
+    "fuels": [
+      {
+        "name": "Bone Fragments",
+        "id": "BoneFragments"
+      },
+      {
+        "name": "Charred Bones",
+        "id": "CharredBone"
+      }
+    ],
+    "conversions": [],
+    "icon": "piece_shieldgenerator"
+  },
+  {
+    "name": "Ballista",
+    "prefab": "piece_turret",
+    "description": "Automated defensive turret that fires missiles at hostile targets. Must be loaded with turret missiles — available in wood, black metal, and flametal variants.",
+    "biome": "Mistlands",
+    "conversions": [
+      {
+        "inputId": "TurretBoltWood",
+        "inputName": "Wooden Missile",
+        "outputId": "TurretBoltWood",
+        "outputName": "Wooden Missile"
+      },
+      {
+        "inputId": "TurretBolt",
+        "inputName": "Black Metal Missile",
+        "outputId": "TurretBolt",
+        "outputName": "Black Metal Missile"
+      },
+      {
+        "inputId": "TurretBoltFlametal",
+        "inputName": "Flametal Missile",
+        "outputId": "TurretBoltFlametal",
+        "outputName": "Flametal Missile"
+      }
+    ],
+    "icon": "piece_turret"
+  }
+]

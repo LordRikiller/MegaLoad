@@ -218,6 +218,8 @@ pub fn run() {
             // Valheim Data (remote-served via MegaWorker)
             fetch_valheim_data,
             read_cached_valheim_data,
+            fetch_valheim_meta,
+            read_cached_valheim_meta,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

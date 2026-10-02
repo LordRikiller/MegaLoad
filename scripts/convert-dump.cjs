@@ -549,7 +549,10 @@ function mapSubcategory(gameType, prefab, shared) {
 
   // Special cases
   if (prefab === "FishingRod") return "Fishing Rod";
-  if ((prefab.startsWith("Feast") && prefab !== "Feaster") || prefab === "MeatPlatter") return "Feast";
+  // Meat Platter is NOT a feast, despite the placeable MeatPlatter piece in the
+  // dump: it stacks to 10, has its own description and is baked at the Stone
+  // Oven like Misthare Supreme. The nine real feasts are Feast*, stack 1.
+  if (prefab.startsWith("Feast") && prefab !== "Feaster") return "Feast";
 
   // Mead Bases — Potion-typed but distinct from finished meads so they stay
   // separable on the detail UI ("Mead Base: Minor Health" → Mead Base, not Consumable).
@@ -3640,14 +3643,218 @@ for (const e of converted) {
     e.source = e.source.map((s) => (s === "Pickup" ? "Fishing" : s));
   }
 
-  if (!NON_MATERIAL_TYPES.has(e.type)) {
-    const crafted = !RAW_OVERRIDES.has(e.id)
-      && ((e.recipe && e.recipe.length > 0) || !!e.producedBy);
-    e.materialClass = crafted ? "Crafted" : "Raw";
-    if (crafted) craftedCount++; else rawCount++;
+  // Oven/rack outputs and Oat Milk were filed under "Raw Food" — they're made.
+  if (e.type === "Food" && e.subcategory === "Raw Food" && e.recipe && e.recipe.length > 0) {
+    e.subcategory = COOKING_CONVERSIONS[e.id] ? "Cooked Food" : "Prepared Food";
+  }
+  // Fishing gear and catch get their own Activity facet; baits are rod ammo,
+  // never a crafting material.
+  if (e.subcategory === "Fish" || e.id.startsWith("FishingBait") || e.id === "FishingRod") {
+    e.tags = [...(e.tags || []), "Fishing"];
   }
 }
-console.log(`Materials: ${rawCount} raw, ${craftedCount} crafted · ${craftAmounts} recipes yield >1 · ${producedBys} factory outputs linked`);
+
+// ── Item class + what each item is used for ──────────────────
+//   itemClass  Raw      gathered from the world (mined, dropped, fished, bought...)
+//              Crafted  made by the player AND used to make something else
+//                       (Bronze, Mechanical Spring, Bread Dough, Cooked Deer Meat)
+//              Item     a finished thing: gear, pieces, meals, meads, keys
+//   usedFor    what an item ends up in, followed through every intermediate:
+//              Copper Ore → Copper → Bronze → a sword is "Gear".
+const allById = Object.fromEntries(converted.map((e) => [e.id, e]));
+const consumersOf = {};
+const addConsumer = (inputId, consumerId) => {
+  (consumersOf[inputId] = consumersOf[inputId] || new Set()).add(consumerId);
+};
+for (const e of converted) {
+  for (const r of e.recipe || []) addConsumer(r.id, e.id);
+  for (const uc of e.upgradeCosts || []) for (const r of uc.resources) addConsumer(r.id, e.id);
+  if (e.producedBy) for (const r of e.producedBy.inputs) addConsumer(r.id, e.id);
+}
+// Every factory route counts, not just the one producedBy picked — the Frost
+// Foundry turns each Cast into its Nord weapon, Scrap Bronze smelts to Bronze.
+for (const st of DUMP_STATIONS) {
+  for (const c of st.conversions || []) {
+    if (c.from && c.to && c.from !== c.to && allById[c.from] && allById[c.to]) addConsumer(c.from, c.to);
+  }
+}
+for (const [finalId, baseRecipe] of Object.entries(MEAD_BASE_MAP)) {
+  if (allById[baseRecipe.item] && allById[finalId]) addConsumer(baseRecipe.item, finalId);
+}
+const USED_FOR_BY_TYPE = {
+  Food: "Food", Potion: "Meads & Potions", BuildPiece: "Building",
+  Weapon: "Gear", Armor: "Gear", Clothing: "Gear", Tool: "Gear", Ammo: "Gear",
+};
+const extraUses = {}; // id → Set of uses that don't come from a recipe
+const addUse = (id, use) => { (extraUses[id] = extraUses[id] || new Set()).add(use); };
+for (const e of converted) {
+  if (e.bossCaller) {
+    addUse(e.bossCaller.id, "Boss Summoning");
+    if (e.bossCaller.gate) addUse(e.bossCaller.gate.id, "Boss Summoning");
+  }
+  for (const f of e.tameFoods || []) addUse(f, "Taming");
+}
+const usedForMemo = {};
+function usedForOf(id, stack = new Set()) {
+  if (usedForMemo[id]) return usedForMemo[id];
+  if (stack.has(id)) return new Set();
+  stack.add(id);
+  const uses = new Set(extraUses[id] || []);
+  for (const cid of consumersOf[id] || []) {
+    const c = allById[cid];
+    if (!c || cid === id) continue;
+    const direct = c.tags && c.tags.includes("Fishing") ? "Fishing" : USED_FOR_BY_TYPE[c.type];
+    if (direct) uses.add(direct);
+    for (const u of usedForOf(cid, stack)) uses.add(u);
+  }
+  stack.delete(id);
+  usedForMemo[id] = uses;
+  return uses;
+}
+
+const ITEM_CLASS_EXEMPT = new Set(["Creature", "WorldObject"]);
+// The dump's own itemType is the edibility truth: Bread, Kale and Raspberries
+// are "Consumable"; Bread Dough, raw Deer Meat and Raw Fish are "Material" and
+// only carry their cooked form's numbers.
+const dumpItemType = Object.fromEntries(items.map((i) => [i.prefab, i.itemType]));
+const isMeadBase = (id) => id.startsWith("MeadBase") || id === "BarleyWineBase";
+const isEdible = (e) => dumpItemType[e.id] === "Consumable"
+  && (e.type === "Food" || e.type === "Material") && e.subcategory !== "Feast";
+// Something you use as-is: gear, pieces, food you can eat, a drinkable mead.
+const isUsable = (e) => NON_MATERIAL_TYPES.has(e.type) || e.type === "Plantable"
+  || e.subcategory === "Feast" || isEdible(e) || (e.type === "Potion" && !isMeadBase(e.id));
+
+//   itemClass is a LIST — Bread is Crafted (it goes into a feast) AND an Item
+//   (you eat it). Barley Flour is only Crafted; a Feast only an Item.
+//   food       Ingredient (goes into another food, through any step) · Prep
+//              (crafted only to cook into something else) · Eat as-is · Feast
+const classCounts = { Raw: 0, Crafted: 0, Item: 0 };
+const foodCounts = {};
+for (const e of converted) {
+  if (ITEM_CLASS_EXEMPT.has(e.type)) continue;
+  const uses = usedForOf(e.id);
+  if (uses.size > 0) e.usedFor = [...uses].sort();
+  const consumed = (consumersOf[e.id] && consumersOf[e.id].size > 0) || !!extraUses[e.id];
+  const made = !RAW_OVERRIDES.has(e.id) && ((e.recipe && e.recipe.length > 0) || !!e.producedBy);
+  const usable = isUsable(e);
+  const cls = [];
+  if (made) {
+    if (consumed) cls.push("Crafted");
+    if (usable || !consumed) cls.push("Item");
+  } else if (NON_MATERIAL_TYPES.has(e.type) || e.type === "Plantable") {
+    cls.push("Item");
+  } else {
+    // Gathered: anything that feeds a recipe or altar, every Material, and raw
+    // food. Unused odds and ends (Hildir's chests, the barber kit) are things.
+    cls.push(consumed || e.type === "Material" || e.type === "Food" ? "Raw" : "Item");
+  }
+  e.itemClass = cls;
+  for (const c of cls) classCounts[c]++;
+
+  const food = [];
+  if (uses.has("Food")) food.push("Ingredient");
+  if (made && uses.has("Food") && !usable) food.push("Prep");
+  if (isEdible(e)) food.push("Eat as-is");
+  if (e.type === "Food" && e.subcategory === "Feast") food.push("Feast");
+  if (food.length > 0) e.food = food;
+  for (const f of food) foodCounts[f] = (foodCounts[f] || 0) + 1;
+
+  // MegaLoad 1.21 / MegaApp 1.13 read materialClass; keep it to the two
+  // material classes so their Raw / Crafted filter stays right.
+  const legacy = NON_MATERIAL_TYPES.has(e.type) ? undefined : cls.find((c) => c !== "Item");
+  if (legacy) e.materialClass = legacy;
+  else delete e.materialClass;
+}
+console.log(`Item classes: ${classCounts.Raw} raw, ${classCounts.Crafted} crafted, ${classCounts.Item} item · food ${JSON.stringify(foodCounts)} · ${craftAmounts} recipes yield >1 · ${producedBys} factory outputs linked`);
+
+// ── Live meta: filters, rollup rules, factory tables ────────
+// Published beside the items as /data/valheim-meta.json so a new filter or a
+// corrected factory table reaches MegaLoad and MegaApp without an app release.
+// Bundled into src/data/valheim-meta.ts as the offline fallback.
+const FACETS = [
+  {
+    id: "itemClass", title: "Class", field: "itemClass",
+    values: [
+      { value: "Raw", label: "Raw", color: "#a3e635", hint: "Gathered: mined, chopped, dropped, fished, picked or bought" },
+      { value: "Crafted", label: "Crafted", color: "#fbbf24", hint: "Made, then used to make something else" },
+      { value: "Item", label: "Item", color: "#60a5fa", hint: "Finished: gear, pieces, meals, meads (Bread is Crafted and an Item)" },
+    ],
+  },
+  {
+    id: "food", title: "Food", field: "food",
+    values: [
+      { value: "Ingredient", label: "Ingredient", color: "#fdba74", hint: "Goes into another food, directly or through a step (Barley → Barley Flour → Bread)" },
+      { value: "Prep", label: "Prep", color: "#fbbf24", hint: "Made only to cook or bake into something else (Barley Flour, Bread Dough, Uncooked dishes)" },
+      { value: "Eat as-is", label: "Eat as-is", color: "#86efac", hint: "Food you can eat straight away (Bread, Deer Stew, Raspberries)" },
+      { value: "Feast", label: "Feast", color: "#f472b6", hint: "Placed on a table and served to the group" },
+    ],
+  },
+  {
+    id: "usedFor", title: "Used For", field: "usedFor",
+    values: [
+      { value: "Food", label: "Food", color: "#f97316" },
+      { value: "Meads & Potions", label: "Meads & Potions", color: "#c084fc" },
+      { value: "Gear", label: "Gear", color: "#94a3b8" },
+      { value: "Building", label: "Building", color: "#d6a35c" },
+      { value: "Fishing", label: "Fishing", color: "#38bdf8" },
+      { value: "Boss Summoning", label: "Boss Summoning", color: "#f87171" },
+      { value: "Taming", label: "Taming", color: "#34d399" },
+    ],
+  },
+  {
+    id: "activity", title: "Activity", field: "tags",
+    values: [
+      { value: "Fishing", label: "Fishing", color: "#38bdf8", hint: "Rod, baits and every fish" },
+    ],
+  },
+];
+
+// Processing stations: hand-kept descriptions/biomes/icons in
+// scripts/processing-stations.json, with conversions and fuel taken from the
+// dump wherever it has the station — so Gold Ore → Bloodgold, Oat → Oat Flour
+// and the Eitr Refinery's Soft-Tissue-in / Sap-as-fuel come from the game.
+const PS_PATH = path.join(__dirname, "processing-stations.json");
+const PS_FALLBACK = JSON.parse(fs.readFileSync(PS_PATH, "utf-8"));
+const dumpStationByPrefab = Object.fromEntries(DUMP_STATIONS.map((s) => [s.prefab, s]));
+const itemName = (id) => (allById[id] && allById[id].name) || loc(findItemName(id)) || id;
+const processingStations = PS_FALLBACK.map((ps) => {
+  const st = dumpStationByPrefab[ps.prefab];
+  if (!st || !(st.conversions || []).length) return ps;
+  const seen = new Set();
+  const conversions = [];
+  for (const c of st.conversions) {
+    const key = c.from + ">" + c.to;
+    if (!c.from || !c.to || seen.has(key)) continue;
+    seen.add(key);
+    conversions.push({ inputId: c.from, inputName: itemName(c.from), outputId: c.to, outputName: itemName(c.to) });
+  }
+  const fuels = st.fuelItem ? [{ name: itemName(st.fuelItem), id: st.fuelItem }] : undefined;
+  return { ...ps, conversions, ...(fuels ? { fuels } : { fuels: undefined }) };
+});
+
+const VALHEIM_META = {
+  schema: 1,
+  generated: new Date().toISOString(),
+  facets: FACETS,
+  rollup: {
+    oneOfRecipes: [...OR_RECIPE_ALTERNATIVES],
+    // Items carrying these tags are left out of materials rollups unless the
+    // matching facet value is switched on (baits stay out of Prep Table mats).
+    excludeTags: ["Fishing"],
+  },
+  processingStations,
+};
+const META_JSON = JSON.stringify(VALHEIM_META);
+fs.writeFileSync(
+  path.join(__dirname, "..", "src", "data", "valheim-meta.ts"),
+  `// ── Valheim meta (bundled fallback) ─────────────────────────\n` +
+  `// Auto-generated by convert-dump.cjs — DO NOT EDIT. The live copy is\n` +
+  `// /data/valheim-meta.json on the MegaWorker (publish-data.cjs).\n` +
+  `import type { ValheimMeta } from "./valheimMeta";\n\n` +
+  `export const BUNDLED_VALHEIM_META: ValheimMeta = ${JSON.stringify(VALHEIM_META, null, 2)};\n`,
+  "utf-8",
+);
+console.log(`Meta: ${FACETS.length} facets, ${processingStations.length} processing stations (${META_JSON.length} bytes)`);
 
 let ts = `// @ts-nocheck — generated data, array literal too large for TS union inference
 // ── Valheim Item Database ──────────────────────────────────
@@ -3791,7 +3998,11 @@ export interface ValheimItem {
   refinement?: { id: string; name: string } | null; // Idol the Forge of Potential consumes to refine this item (1.0); not a crafting cost
   craftAmount?: number; // How many one craft yields, when more than 1 (arrows 20, Bread Dough 2, meads 6)
   producedBy?: ProducedBy; // Factory conversion for outputs with no Recipe (Copper ← Copper Ore at the Smelter)
-  materialClass?: "Raw" | "Crafted"; // Non-equipment items only: gathered from the world vs made by the player
+  materialClass?: "Raw" | "Crafted"; // Legacy (1.21): Raw / Crafted materials only — see itemClass
+  itemClass?: Array<"Raw" | "Crafted" | "Item">; // Raw = gathered · Crafted = made and used to make something · Item = finished thing (Bread is Crafted + Item)
+  food?: string[];      // Food role: "Ingredient", "Prep", "Eat as-is", "Feast"
+  usedFor?: string[];   // What it ends up in, through every intermediate: "Food", "Gear", "Building", "Fishing"...
+  tags?: string[];      // Activity tags ("Fishing") that drive meta facets
 }
 
 export interface ProducedBy {

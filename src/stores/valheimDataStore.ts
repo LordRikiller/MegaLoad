@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { VALHEIM_ITEMS, type ValheimItem } from "../data/valheim-items";
 import { replaceValheimItems } from "../data/valheimItemsRuntime";
+import { getValheimMeta, replaceValheimMeta, facetValuesOf, type Facet, type ValheimMeta } from "../data/valheimMeta";
 
 export type SortOption = "name-asc" | "name-desc" | "tier-asc" | "tier-desc" | "biome-grouped";
 export type ViewMode = "grid" | "table";
@@ -504,8 +505,8 @@ export const STATION_ICONS: Record<string, string> = {
 };
 
 // ── Processing Stations (Factories) ──────────────────────────
-// These stations convert raw materials into refined products (smelting, grinding, etc.)
-// The game dump doesn't include conversion recipes, so we define them here.
+// These stations convert raw materials into refined products (smelting, grinding,
+// casting). The table is live data — see PROCESSING_STATIONS below.
 
 export interface ProcessingConversion {
   inputId: string;
@@ -525,112 +526,28 @@ export interface ProcessingStation {
   conversions: ProcessingConversion[];
 }
 
-export const PROCESSING_STATIONS: Record<string, ProcessingStation> = {
-  "Charcoal Kiln": {
-    name: "Charcoal Kiln",
-    prefab: "charcoal_kiln",
-    description: "Converts wood into coal. Accepts regular wood and fine wood. Essential for fuelling smelters and blast furnaces.",
-    biome: "Black Forest",
-    conversions: [
-      { inputId: "Wood", inputName: "Wood", outputId: "Coal", outputName: "Coal" },
-      { inputId: "FineWood", inputName: "Fine Wood", outputId: "Coal", outputName: "Coal" },
-      { inputId: "RoundLog", inputName: "Core Wood", outputId: "Coal", outputName: "Coal" },
-    ],
-  },
-  "Smelter": {
-    name: "Smelter",
-    prefab: "smelter",
-    description: "Smelts basic ores into metal bars using coal as fuel. Processes copper, tin, iron, and silver ores.",
-    biome: "Black Forest",
-    fuels: [{ name: "Coal", id: "Coal" }],
-    conversions: [
-      { inputId: "CopperOre", inputName: "Copper Ore", outputId: "Copper", outputName: "Copper" },
-      { inputId: "TinOre", inputName: "Tin Ore", outputId: "Tin", outputName: "Tin" },
-      { inputId: "IronScrap", inputName: "Scrap Iron", outputId: "Iron", outputName: "Iron" },
-      { inputId: "SilverOre", inputName: "Silver Ore", outputId: "Silver", outputName: "Silver" },
-      { inputId: "CopperScrap", inputName: "Copper Scrap", outputId: "Copper", outputName: "Copper" },
-      { inputId: "IronOre", inputName: "Iron Ore", outputId: "Iron", outputName: "Iron" },
-      { inputId: "BronzeScrap", inputName: "Scrap Bronze", outputId: "Bronze", outputName: "Bronze" },
-    ],
-  },
-  "Blast Furnace": {
-    name: "Blast Furnace",
-    prefab: "blastfurnace",
-    description: "An advanced furnace that smelts high-tier ores. Processes black metal scraps and flametal ore using coal.",
-    biome: "Plains",
-    fuels: [{ name: "Coal", id: "Coal" }],
-    conversions: [
-      { inputId: "BlackMetalScrap", inputName: "Black Metal Scrap", outputId: "BlackMetal", outputName: "Black Metal" },
-      { inputId: "FlametalOreNew", inputName: "Flametal Ore", outputId: "FlametalNew", outputName: "Refined Flametal" },
-    ],
-  },
-  "Spinning Wheel": {
-    name: "Spinning Wheel",
-    prefab: "piece_spinningwheel",
-    description: "Spins raw flax into linen thread. Required for crafting padded armour and some Plains-tier gear.",
-    biome: "Plains",
-    conversions: [
-      { inputId: "Flax", inputName: "Flax", outputId: "LinenThread", outputName: "Linen Thread" },
-    ],
-  },
-  "Windmill": {
-    name: "Windmill",
-    prefab: "windmill",
-    description: "Grinds barley into barley flour. Must be placed outdoors with wind exposure to function.",
-    biome: "Plains",
-    conversions: [
-      { inputId: "Barley", inputName: "Barley", outputId: "BarleyFlour", outputName: "Barley Flour" },
-    ],
-  },
-  "Eitr Refinery": {
-    name: "Eitr Refinery",
-    prefab: "eitrrefinery",
-    description: "Refines soft tissue and sap into refined Eitr — the magical essence needed for Mistlands-tier staffs and gear.",
-    biome: "Mistlands",
-    conversions: [
-      { inputId: "Sap", inputName: "Sap", outputId: "Eitr", outputName: "Refined Eitr" },
-      { inputId: "Softtissue", inputName: "Soft Tissue", outputId: "Eitr", outputName: "Refined Eitr" },
-    ],
-  },
-  "Shield Generator": {
-    name: "Shield Generator",
-    prefab: "piece_shieldgenerator",
-    description: "Creates a protective shield against weather and projectiles. Fuelled by bones — consumes Bone Fragments or Charred Bones to maintain its barrier.",
-    biome: "Mistlands",
-    fuels: [
-      { name: "Bone Fragments", id: "BoneFragments" },
-      { name: "Charred Bones", id: "CharredBone" },
-    ],
-    conversions: [],
-  },
-  "Ballista": {
-    name: "Ballista",
-    prefab: "piece_turret",
-    description: "Automated defensive turret that fires missiles at hostile targets. Must be loaded with turret missiles — available in wood, black metal, and flametal variants.",
-    biome: "Mistlands",
-    conversions: [
-      { inputId: "TurretBoltWood", inputName: "Wooden Missile", outputId: "TurretBoltWood", outputName: "Wooden Missile" },
-      { inputId: "TurretBolt", inputName: "Black Metal Missile", outputId: "TurretBolt", outputName: "Black Metal Missile" },
-      { inputId: "TurretBoltFlametal", inputName: "Flametal Missile", outputId: "TurretBoltFlametal", outputName: "Flametal Missile" },
-    ],
-  },
-};
+// Built from the live meta (scripts/processing-stations.json + the dump's own
+// station conversions) and rebuilt IN PLACE when a fresh meta arrives, so the
+// factory pages and rollups pick up a corrected table without an app release.
+export const PROCESSING_STATIONS: Record<string, ProcessingStation> = {};
+export const PROCESSING_STATION_LIST: string[] = [];
+export const PROCESSING_STATION_ICONS: Record<string, string> = {};
 
-export const PROCESSING_STATION_LIST = [
-  "Charcoal Kiln", "Smelter", "Blast Furnace",
-  "Spinning Wheel", "Windmill", "Eitr Refinery", "Shield Generator", "Ballista",
-] as const;
-
-export const PROCESSING_STATION_ICONS: Record<string, string> = {
-  "Charcoal Kiln": "charcoal_kiln",
-  "Smelter": "smelter",
-  "Blast Furnace": "blastfurnace",
-  "Spinning Wheel": "piece_spinningwheel",
-  "Windmill": "windmill",
-  "Eitr Refinery": "eitrrefinery",
-  "Shield Generator": "piece_shieldgenerator",
-  "Ballista": "piece_turret",
-};
+function loadProcessingStations(meta: ValheimMeta): void {
+  for (const k of Object.keys(PROCESSING_STATIONS)) delete PROCESSING_STATIONS[k];
+  for (const k of Object.keys(PROCESSING_STATION_ICONS)) delete PROCESSING_STATION_ICONS[k];
+  PROCESSING_STATION_LIST.length = 0;
+  for (const ps of meta.processingStations) {
+    PROCESSING_STATIONS[ps.name] = {
+      name: ps.name, prefab: ps.prefab, description: ps.description, biome: ps.biome,
+      ...(ps.fuels && ps.fuels.length ? { fuels: ps.fuels } : {}),
+      conversions: ps.conversions,
+    };
+    PROCESSING_STATION_LIST.push(ps.name);
+    PROCESSING_STATION_ICONS[ps.name] = ps.icon || ps.prefab;
+  }
+}
+loadProcessingStations(getValheimMeta());
 
 /** Check if a station name is a processing station (factory) */
 export function isProcessingStation(name: string): boolean {
@@ -820,16 +737,15 @@ export interface MaterialRollup {
   crafted: CartMaterial[];  // made on the way (units needed, not crafts)
 }
 
-// "Any one of N" recipes (Raw Fish = any fish). Summing the list would ask
-// for every fish, so they stop the expansion and count as the raw need.
-const ONE_OF_RECIPES = new Set(["FishRaw"]);
+// "Any one of N" recipes (Raw Fish = any fish) come from the live meta
+// (rollup.oneOfRecipes). Summing the list would ask for every fish, so they
+// stop the expansion and count as the raw need.
 // Saplings show up as ingredients in some mods' Hammer pieces; never a mat.
 const NEVER_MAT_TYPES = new Set(["Plantable"]);
-const EQUIPMENT_TYPES = new Set(["Weapon", "Armor", "Clothing", "Tool", "Ammo", "BuildPiece", "Creature", "WorldObject"]);
 
 /** How one craft of `it` is made, or null when it's gathered as itself. */
 function getMakeRecipe(it: ValheimItem): { inputs: { id: string; name: string; amount: number }[]; yields: number } | null {
-  if (ONE_OF_RECIPES.has(it.id)) return null;
+  if (getValheimMeta().rollup.oneOfRecipes.includes(it.id)) return null;
   const pick = it.recipe && it.recipe.length > 0
     ? { inputs: it.recipe, yields: it.craftAmount || 1 }
     : it.producedBy
@@ -840,13 +756,13 @@ function getMakeRecipe(it: ValheimItem): { inputs: { id: string; name: string; a
   return pick;
 }
 
-/** "Raw" | "Crafted" for a material-like item; null for equipment/creatures.
- *  Prefers the converter's tag, falls back to the recipe/factory data so an
- *  older hot-swapped dataset still classifies. */
-export function getMaterialClass(it: ValheimItem): "Raw" | "Crafted" | null {
-  if (it.materialClass) return it.materialClass;
-  if (EQUIPMENT_TYPES.has(it.type)) return null;
-  return (it.recipe && it.recipe.length > 0) || it.producedBy ? "Crafted" : "Raw";
+/** Tagged items (baits) stay out of rollups unless their tag is switched on
+ *  in a facet — the Food Preparation Table's mats are food, not bait. */
+function rolledUp(item: ValheimItem, includeTags: string[]): boolean {
+  const tags = item.tags;
+  if (!tags || tags.length === 0) return true;
+  const excluded = getValheimMeta().rollup.excludeTags;
+  return !tags.some((t) => excluded.includes(t) && !includeTags.includes(t));
 }
 
 function addNeed(need: Map<string, CartMaterial>, id: string, name: string, amount: number): void {
@@ -895,7 +811,7 @@ export function planMaterials(direct: Map<string, CartMaterial>): MaterialRollup
 }
 
 /** Raw + crafted materials needed to craft/build everything at the given stations */
-export function getStationMaterials(stationNames: string[], mode: "craft" | "build"): MaterialRollup {
+export function getStationMaterials(stationNames: string[], mode: "craft" | "build", includeTags: string[] = []): MaterialRollup {
   const expanded = expandStationSupersets(stationNames);
   const totals = new Map<string, CartMaterial>();
   for (const name of expanded) {
@@ -908,6 +824,7 @@ export function getStationMaterials(stationNames: string[], mode: "craft" | "bui
       const isAssembly = item.subcategory === "Siege" || item.subcategory === "Vehicle";
       if (mode === "craft" && item.type === "BuildPiece" && !isAssembly) continue;
       if (mode === "build" && (item.type !== "BuildPiece" || isAssembly)) continue;
+      if (!rolledUp(item, includeTags)) continue;
       for (const ing of item.recipe) addNeed(totals, ing.id, ing.name, ing.amount);
       for (const uc of item.upgradeCosts) {
         for (const r of uc.resources) addNeed(totals, r.id, r.name, r.amount);
@@ -968,11 +885,12 @@ export const CRAFTABLE_TYPES: ReadonlyArray<string> = [
  *  recipe, once each with every upgrade. Works across any pre-filtered set
  *  (typically the output of getFilteredItems). Skips decoration-only
  *  BuildPieces via isPlayerBuildable. */
-export function getCraftableMaterials(items: ValheimItem[]): MaterialRollup {
+export function getCraftableMaterials(items: ValheimItem[], includeTags: string[] = []): MaterialRollup {
   const totals = new Map<string, CartMaterial>();
   for (const item of items) {
     if (!CRAFTABLE_TYPES.includes(item.type)) continue;
     if (item.type === "BuildPiece" && !isPlayerBuildable(item)) continue;
+    if (!rolledUp(item, includeTags)) continue;
     if ((!item.recipe || item.recipe.length === 0) && (!item.upgradeCosts || item.upgradeCosts.length === 0)) continue;
     for (const ing of item.recipe || []) addNeed(totals, ing.id, ing.name, ing.amount);
     for (const uc of item.upgradeCosts || []) {
@@ -1060,6 +978,10 @@ interface ValheimDataState {
   /** Replace the bundled dataset with a remote payload and bump dataVersion so
    *  subscribers re-render. Used by lib/valheimDataLoader.ts on launch + poll. */
   applyRemoteData: (items: ValheimItem[], version: string, source?: DataSource) => void;
+  /** Swap in a fetched meta (facets, rollup rules, factory tables). Ignored —
+   *  returns false — when its schema is newer than this build understands. */
+  applyRemoteMeta: (meta: unknown, version: string) => boolean;
+  metaVersionLabel: string;
   query: string;
   activeTypes: string[];
   activeSubcategories: string[];
@@ -1069,7 +991,7 @@ interface ValheimDataState {
   activeVendors: string[];
   onlyContainers: boolean;
   onlyTameable: boolean;
-  activeMaterialClasses: string[];
+  activeFacets: Record<string, string[]>; // facet id → selected values (facets come from the live meta)
   activeFactions: string[];
   activeDealsDamage: string[];
   activeWeakTo: string[];
@@ -1100,7 +1022,7 @@ interface ValheimDataState {
   setOnlyTameable: (v: boolean) => void;
   setOnlyContainers: (v: boolean) => void;
   toggleOnlyContainers: () => void;
-  toggleMaterialClass: (c: string) => void;
+  toggleFacet: (facetId: string, value: string) => void;
   toggleOnlyTameable: () => void;
   toggleFaction: (f: string) => void;
   toggleDealsDamage: (d: string) => void;
@@ -1169,6 +1091,19 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
       dataVersionLabel: version,
     }));
   },
+  metaVersionLabel: "",
+  applyRemoteMeta: (meta, version) => {
+    if (!replaceValheimMeta(meta)) return false;
+    loadProcessingStations(getValheimMeta());
+    // Drop selections for facets the new meta no longer defines.
+    const known = new Set(getValheimMeta().facets.map((f) => f.id));
+    set((s) => ({
+      dataVersion: s.dataVersion + 1,
+      metaVersionLabel: version,
+      activeFacets: Object.fromEntries(Object.entries(s.activeFacets).filter(([id]) => known.has(id))),
+    }));
+    return true;
+  },
   query: "",
   activeTypes: [],
   activeSubcategories: [],
@@ -1178,7 +1113,7 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   activeVendors: [],
   onlyContainers: false,
   onlyTameable: false,
-  activeMaterialClasses: [],
+  activeFacets: {},
   activeFactions: [],
   activeDealsDamage: [],
   activeWeakTo: [],
@@ -1248,9 +1183,13 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   toggleOnlyTameable: () => set((s) => ({ onlyTameable: !s.onlyTameable })),
   setOnlyContainers: (v) => set({ onlyContainers: v }),
   toggleOnlyContainers: () => set((s) => ({ onlyContainers: !s.onlyContainers })),
-  toggleMaterialClass: (c) => set((s) => ({
-    activeMaterialClasses: s.activeMaterialClasses.includes(c) ? s.activeMaterialClasses.filter((x) => x !== c) : [...s.activeMaterialClasses, c],
-  })),
+  toggleFacet: (facetId, value) => set((s) => {
+    const cur = s.activeFacets[facetId] || [];
+    const next = cur.includes(value) ? cur.filter((x) => x !== value) : [...cur, value];
+    const activeFacets = { ...s.activeFacets };
+    if (next.length > 0) activeFacets[facetId] = next; else delete activeFacets[facetId];
+    return { activeFacets };
+  }),
   toggleFaction: (f) => set((s) => ({
     activeFactions: s.activeFactions.includes(f) ? s.activeFactions.filter((x) => x !== f) : [...s.activeFactions, f],
   })),
@@ -1362,16 +1301,15 @@ export function getFilteredItems(
   activeDealsDamage: string[] = [],
   activeWeakTo: string[] = [],
   onlyContainers: boolean = false,
-  activeMaterialClasses: string[] = []
+  activeFacets: Record<string, string[]> = {}
 ): ValheimItem[] {
   let items = VALHEIM_ITEMS;
-  // Raw = gathered from the world, Crafted = made by the player. Equipment and
-  // creatures carry no class, so this filter narrows the view to materials.
-  if (activeMaterialClasses.length > 0) {
-    items = items.filter((i) => {
-      const c = getMaterialClass(i);
-      return !!c && activeMaterialClasses.includes(c);
-    });
+  // Live-meta facets (Class, Used For, Activity...): any selected value within
+  // a facet, every facet with a selection.
+  for (const f of getValheimMeta().facets) {
+    const sel = activeFacets[f.id];
+    if (!sel || sel.length === 0) continue;
+    items = items.filter((i) => facetValuesOf(i, f.field).some((v) => sel.includes(v)));
   }
   if (onlyTameable) {
     items = items.filter((i) => i.tameable === true);
@@ -1616,21 +1554,36 @@ export function getSubcategoryCounts(
   return counts;
 }
 
-export const MATERIAL_CLASSES = ["Raw", "Crafted"] as const;
+/** The facets the live meta defines (Class, Used For, Activity...). */
+export function getFacets(): Facet[] {
+  return getValheimMeta().facets;
+}
 
-/** Raw / Crafted counts within the current type/biome/station scope. */
-export function getMaterialClassCounts(
+/** Per-facet value counts within the current type/biome/station scope. */
+export function getFacetCounts(
   query: string,
   activeTypes: string[],
   activeBiomes: string[],
   activeStations: string[],
-): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const item of getFilteredItems(query, activeTypes, activeBiomes, activeStations)) {
-    const c = getMaterialClass(item);
-    if (c) counts[c] = (counts[c] || 0) + 1;
+): Record<string, Record<string, number>> {
+  const base = getFilteredItems(query, activeTypes, activeBiomes, activeStations);
+  const out: Record<string, Record<string, number>> = {};
+  for (const f of getValheimMeta().facets) {
+    const counts: Record<string, number> = {};
+    for (const item of base) for (const v of facetValuesOf(item, f.field)) counts[v] = (counts[v] || 0) + 1;
+    out[f.id] = counts;
   }
-  return counts;
+  return out;
+}
+
+/** Tags switched on through a facet over the `tags` field — these let tagged
+ *  items (baits) back into the materials rollups. */
+export function activeFacetTags(activeFacets: Record<string, string[]>): string[] {
+  const tags: string[] = [];
+  for (const f of getValheimMeta().facets) {
+    if (f.field === "tags") tags.push(...(activeFacets[f.id] || []));
+  }
+  return tags;
 }
 
 // ── Cart material aggregation ────────────────────────────────

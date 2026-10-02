@@ -73,8 +73,9 @@ import {
   getCraftableMaterials,
   getCraftableItemCount,
   filterMaterialsByBiome,
-  getMaterialClassCounts,
-  MATERIAL_CLASSES,
+  getFacets,
+  getFacetCounts,
+  activeFacetTags,
   type MaterialRollup,
   type CartMaterial,
   CRAFTABLE_TYPES,
@@ -599,7 +600,7 @@ export function ValheimData() {
   const {
     query, activeTypes, activeBiomes, activeStations, activeFactories, activeVendors, sortBy,
     selectedItem, selectedStation, selectedFactory, selectedVendor,
-    cartItems, activeSubcategories, onlyTameable, onlyContainers, activeMaterialClasses,
+    cartItems, activeSubcategories, onlyTameable, onlyContainers, activeFacets,
     activeFactions, activeDealsDamage, activeWeakTo,
     viewMode, tableSortKey, tableSortDir,
     stationMaterialsMode, setStationMaterialsMode,
@@ -610,7 +611,7 @@ export function ValheimData() {
     setViewMode, setTableSort,
     toggleType, toggleSubcategory, toggleBiome, toggleStation, toggleFactory, toggleVendor,
     setOnlyTameable, toggleOnlyTameable,
-    setOnlyContainers, toggleOnlyContainers, toggleMaterialClass,
+    setOnlyContainers, toggleOnlyContainers, toggleFacet,
     toggleFaction, toggleDealsDamage, toggleWeakTo,
   } = useValheimDataStore();
 
@@ -679,7 +680,7 @@ export function ValheimData() {
     }
   }, [selectedItem, selectedStation, selectedFactory, selectedVendor]);
 
-  const rawItems = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo, onlyContainers, activeMaterialClasses);
+  const rawItems = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo, onlyContainers, activeFacets);
   // Apply discovery filter. Creatures are skipped from this filter since they
   // aren't "discovered" in the save-file knowledge lists (those cover
   // materials / recipes / pieces).
@@ -697,7 +698,12 @@ export function ValheimData() {
   const vendorCounts = getVendorCounts(query, activeTypes, activeBiomes, activeStations);
   const factoryCounts = getFactoryCounts(query, activeTypes, activeBiomes, activeStations);
   const subcategoryCounts = getSubcategoryCounts(query, activeTypes, activeBiomes, activeStations);
-  const materialClassCounts = getMaterialClassCounts(query, activeTypes, activeBiomes, activeStations);
+  // Facets (Class, Used For, Activity...) are defined by the live meta.
+  const facets = getFacets();
+  const facetCounts = getFacetCounts(query, activeTypes, activeBiomes, activeStations);
+  const facetSelectionCount = Object.values(activeFacets).reduce((n, v) => n + v.length, 0);
+  // Baits etc. only join the materials rollups when their Activity is ticked.
+  const rollupTags = activeFacetTags(activeFacets);
   const totalMatching = items.length;
 
   const stationMaterials = useMemo<MaterialRollup>(() => {
@@ -705,12 +711,12 @@ export function ValheimData() {
     // A station spans every biome, so the only way the sidebar biome filter can
     // scope this rollup is to filter the aggregated mats by their own biome —
     // otherwise Workbench Craft Mats leaks Mistlands/Ashlands/Plains ingredients.
-    const rollup = getStationMaterials(activeStations, stationMaterialsMode);
+    const rollup = getStationMaterials(activeStations, stationMaterialsMode, rollupTags);
     return {
       raw: filterMaterialsByBiome(rollup.raw, activeBiomes),
       crafted: filterMaterialsByBiome(rollup.crafted, activeBiomes),
     };
-  }, [stationMaterialsMode, activeStations, activeBiomes]);
+  }, [stationMaterialsMode, activeStations, activeBiomes, rollupTags.join("|")]);
   // Materials toggle is only meaningful when at least one craftable type is in
   // scope — Weapons / Armour / Food etc. Falls back to false otherwise so
   // selecting only Material / Creature / WorldObject hides the toggle.
@@ -718,14 +724,14 @@ export function ValheimData() {
   const itemMaterialsActive = itemMaterialsMode === "materials" && hasCraftableType;
   const itemMaterials = useMemo<MaterialRollup>(() => {
     if (!itemMaterialsActive) return EMPTY_ROLLUP;
-    return getCraftableMaterials(rawItems);
-  }, [itemMaterialsActive, rawItems]);
+    return getCraftableMaterials(rawItems, rollupTags);
+  }, [itemMaterialsActive, rawItems, rollupTags.join("|")]);
   const itemMaterialsItemCount = useMemo(() => {
     if (!itemMaterialsActive) return 0;
     return getCraftableItemCount(rawItems);
   }, [itemMaterialsActive, rawItems]);
   const subcategoryEntries = Object.entries(subcategoryCounts).sort((a, b) => b[1] - a[1]);
-  const hasActiveFilters = query || activeTypes.length > 0 || activeSubcategories.length > 0 || activeBiomes.length > 0 || activeStations.length > 0 || activeFactories.length > 0 || activeVendors.length > 0 || onlyTameable || onlyContainers || activeMaterialClasses.length > 0 || activeFactions.length > 0 || activeDealsDamage.length > 0 || activeWeakTo.length > 0 || sortBy !== "name-asc";
+  const hasActiveFilters = query || activeTypes.length > 0 || activeSubcategories.length > 0 || activeBiomes.length > 0 || activeStations.length > 0 || activeFactories.length > 0 || activeVendors.length > 0 || onlyTameable || onlyContainers || facetSelectionCount > 0 || activeFactions.length > 0 || activeDealsDamage.length > 0 || activeWeakTo.length > 0 || sortBy !== "name-asc";
 
   // Group items by type (default) or by biome (when biome-grouped)
   const groupedItems = useMemo(() => {
@@ -802,7 +808,7 @@ export function ValheimData() {
     await saveTextFile(path, content);
   };
 
-  const activeFilterCount = activeTypes.length + activeSubcategories.length + activeBiomes.length + activeStations.length + activeFactories.length + activeVendors.length + (onlyTameable ? 1 : 0) + (onlyContainers ? 1 : 0) + activeMaterialClasses.length + activeFactions.length + activeDealsDamage.length + activeWeakTo.length;
+  const activeFilterCount = activeTypes.length + activeSubcategories.length + activeBiomes.length + activeStations.length + activeFactories.length + activeVendors.length + (onlyTameable ? 1 : 0) + (onlyContainers ? 1 : 0) + facetSelectionCount + activeFactions.length + activeDealsDamage.length + activeWeakTo.length;
 
   // Browser-style back — first try to pop the in-page nav history (so chained
   // detail clicks unwind one step at a time). If history is empty: honour the
@@ -1055,7 +1061,7 @@ export function ValheimData() {
                   setActiveVendor("");
                   setOnlyTameable(false);
                   setOnlyContainers(false);
-                  useValheimDataStore.setState({ activeFactions: [], activeDealsDamage: [], activeWeakTo: [], activeMaterialClasses: [] });
+                  useValheimDataStore.setState({ activeFactions: [], activeDealsDamage: [], activeWeakTo: [], activeFacets: {} });
                   setStationMaterialsMode(false);
                   setItemMaterialsMode(false);
                   setSortBy("name-asc");
@@ -1145,24 +1151,30 @@ export function ValheimData() {
               )}
             </FilterAccordion>
 
-            {/* Material class — Raw (gathered) vs Crafted (made by the player).
-                Equipment and creatures carry no class, so this only shows while
-                something class-bearing is in scope. */}
-            {(materialClassCounts.Raw || 0) + (materialClassCounts.Crafted || 0) > 0 && (
-              <FilterAccordion title="Material" defaultOpen={activeTypes.includes("Material")}>
-                {MATERIAL_CLASSES.map((c) => (
-                  <FilterCheckbox
-                    key={c}
-                    checked={activeMaterialClasses.includes(c)}
-                    onChange={() => toggleMaterialClass(c)}
-                    count={materialClassCounts[c] || 0}
-                    labelClassName={c === "Raw" ? "text-lime-400" : "text-amber-400"}
-                  >
-                    {c}
-                  </FilterCheckbox>
-                ))}
-              </FilterAccordion>
-            )}
+            {/* Live-meta facets — Class (Raw / Crafted / Item), Used For, Activity.
+                Defined in /data/valheim-meta.json, so a new filter ships as a
+                data publish. A group shows while any of its values match. */}
+            {facets.map((f) => {
+              const counts = facetCounts[f.id] || {};
+              const selected = activeFacets[f.id] || [];
+              const shown = f.values.filter((v) => (counts[v.value] || 0) > 0 || selected.includes(v.value));
+              if (shown.length === 0) return null;
+              return (
+                <FilterAccordion key={f.id} title={f.title} defaultOpen={selected.length > 0 || f.id === "itemClass"}>
+                  {shown.map((v) => (
+                    <div key={v.value} title={v.hint}>
+                      <FilterCheckbox
+                        checked={selected.includes(v.value)}
+                        onChange={() => toggleFacet(f.id, v.value)}
+                        count={counts[v.value] || 0}
+                      >
+                        <span style={v.color ? { color: v.color } : undefined}>{v.label}</span>
+                      </FilterCheckbox>
+                    </div>
+                  ))}
+                </FilterAccordion>
+              );
+            })}
 
             {/* Subcategory — only shown when types are selected and subcategories exist */}
             {activeTypes.length > 0 && subcategoryEntries.length > 1 && (
@@ -1431,14 +1443,17 @@ export function ValheimData() {
                   </button>
                 </span>
               )}
-              {activeMaterialClasses.map((c) => (
-                <span key={c} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-[11px] text-amber-400 border border-amber-500/20">
-                  {c} materials
-                  <button title={`Clear ${c} filter`} onClick={() => toggleMaterialClass(c)}>
-                    <X className="w-3 h-3 text-amber-400/50 hover:text-amber-400" />
-                  </button>
-                </span>
-              ))}
+              {facets.flatMap((f) => (activeFacets[f.id] || []).map((value) => {
+                const v = f.values.find((x) => x.value === value);
+                return (
+                  <span key={`${f.id}:${value}`} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-800/60 text-[11px] border border-zinc-700/40" style={v?.color ? { color: v.color } : undefined}>
+                    {f.title}: {v?.label ?? value}
+                    <button title={`Clear ${f.title}: ${v?.label ?? value}`} onClick={() => toggleFacet(f.id, value)}>
+                      <X className="w-3 h-3 opacity-50 hover:opacity-100" />
+                    </button>
+                  </span>
+                );
+              }))}
               {onlyTameable && (
                 <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-[11px] text-emerald-400 border border-emerald-500/20">
                   Tameable

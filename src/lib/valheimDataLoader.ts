@@ -51,7 +51,40 @@ function safeParseItems(body: string): ValheimItem[] | null {
  * from main.tsx ahead of ReactDOM.createRoot so the very first paint shows
  * the user's latest data, not the bundled snapshot from N versions ago.
  */
+// ── Meta (facets, rollup rules, factory tables) ──────────────
+// Served beside the items as /data/valheim-meta.json and cached the same way.
+// The store refuses a meta whose schema is newer than this build understands,
+// so an old client keeps its bundled/cached meta rather than breaking.
+
+async function bootstrapValheimMeta(): Promise<void> {
+  try {
+    const cached = await invoke<CachedDataResult | null>("read_cached_valheim_meta");
+    if (!cached) return;
+    const ok = useValheimDataStore.getState().applyRemoteMeta(JSON.parse(cached.body), cached.version);
+    debugLog(`valheimMeta: ${ok ? "bootstrapped from cache" : "cached meta unusable, kept bundled"} (v${cached.version})`);
+  } catch (e) {
+    debugLog(`valheimMeta: bootstrap failed: ${e}`);
+  }
+}
+
+async function refreshValheimMeta(): Promise<void> {
+  try {
+    const result = await invoke<FetchResult>("fetch_valheim_meta");
+    if (result.status === "updated") {
+      const ok = useValheimDataStore.getState().applyRemoteMeta(JSON.parse(result.body), result.version);
+      debugLog(`valheimMeta: ${ok ? "applied" : "ignored (newer schema)"} remote v${result.version}`);
+    } else if (result.status === "unchanged") {
+      debugLog(`valheimMeta: remote unchanged (v${result.version})`);
+    } else {
+      debugLog(`valheimMeta: fetch failed: ${result.error}`);
+    }
+  } catch (e) {
+    debugLog(`valheimMeta: fetch threw: ${e}`);
+  }
+}
+
 export async function bootstrapValheimData(): Promise<void> {
+  await bootstrapValheimMeta();
   try {
     const cached = await invoke<CachedDataResult | null>("read_cached_valheim_data");
     if (!cached) {
@@ -77,6 +110,7 @@ export async function bootstrapValheimData(): Promise<void> {
  * updated, false if the remote was unchanged or unreachable.
  */
 export async function refreshValheimData(): Promise<boolean> {
+  await refreshValheimMeta();
   try {
     const result = await invoke<FetchResult>("fetch_valheim_data");
     if (result.status === "updated") {
