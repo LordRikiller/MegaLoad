@@ -808,11 +808,94 @@ export function getStationItems(stationName: string): ValheimItem[] {
   return VALHEIM_ITEMS.filter((i) => names.includes(i.station));
 }
 
-// Types that are "items in their own right" — exclude from materials lists when used as ingredients
-const ITEM_INGREDIENT_TYPES = new Set(["Weapon", "Armor", "Tool", "Ammo"]);
+// ── Raw / crafted material rollups ───────────────────────────
+// Rollups count RAW materials only — what a player gathers, mines, kills,
+// fishes or buys. Anything made (Bread, Bronze, Linen Thread, Uncooked Stuffed
+// Mushroom, a Berserkir Axe feeding its Bleeding upgrade) is expanded into its
+// own inputs, and listed separately as a CRAFTED intermediate so the player
+// still sees what they'll make along the way.
 
-/** Get all unique raw ingredients needed to craft/build at the given stations */
-export function getStationMaterials(stationNames: string[], mode: "craft" | "build"): CartMaterial[] {
+export interface MaterialRollup {
+  raw: CartMaterial[];      // gathered from the world
+  crafted: CartMaterial[];  // made on the way (units needed, not crafts)
+}
+
+// "Any one of N" recipes (Raw Fish = any fish). Summing the list would ask
+// for every fish, so they stop the expansion and count as the raw need.
+const ONE_OF_RECIPES = new Set(["FishRaw"]);
+// Saplings show up as ingredients in some mods' Hammer pieces; never a mat.
+const NEVER_MAT_TYPES = new Set(["Plantable"]);
+const EQUIPMENT_TYPES = new Set(["Weapon", "Armor", "Clothing", "Tool", "Ammo", "BuildPiece", "Creature", "WorldObject"]);
+
+/** How one craft of `it` is made, or null when it's gathered as itself. */
+function getMakeRecipe(it: ValheimItem): { inputs: { id: string; name: string; amount: number }[]; yields: number } | null {
+  if (ONE_OF_RECIPES.has(it.id)) return null;
+  const pick = it.recipe && it.recipe.length > 0
+    ? { inputs: it.recipe, yields: it.craftAmount || 1 }
+    : it.producedBy
+      ? { inputs: it.producedBy.inputs, yields: it.producedBy.output || 1 }
+      : null;
+  // A self-referencing recipe (RottenMeat piece) can't be expanded.
+  if (!pick || pick.inputs.some((i) => i.id === it.id)) return null;
+  return pick;
+}
+
+/** "Raw" | "Crafted" for a material-like item; null for equipment/creatures.
+ *  Prefers the converter's tag, falls back to the recipe/factory data so an
+ *  older hot-swapped dataset still classifies. */
+export function getMaterialClass(it: ValheimItem): "Raw" | "Crafted" | null {
+  if (it.materialClass) return it.materialClass;
+  if (EQUIPMENT_TYPES.has(it.type)) return null;
+  return (it.recipe && it.recipe.length > 0) || it.producedBy ? "Crafted" : "Raw";
+}
+
+function addNeed(need: Map<string, CartMaterial>, id: string, name: string, amount: number): void {
+  if (!(amount > 0)) return;
+  const prev = need.get(id);
+  need.set(id, { id, name: prev?.name || getItemById(id)?.name || name, amount: (prev?.amount || 0) + amount });
+}
+
+/** Expand a set of direct needs into raw + crafted totals. Crafted items are
+ *  settled only after everything that consumes them (reverse DFS post-order),
+ *  so a shared intermediate is rounded up to whole crafts once — 30 Bread
+ *  Dough is 15 crafts of 10 Barley Flour, not 30. */
+export function planMaterials(direct: Map<string, CartMaterial>): MaterialRollup {
+  const order: string[] = [];
+  const seen = new Set<string>();
+  const visit = (id: string) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    const it = getItemById(id);
+    const mk = it && getMakeRecipe(it);
+    if (mk) for (const ing of mk.inputs) visit(ing.id);
+    order.push(id);
+  };
+  for (const id of direct.keys()) visit(id);
+  order.reverse();
+
+  const need = new Map<string, CartMaterial>();
+  for (const m of direct.values()) addNeed(need, m.id, m.name, m.amount);
+  const raw: CartMaterial[] = [];
+  const crafted: CartMaterial[] = [];
+  for (const id of order) {
+    const m = need.get(id);
+    if (!m) continue;
+    const it = getItemById(id);
+    const mk = it && getMakeRecipe(it);
+    if (!mk) {
+      if (!it || !NEVER_MAT_TYPES.has(it.type)) raw.push(m);
+      continue;
+    }
+    crafted.push(m);
+    const crafts = Math.ceil(m.amount / mk.yields);
+    for (const ing of mk.inputs) addNeed(need, ing.id, ing.name, crafts * ing.amount);
+  }
+  const byName = (a: CartMaterial, b: CartMaterial) => a.name.localeCompare(b.name);
+  return { raw: raw.sort(byName), crafted: crafted.sort(byName) };
+}
+
+/** Raw + crafted materials needed to craft/build everything at the given stations */
+export function getStationMaterials(stationNames: string[], mode: "craft" | "build"): MaterialRollup {
   const expanded = expandStationSupersets(stationNames);
   const totals = new Map<string, CartMaterial>();
   for (const name of expanded) {
@@ -825,37 +908,15 @@ export function getStationMaterials(stationNames: string[], mode: "craft" | "bui
       const isAssembly = item.subcategory === "Siege" || item.subcategory === "Vehicle";
       if (mode === "craft" && item.type === "BuildPiece" && !isAssembly) continue;
       if (mode === "build" && (item.type !== "BuildPiece" || isAssembly)) continue;
-      for (const ing of item.recipe) {
-        const prev = totals.get(ing.id);
-        totals.set(ing.id, { id: ing.id, name: ing.name, amount: (prev?.amount || 0) + ing.amount });
-      }
+      for (const ing of item.recipe) addNeed(totals, ing.id, ing.name, ing.amount);
       for (const uc of item.upgradeCosts) {
-        for (const r of uc.resources) {
-          const prev = totals.get(r.id);
-          totals.set(r.id, { id: r.id, name: r.name, amount: (prev?.amount || 0) + r.amount });
-        }
+        for (const r of uc.resources) addNeed(totals, r.id, r.name, r.amount);
       }
     }
   }
-  // Filter out ingredients that are themselves craftable weapons/armor/tools
-  // (e.g. Berserkir Axes used to craft Bleeding Berserkir Axes — that's an upgrade path, not a raw material).
-  // Exception: Torch-subcategory items (Dvergr Lantern) are genuine BuildPiece
-  // ingredients (piece_dvergr_lantern + piece_dvergr_lantern_pole), not upgrade chains — keep them.
-  const itemMap = new Map(VALHEIM_ITEMS.map(i => [i.id, i]));
-  for (const [id] of totals) {
-    const ingItem = itemMap.get(id);
-    if (ingItem && ITEM_INGREDIENT_TYPES.has(ingItem.type) && ingItem.subcategory !== "Torch") {
-      totals.delete(id);
-    }
-  }
-  return [...totals.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return planMaterials(totals);
 }
 
-// Items that can show up as ingredients but should never count as raw mats:
-// crafted weapons/armor/tools/ammo (already filtered) plus plantables (saplings
-// drop here as upgrade-recipes for Hammer pieces in some mods — keep the list
-// raw-resource only).
-const NON_RAW_MAT_TYPES = new Set([...ITEM_INGREDIENT_TYPES, "Plantable"]);
 
 /** "Player-obtainable" check used to weed out decoration-only BuildPieces.
  *  An ingredient counts as obtainable if it has any of: a recipe (craftable),
@@ -903,39 +964,22 @@ export const CRAFTABLE_TYPES: ReadonlyArray<string> = [
   "Weapon", "Armor", "Clothing", "Food", "Potion", "Tool", "Ammo", "BuildPiece",
 ];
 
-/** Aggregate raw materials needed to craft every item in `items` that has a
- *  recipe. Works across any pre-filtered set (typically the output of
- *  getFilteredItems). Skips decoration-only BuildPieces via isPlayerBuildable
- *  and filters out non-raw ingredient types so the list stays raw resources
- *  only (Torch-tool exception preserved for piece_dvergr_lantern). */
-export function getCraftableMaterials(items: ValheimItem[]): CartMaterial[] {
+/** Raw + crafted materials needed to craft every item in `items` that has a
+ *  recipe, once each with every upgrade. Works across any pre-filtered set
+ *  (typically the output of getFilteredItems). Skips decoration-only
+ *  BuildPieces via isPlayerBuildable. */
+export function getCraftableMaterials(items: ValheimItem[]): MaterialRollup {
   const totals = new Map<string, CartMaterial>();
   for (const item of items) {
     if (!CRAFTABLE_TYPES.includes(item.type)) continue;
     if (item.type === "BuildPiece" && !isPlayerBuildable(item)) continue;
     if ((!item.recipe || item.recipe.length === 0) && (!item.upgradeCosts || item.upgradeCosts.length === 0)) continue;
-    for (const ing of item.recipe || []) {
-      const canonical = _bpItemMap.get(ing.id);
-      const displayName = canonical?.name || ing.name;
-      const prev = totals.get(ing.id);
-      totals.set(ing.id, { id: ing.id, name: displayName, amount: (prev?.amount || 0) + ing.amount });
-    }
+    for (const ing of item.recipe || []) addNeed(totals, ing.id, ing.name, ing.amount);
     for (const uc of item.upgradeCosts || []) {
-      for (const r of uc.resources) {
-        const canonical = _bpItemMap.get(r.id);
-        const displayName = canonical?.name || r.name;
-        const prev = totals.get(r.id);
-        totals.set(r.id, { id: r.id, name: displayName, amount: (prev?.amount || 0) + r.amount });
-      }
+      for (const r of uc.resources) addNeed(totals, r.id, r.name, r.amount);
     }
   }
-  for (const [id] of totals) {
-    const ingItem = _bpItemMap.get(id);
-    if (ingItem && NON_RAW_MAT_TYPES.has(ingItem.type) && ingItem.subcategory !== "Torch") {
-      totals.delete(id);
-    }
-  }
-  return [...totals.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return planMaterials(totals);
 }
 
 /** Count of items in `items` that contribute to getCraftableMaterials (have a
@@ -1025,6 +1069,7 @@ interface ValheimDataState {
   activeVendors: string[];
   onlyContainers: boolean;
   onlyTameable: boolean;
+  activeMaterialClasses: string[];
   activeFactions: string[];
   activeDealsDamage: string[];
   activeWeakTo: string[];
@@ -1055,6 +1100,7 @@ interface ValheimDataState {
   setOnlyTameable: (v: boolean) => void;
   setOnlyContainers: (v: boolean) => void;
   toggleOnlyContainers: () => void;
+  toggleMaterialClass: (c: string) => void;
   toggleOnlyTameable: () => void;
   toggleFaction: (f: string) => void;
   toggleDealsDamage: (d: string) => void;
@@ -1132,6 +1178,7 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   activeVendors: [],
   onlyContainers: false,
   onlyTameable: false,
+  activeMaterialClasses: [],
   activeFactions: [],
   activeDealsDamage: [],
   activeWeakTo: [],
@@ -1201,6 +1248,9 @@ export const useValheimDataStore = create<ValheimDataState>((set, get) => ({
   toggleOnlyTameable: () => set((s) => ({ onlyTameable: !s.onlyTameable })),
   setOnlyContainers: (v) => set({ onlyContainers: v }),
   toggleOnlyContainers: () => set((s) => ({ onlyContainers: !s.onlyContainers })),
+  toggleMaterialClass: (c) => set((s) => ({
+    activeMaterialClasses: s.activeMaterialClasses.includes(c) ? s.activeMaterialClasses.filter((x) => x !== c) : [...s.activeMaterialClasses, c],
+  })),
   toggleFaction: (f) => set((s) => ({
     activeFactions: s.activeFactions.includes(f) ? s.activeFactions.filter((x) => x !== f) : [...s.activeFactions, f],
   })),
@@ -1311,9 +1361,18 @@ export function getFilteredItems(
   activeFactions: string[] = [],
   activeDealsDamage: string[] = [],
   activeWeakTo: string[] = [],
-  onlyContainers: boolean = false
+  onlyContainers: boolean = false,
+  activeMaterialClasses: string[] = []
 ): ValheimItem[] {
   let items = VALHEIM_ITEMS;
+  // Raw = gathered from the world, Crafted = made by the player. Equipment and
+  // creatures carry no class, so this filter narrows the view to materials.
+  if (activeMaterialClasses.length > 0) {
+    items = items.filter((i) => {
+      const c = getMaterialClass(i);
+      return !!c && activeMaterialClasses.includes(c);
+    });
+  }
   if (onlyTameable) {
     items = items.filter((i) => i.tameable === true);
   }
@@ -1553,6 +1612,23 @@ export function getSubcategoryCounts(
   const counts: Record<string, number> = {};
   for (const item of base) {
     if (item.subcategory) counts[item.subcategory] = (counts[item.subcategory] || 0) + 1;
+  }
+  return counts;
+}
+
+export const MATERIAL_CLASSES = ["Raw", "Crafted"] as const;
+
+/** Raw / Crafted counts within the current type/biome/station scope. */
+export function getMaterialClassCounts(
+  query: string,
+  activeTypes: string[],
+  activeBiomes: string[],
+  activeStations: string[],
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const item of getFilteredItems(query, activeTypes, activeBiomes, activeStations)) {
+    const c = getMaterialClass(item);
+    if (c) counts[c] = (counts[c] || 0) + 1;
   }
   return counts;
 }

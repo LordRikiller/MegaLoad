@@ -1817,6 +1817,26 @@ const STONE_OVEN_ITEMS = new Set([
   "MisthareSupreme", "MagicallyStuffedShroom", "PiquantPie",
   "RoastedCrustPie", "VikingCupcake",
 ]);
+// Top the hand-kept sets up from the dump's own station conversions, so a
+// new cooked/baked item (1.0 added Cooked Moose Meat, Cooked Seal Blubber,
+// Kale Chips, Oven Pancake, Baked Poteitr) gets a station + recipe instead
+// of dead-ending as "Raw Food, source Pickup". COOKING_CONVERSIONS below is
+// topped up the same way once it's declared.
+const DUMP_STATIONS = raw.stations || [];
+const COOKING_STATION_PREFABS = {
+  piece_cookingstation: COOKING_STATION_ITEMS,
+  piece_cookingstation_iron: IRON_COOKING_STATION_ITEMS,
+  piece_oven: STONE_OVEN_ITEMS,
+};
+for (const st of DUMP_STATIONS) {
+  const set = COOKING_STATION_PREFABS[st.prefab];
+  if (!set) continue;
+  for (const c of st.conversions || []) {
+    // A meat both racks cook stays on the basic Cooking Station.
+    if (set === IRON_COOKING_STATION_ITEMS && COOKING_STATION_ITEMS.has(c.to)) continue;
+    set.add(c.to);
+  }
+}
 const FIRE_COOKED_ITEMS = new Set([...COOKING_STATION_ITEMS, ...IRON_COOKING_STATION_ITEMS]);
 
 // Raw/uncooked → cooked mappings (1:1). The game stores these as Smelter
@@ -1853,6 +1873,12 @@ const COOKING_CONVERSIONS = {
   RoastedCrustPie:            "RoastedCrustPieUncooked",
   VikingCupcake:              "VikingCupcakeUncooked",
 };
+for (const st of DUMP_STATIONS) {
+  if (!COOKING_STATION_PREFABS[st.prefab]) continue;
+  for (const c of st.conversions || []) {
+    if (!COOKING_CONVERSIONS[c.to]) COOKING_CONVERSIONS[c.to] = c.from;
+  }
+}
 
 // ── Determine source (how to obtain) ──
 function getSource(prefab, recipe, itemDrops) {
@@ -2114,21 +2140,32 @@ for (const item of items) {
     });
   }
 
-  // Build upgrade costs (level 2+)
+  // Build upgrade costs (level 2+). Mirrors the 1.0 IL exactly:
+  //   Piece.Requirement.GetAmount(q) = floor(mult * amountPerLevel), where
+  //     mult = q < 4 ? q - 1 : 4 + (q - 4) / 2   (float divide: Q5 = 4.5x)
+  //   (+ m_amount for an upgraderResource, which we skip: Idols are a
+  //   refinement flag, not a cost).
+  //   Recipe.GetRequiredStationLevel(q) = max(1, minStationLevel) + (q - 1)
+  // Writing amountPerLevel flat and stationLevel = q under-priced Q3+ (Bronze
+  // Sword Q3 showed 4 Bronze, really 8) and under-gated late stations (Black
+  // Metal Sword Q2 needs Forge 5, not 2).
   const upgradeCosts = [];
   if (item.maxQuality > 1 && recipe) {
+    const baseStationLevel = Math.max(1, recipe.minStationLevel || 1);
     for (let lvl = 2; lvl <= item.maxQuality; lvl++) {
+      const mult = lvl < 4 ? lvl - 1 : 4 + (lvl - 4) / 2;
       const resources = recipe.resources
-        .filter(r => r.item && r.amountPerLevel > 0)
+        .filter(r => r.item && r.amountPerLevel > 0 && !r.upgraderResource)
         .map(r => ({
           id: r.item,
           name: loc(findItemName(r.item)),
-          amount: r.amountPerLevel,
-        }));
+          amount: Math.floor(mult * r.amountPerLevel),
+        }))
+        .filter(r => r.amount > 0);
       if (resources.length > 0) {
         upgradeCosts.push({
           level: lvl,
-          stationLevel: lvl,
+          stationLevel: baseStationLevel + (lvl - 1),
           resources,
         });
       }
@@ -3533,6 +3570,85 @@ console.log("Type breakdown:", typeCounts);
   );
 }
 
+// ── Raw vs crafted materials ────────────────────────────────
+// The stores expand every crafted ingredient down to the raw world materials
+// a player gathers (Bread → Barley, Bronze → Copper Ore + Tin Ore). That needs
+// three things the recipe list alone doesn't carry:
+//   craftAmount  how many one craft yields (arrows 20, Bread Dough 2, meads 6)
+//   producedBy   the factory conversion for outputs with no Recipe (Copper,
+//                Linen Thread, Barley Flour, Coal, Refined Eitr, Bloodgold...)
+//   materialClass "Raw" | "Crafted" on every non-equipment item
+// Fuel (smelter Coal, refinery Sap) is not an input, so it isn't counted.
+const FERMENTER_YIELD = 6; // one Mead Base ferments into six meads
+// Conversions with several inputs: the route a player actually takes.
+const PRODUCED_BY_PREFERRED = {
+  Iron: "IronScrap",   // Iron Ore is rare; Scrap Iron from Swamp crypts is the bulk route
+  Copper: "CopperOre",
+  Coal: "Wood",
+};
+// Harvested crops the dump also lists as a factory output (1.0's Windmill
+// takes Oat Seeds → Oat). A crop is gathered, not crafted.
+const RAW_OVERRIDES = new Set(["Oat"]);
+// Factory outputs typed Misc by mapItemType that are plain materials.
+const MATERIAL_TYPE_FIXES = new Set(["BarleyFlour", "OatFlour"]);
+const NON_MATERIAL_TYPES = new Set(["Weapon", "Armor", "Clothing", "Tool", "Ammo", "BuildPiece", "Creature", "WorldObject"]);
+
+const producedByMap = {};
+for (const st of DUMP_STATIONS) {
+  if (COOKING_STATION_PREFABS[st.prefab]) continue; // these get a synthetic recipe instead
+  const stationName = loc(st.name) || st.prefab;
+  for (const c of st.conversions || []) {
+    if (!c.from || !c.to || c.from === c.to || RAW_OVERRIDES.has(c.to)) continue;
+    const prev = producedByMap[c.to];
+    const preferred = PRODUCED_BY_PREFERRED[c.to];
+    if (prev && !(preferred && c.from === preferred && prev.inputs[0].id !== preferred)) continue;
+    producedByMap[c.to] = {
+      station: stationName,
+      inputs: [{ id: c.from, name: loc(findItemName(c.from)), amount: 1 }],
+      output: 1,
+    };
+  }
+}
+
+let craftAmounts = 0, producedBys = 0, rawCount = 0, craftedCount = 0;
+for (const e of converted) {
+  const r = recipeMap[e.id];
+  let yieldAmt = r && r.amount > 1 ? r.amount : 1;
+  if (e.station === "Fermenter") yieldAmt = (r && r.amount > 0 ? r.amount : 1) * FERMENTER_YIELD;
+  if (yieldAmt > 1 && e.recipe && e.recipe.length > 0) { e.craftAmount = yieldAmt; craftAmounts++; }
+
+  if ((!e.recipe || e.recipe.length === 0) && producedByMap[e.id]) {
+    e.producedBy = producedByMap[e.id];
+    producedBys++;
+    // Factory outputs came through as "Pickup" (the extractor saw them on the
+    // ground) — they're made, not found.
+    if (e.source.includes("Pickup") && (!e.worldSources || e.worldSources.length === 0)) {
+      e.source = e.source.map((s) => (s === "Pickup" ? "Crafting" : s));
+    }
+  }
+  if (MATERIAL_TYPE_FIXES.has(e.id)) {
+    e.type = "Material";
+    e.subcategory = "Material";
+    e.source = ["Crafting"];
+  }
+  // Oven/rack outputs the extractor only saw lying on the ground.
+  if (COOKING_CONVERSIONS[e.id] && e.source.includes("Pickup")) {
+    e.source = e.source.map((s) => (s === "Pickup" ? "Cooking" : s));
+  }
+  // Fish are caught, not picked up.
+  if (e.type === "Material" && e.subcategory === "Fish" && e.source.includes("Pickup")) {
+    e.source = e.source.map((s) => (s === "Pickup" ? "Fishing" : s));
+  }
+
+  if (!NON_MATERIAL_TYPES.has(e.type)) {
+    const crafted = !RAW_OVERRIDES.has(e.id)
+      && ((e.recipe && e.recipe.length > 0) || !!e.producedBy);
+    e.materialClass = crafted ? "Crafted" : "Raw";
+    if (crafted) craftedCount++; else rawCount++;
+  }
+}
+console.log(`Materials: ${rawCount} raw, ${craftedCount} crafted · ${craftAmounts} recipes yield >1 · ${producedBys} factory outputs linked`);
+
 let ts = `// @ts-nocheck — generated data, array literal too large for TS union inference
 // ── Valheim Item Database ──────────────────────────────────
 // Auto-generated from game data dump (assembly_valheim.dll via MegaDataExtractor)
@@ -3673,6 +3789,15 @@ export interface ValheimItem {
   wikiGroup: string;    // Wiki group page name (empty if item has its own page)
   setEffect?: SetEffect | null; // Armor only — set bonus mechanics on the chest piece
   refinement?: { id: string; name: string } | null; // Idol the Forge of Potential consumes to refine this item (1.0); not a crafting cost
+  craftAmount?: number; // How many one craft yields, when more than 1 (arrows 20, Bread Dough 2, meads 6)
+  producedBy?: ProducedBy; // Factory conversion for outputs with no Recipe (Copper ← Copper Ore at the Smelter)
+  materialClass?: "Raw" | "Crafted"; // Non-equipment items only: gathered from the world vs made by the player
+}
+
+export interface ProducedBy {
+  station: string;              // "Smelter", "Windmill", "Charcoal Kiln", ...
+  inputs: RecipeIngredient[];   // What goes in per output (fuel not counted)
+  output: number;               // Units out per input batch
 }
 
 export const VALHEIM_ITEMS: ValheimItem[] = [\n`;

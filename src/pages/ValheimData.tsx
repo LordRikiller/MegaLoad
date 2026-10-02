@@ -73,6 +73,10 @@ import {
   getCraftableMaterials,
   getCraftableItemCount,
   filterMaterialsByBiome,
+  getMaterialClassCounts,
+  MATERIAL_CLASSES,
+  type MaterialRollup,
+  type CartMaterial,
   CRAFTABLE_TYPES,
   getProcessingStationForOutput,
   getItemSource,
@@ -595,7 +599,7 @@ export function ValheimData() {
   const {
     query, activeTypes, activeBiomes, activeStations, activeFactories, activeVendors, sortBy,
     selectedItem, selectedStation, selectedFactory, selectedVendor,
-    cartItems, activeSubcategories, onlyTameable, onlyContainers,
+    cartItems, activeSubcategories, onlyTameable, onlyContainers, activeMaterialClasses,
     activeFactions, activeDealsDamage, activeWeakTo,
     viewMode, tableSortKey, tableSortDir,
     stationMaterialsMode, setStationMaterialsMode,
@@ -606,7 +610,7 @@ export function ValheimData() {
     setViewMode, setTableSort,
     toggleType, toggleSubcategory, toggleBiome, toggleStation, toggleFactory, toggleVendor,
     setOnlyTameable, toggleOnlyTameable,
-    setOnlyContainers, toggleOnlyContainers,
+    setOnlyContainers, toggleOnlyContainers, toggleMaterialClass,
     toggleFaction, toggleDealsDamage, toggleWeakTo,
   } = useValheimDataStore();
 
@@ -675,7 +679,7 @@ export function ValheimData() {
     }
   }, [selectedItem, selectedStation, selectedFactory, selectedVendor]);
 
-  const rawItems = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo, onlyContainers);
+  const rawItems = getFilteredItems(query, activeTypes, activeBiomes, activeStations, activeVendors, sortBy, activeSubcategories, activeFactories, onlyTameable, activeFactions, activeDealsDamage, activeWeakTo, onlyContainers, activeMaterialClasses);
   // Apply discovery filter. Creatures are skipped from this filter since they
   // aren't "discovered" in the save-file knowledge lists (those cover
   // materials / recipes / pieces).
@@ -693,25 +697,27 @@ export function ValheimData() {
   const vendorCounts = getVendorCounts(query, activeTypes, activeBiomes, activeStations);
   const factoryCounts = getFactoryCounts(query, activeTypes, activeBiomes, activeStations);
   const subcategoryCounts = getSubcategoryCounts(query, activeTypes, activeBiomes, activeStations);
+  const materialClassCounts = getMaterialClassCounts(query, activeTypes, activeBiomes, activeStations);
   const totalMatching = items.length;
 
-  const stationMaterials = useMemo(() => {
-    if (!stationMaterialsMode || activeStations.length === 0) return [];
+  const stationMaterials = useMemo<MaterialRollup>(() => {
+    if (!stationMaterialsMode || activeStations.length === 0) return EMPTY_ROLLUP;
     // A station spans every biome, so the only way the sidebar biome filter can
     // scope this rollup is to filter the aggregated mats by their own biome —
     // otherwise Workbench Craft Mats leaks Mistlands/Ashlands/Plains ingredients.
-    return filterMaterialsByBiome(
-      getStationMaterials(activeStations, stationMaterialsMode),
-      activeBiomes,
-    );
+    const rollup = getStationMaterials(activeStations, stationMaterialsMode);
+    return {
+      raw: filterMaterialsByBiome(rollup.raw, activeBiomes),
+      crafted: filterMaterialsByBiome(rollup.crafted, activeBiomes),
+    };
   }, [stationMaterialsMode, activeStations, activeBiomes]);
   // Materials toggle is only meaningful when at least one craftable type is in
   // scope — Weapons / Armour / Food etc. Falls back to false otherwise so
   // selecting only Material / Creature / WorldObject hides the toggle.
   const hasCraftableType = activeTypes.some((t) => CRAFTABLE_TYPES.includes(t));
   const itemMaterialsActive = itemMaterialsMode === "materials" && hasCraftableType;
-  const itemMaterials = useMemo(() => {
-    if (!itemMaterialsActive) return [];
+  const itemMaterials = useMemo<MaterialRollup>(() => {
+    if (!itemMaterialsActive) return EMPTY_ROLLUP;
     return getCraftableMaterials(rawItems);
   }, [itemMaterialsActive, rawItems]);
   const itemMaterialsItemCount = useMemo(() => {
@@ -719,7 +725,7 @@ export function ValheimData() {
     return getCraftableItemCount(rawItems);
   }, [itemMaterialsActive, rawItems]);
   const subcategoryEntries = Object.entries(subcategoryCounts).sort((a, b) => b[1] - a[1]);
-  const hasActiveFilters = query || activeTypes.length > 0 || activeSubcategories.length > 0 || activeBiomes.length > 0 || activeStations.length > 0 || activeFactories.length > 0 || activeVendors.length > 0 || onlyTameable || onlyContainers || activeFactions.length > 0 || activeDealsDamage.length > 0 || activeWeakTo.length > 0 || sortBy !== "name-asc";
+  const hasActiveFilters = query || activeTypes.length > 0 || activeSubcategories.length > 0 || activeBiomes.length > 0 || activeStations.length > 0 || activeFactories.length > 0 || activeVendors.length > 0 || onlyTameable || onlyContainers || activeMaterialClasses.length > 0 || activeFactions.length > 0 || activeDealsDamage.length > 0 || activeWeakTo.length > 0 || sortBy !== "name-asc";
 
   // Group items by type (default) or by biome (when biome-grouped)
   const groupedItems = useMemo(() => {
@@ -796,7 +802,7 @@ export function ValheimData() {
     await saveTextFile(path, content);
   };
 
-  const activeFilterCount = activeTypes.length + activeSubcategories.length + activeBiomes.length + activeStations.length + activeFactories.length + activeVendors.length + (onlyTameable ? 1 : 0) + (onlyContainers ? 1 : 0) + activeFactions.length + activeDealsDamage.length + activeWeakTo.length;
+  const activeFilterCount = activeTypes.length + activeSubcategories.length + activeBiomes.length + activeStations.length + activeFactories.length + activeVendors.length + (onlyTameable ? 1 : 0) + (onlyContainers ? 1 : 0) + activeMaterialClasses.length + activeFactions.length + activeDealsDamage.length + activeWeakTo.length;
 
   // Browser-style back — first try to pop the in-page nav history (so chained
   // detail clicks unwind one step at a time). If history is empty: honour the
@@ -1049,7 +1055,7 @@ export function ValheimData() {
                   setActiveVendor("");
                   setOnlyTameable(false);
                   setOnlyContainers(false);
-                  useValheimDataStore.setState({ activeFactions: [], activeDealsDamage: [], activeWeakTo: [] });
+                  useValheimDataStore.setState({ activeFactions: [], activeDealsDamage: [], activeWeakTo: [], activeMaterialClasses: [] });
                   setStationMaterialsMode(false);
                   setItemMaterialsMode(false);
                   setSortBy("name-asc");
@@ -1138,6 +1144,25 @@ export function ValheimData() {
                 </FilterCheckbox>
               )}
             </FilterAccordion>
+
+            {/* Material class — Raw (gathered) vs Crafted (made by the player).
+                Equipment and creatures carry no class, so this only shows while
+                something class-bearing is in scope. */}
+            {(materialClassCounts.Raw || 0) + (materialClassCounts.Crafted || 0) > 0 && (
+              <FilterAccordion title="Material" defaultOpen={activeTypes.includes("Material")}>
+                {MATERIAL_CLASSES.map((c) => (
+                  <FilterCheckbox
+                    key={c}
+                    checked={activeMaterialClasses.includes(c)}
+                    onChange={() => toggleMaterialClass(c)}
+                    count={materialClassCounts[c] || 0}
+                    labelClassName={c === "Raw" ? "text-lime-400" : "text-amber-400"}
+                  >
+                    {c}
+                  </FilterCheckbox>
+                ))}
+              </FilterAccordion>
+            )}
 
             {/* Subcategory — only shown when types are selected and subcategories exist */}
             {activeTypes.length > 0 && subcategoryEntries.length > 1 && (
@@ -1406,6 +1431,14 @@ export function ValheimData() {
                   </button>
                 </span>
               )}
+              {activeMaterialClasses.map((c) => (
+                <span key={c} className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-[11px] text-amber-400 border border-amber-500/20">
+                  {c} materials
+                  <button title={`Clear ${c} filter`} onClick={() => toggleMaterialClass(c)}>
+                    <X className="w-3 h-3 text-amber-400/50 hover:text-amber-400" />
+                  </button>
+                </span>
+              ))}
               {onlyTameable && (
                 <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-[11px] text-emerald-400 border border-emerald-500/20">
                   Tameable
@@ -1589,9 +1622,9 @@ export function ValheimData() {
         onClose={() => setMegaListModalOpen(false)}
         itemIds={
           itemMaterialsActive
-            ? itemMaterials.map((m) => m.id)
+            ? [...itemMaterials.raw, ...itemMaterials.crafted].map((m) => m.id)
             : stationMaterialsMode && activeStations.length > 0
-              ? stationMaterials.map((m) => m.id)
+              ? [...stationMaterials.raw, ...stationMaterials.crafted].map((m) => m.id)
               : items.map((i) => i.id)
         }
         filterSnapshot={{
@@ -2973,69 +3006,32 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
 }
 
 // ── Station Materials View ─────────────────────────────────
-function StationMaterialsView({ materials, stations, mode, activeBiomes, onItemClick }: {
-  materials: { id: string; name: string; amount: number }[];
-  stations: string[];
-  mode: "craft" | "build";
-  activeBiomes: string[];
+const EMPTY_ROLLUP: MaterialRollup = { raw: [], crafted: [] };
+
+function rollupCopyText(r: MaterialRollup): string {
+  const lines = r.raw.map((m) => `${m.name} x${m.amount}`);
+  if (r.crafted.length > 0) {
+    lines.push("", "Crafted along the way:", ...r.crafted.map((m) => `${m.name} x${m.amount}`));
+  }
+  return lines.join("\n");
+}
+
+// Two groups: RAW (what to gather — the real shopping list) and CRAFTED (the
+// intermediates you'll make on the way: Bronze, Bread Dough, Linen Thread...).
+function MaterialRollupList({ materials, activeBiomes = [], onItemClick }: {
+  materials: MaterialRollup;
+  activeBiomes?: string[];
   onItemClick: (item: ValheimItem) => void;
 }) {
-  const totalCraftable = useMemo(() => {
-    // getStationItems now expands Iron Cooking Station → also includes Cooking
-    // Station items. Dedupe by item id so mixed selections don't double count.
-    const seen = new Set<string>();
-    for (const s of stations) {
-      for (const item of getStationItems(s)) {
-        if (seen.has(item.id)) continue;
-        if (mode === "craft" && item.type !== "BuildPiece") seen.add(item.id);
-        if (mode === "build" && item.type === "BuildPiece") seen.add(item.id);
-      }
-    }
-    return seen.size;
-  }, [stations, mode]);
-  const modeLabel = mode === "craft" ? "Crafting Materials" : "Building Materials";
-  const modeDesc = mode === "craft" ? "craft" : "build";
-
-  return (
-    <div className="space-y-3">
-      {/* Summary header */}
-      <div className="glass rounded-xl p-4 border border-amber-500/20">
-        <div className="flex items-center gap-3">
-          <Package className="w-5 h-5 text-amber-400 shrink-0" />
-          <div className="flex-1">
-            <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-1">
-              {modeLabel}
-              <span className="text-zinc-500 font-normal ml-2">
-                ({materials.length} unique)
-              </span>
-              <CopyTextButton
-                text={materials.map((m) => `${m.name} x${m.amount}`).join("\n")}
-                size={14}
-                title="Copy all materials to clipboard"
-                className="ml-1"
-              />
-            </h2>
-            <p className="text-[11px] text-zinc-500 mt-0.5">
-              {activeBiomes.length > 0 ? (
-                <>
-                  Ingredients from {activeBiomes.join(", ")} needed to {modeDesc} at{" "}
-                  {stations.join(", ")}
-                </>
-              ) : (
-                <>
-                  All ingredients needed to {modeDesc} {totalCraftable} items at{" "}
-                  {stations.join(", ")}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Materials list */}
+  const section = (title: string, hint: string, list: CartMaterial[], tone: string) =>
+    list.length === 0 ? null : (
       <div className="glass rounded-xl border border-zinc-800/50 overflow-hidden">
+        <div className="flex items-baseline gap-2 px-4 py-2 border-b border-zinc-800/50 bg-zinc-900/40">
+          <span className={cn("text-[11px] font-semibold uppercase tracking-wide", tone)}>{title}</span>
+          <span className="text-[10px] text-zinc-500">{list.length} · {hint}</span>
+        </div>
         <div className="divide-y divide-zinc-800/30">
-          {materials.map((mat) => {
+          {list.map((mat) => {
             const matItem = getItemById(mat.id);
             // When biomes are filtered, show a biome tag that's actually in the
             // active set (a mat can span several) so the tag never contradicts
@@ -3074,6 +3070,75 @@ function StationMaterialsView({ materials, stations, mode, activeBiomes, onItemC
           })}
         </div>
       </div>
+    );
+  return (
+    <>
+      {section("Raw materials", "gather these", materials.raw, "text-lime-400")}
+      {section("Crafted materials", "made along the way", materials.crafted, "text-amber-400")}
+    </>
+  );
+}
+
+function StationMaterialsView({ materials, stations, mode, activeBiomes, onItemClick }: {
+  materials: MaterialRollup;
+  stations: string[];
+  mode: "craft" | "build";
+  activeBiomes: string[];
+  onItemClick: (item: ValheimItem) => void;
+}) {
+  const totalCraftable = useMemo(() => {
+    // getStationItems now expands Iron Cooking Station → also includes Cooking
+    // Station items. Dedupe by item id so mixed selections don't double count.
+    const seen = new Set<string>();
+    for (const s of stations) {
+      for (const item of getStationItems(s)) {
+        if (seen.has(item.id)) continue;
+        if (mode === "craft" && item.type !== "BuildPiece") seen.add(item.id);
+        if (mode === "build" && item.type === "BuildPiece") seen.add(item.id);
+      }
+    }
+    return seen.size;
+  }, [stations, mode]);
+  const modeLabel = mode === "craft" ? "Crafting Materials" : "Building Materials";
+  const modeDesc = mode === "craft" ? "craft" : "build";
+
+  return (
+    <div className="space-y-3">
+      {/* Summary header */}
+      <div className="glass rounded-xl p-4 border border-amber-500/20">
+        <div className="flex items-center gap-3">
+          <Package className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="flex-1">
+            <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-1">
+              {modeLabel}
+              <span className="text-zinc-500 font-normal ml-2">
+                ({materials.raw.length} raw · {materials.crafted.length} crafted)
+              </span>
+              <CopyTextButton
+                text={rollupCopyText(materials)}
+                size={14}
+                title="Copy all materials to clipboard"
+                className="ml-1"
+              />
+            </h2>
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              {activeBiomes.length > 0 ? (
+                <>
+                  Ingredients from {activeBiomes.join(", ")} needed to {modeDesc} at{" "}
+                  {stations.join(", ")}
+                </>
+              ) : (
+                <>
+                  All ingredients needed to {modeDesc} {totalCraftable} items at{" "}
+                  {stations.join(", ")}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <MaterialRollupList materials={materials} activeBiomes={activeBiomes} onItemClick={onItemClick} />
     </div>
   );
 }
@@ -3084,7 +3149,7 @@ function StationMaterialsView({ materials, stations, mode, activeBiomes, onItemC
 // Mirrors StationMaterialsView's layout so the Pieces/Materials toggle on the
 // sidebar feels symmetrical regardless of which craftable type is in scope.
 function ItemMaterialsView({ materials, activeTypes, subcategories, itemCount, onItemClick }: {
-  materials: { id: string; name: string; amount: number }[];
+  materials: MaterialRollup;
   activeTypes: string[];
   subcategories: string[];
   itemCount: number;
@@ -3111,10 +3176,10 @@ function ItemMaterialsView({ materials, activeTypes, subcategories, itemCount, o
             <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-1">
               {heading}
               <span className="text-zinc-500 font-normal ml-2">
-                ({materials.length} unique)
+                ({materials.raw.length} raw · {materials.crafted.length} crafted)
               </span>
               <CopyTextButton
-                text={materials.map((m) => `${m.name} x${m.amount}`).join("\n")}
+                text={rollupCopyText(materials)}
                 size={14}
                 title="Copy all materials to clipboard"
                 className="ml-1"
@@ -3127,43 +3192,7 @@ function ItemMaterialsView({ materials, activeTypes, subcategories, itemCount, o
         </div>
       </div>
 
-      {/* Materials list */}
-      <div className="glass rounded-xl border border-zinc-800/50 overflow-hidden">
-        <div className="divide-y divide-zinc-800/30">
-          {materials.map((mat) => {
-            const matItem = getItemById(mat.id);
-            const biome = matItem?.biomes[0];
-            return (
-              <div
-                key={mat.id}
-                onClick={() => matItem && onItemClick(matItem)}
-                className="flex items-center gap-3 px-4 py-2 hover:bg-zinc-800/20 transition-colors cursor-pointer group"
-              >
-                <div className="w-6 h-6 shrink-0">
-                  <ItemIcon id={mat.id} size={24} />
-                </div>
-                <span className="text-sm text-brand-400 hover:underline flex-1 truncate">
-                  {mat.name}
-                </span>
-                <CopyTextButton
-                  text={mat.name}
-                  size={14}
-                  title={`Copy "${mat.name}"`}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                />
-                {biome && (
-                  <span className={cn("text-[10px] font-medium shrink-0", BIOME_COLORS[biome] || "text-zinc-400")}>
-                    {biome}
-                  </span>
-                )}
-                <span className="text-sm text-zinc-400 font-mono shrink-0 w-16 text-right">
-                  x{mat.amount.toLocaleString()}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <MaterialRollupList materials={materials} onItemClick={onItemClick} />
     </div>
   );
 }
@@ -3177,7 +3206,7 @@ function StationDetailView({ station, onBack }: { station: string; onBack: () =>
   const upgrades = getStationUpgrades(station);
   const levels = [...itemsByLevel.keys()].sort((a, b) => a - b);
   const maxLevel = upgrades.length > 0 ? upgrades.length + 1 : levels.length;
-  const buildMaterials = getStationMaterials([station], "build");
+  const buildMaterials = getStationMaterials([station], "build").raw;
   const buildPieceCount = allItems.filter((i) => i.type === "BuildPiece" && i.subcategory !== "Siege" && i.subcategory !== "Vehicle").length;
 
   // Find the station's own build piece item (for its recipe)
