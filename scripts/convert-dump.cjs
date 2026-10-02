@@ -3706,8 +3706,11 @@ const isEdible = (e) => givesFood(dumpItemByPrefab[e.id])
 const isUsable = (e) => NON_MATERIAL_TYPES.has(e.type) || e.type === "Plantable"
   || e.subcategory === "Feast" || isEdible(e) || (e.type === "Potion" && !isMeadBase(e.id));
 
-//   itemClass is a LIST — Bread is Crafted (it goes into a feast) AND an Item
-//   (you eat it). Barley Flour is only Crafted; a Feast only an Item.
+//   itemClass is a LIST (Milord's rule): Raw = gathered, never made · Crafted =
+//   made by a player at a station or factory · Item = a finished thing you use.
+//   Eyescream, Bread and a Bronze Sword are Crafted + Item; Barley Flour and
+//   Bread Dough are Crafted only; Raspberries are Raw. Whether a crafted thing
+//   feeds something else is Food: Prep / Used For, not the class.
 //   food       Ingredient (goes into another food, through any step) · Prep
 //              (crafted only to cook into something else) · Eat as-is · Feast
 const classCounts = { Raw: 0, Crafted: 0, Item: 0 };
@@ -3721,8 +3724,8 @@ for (const e of converted) {
   const usable = isUsable(e);
   const cls = [];
   if (made) {
-    if (consumed) cls.push("Crafted");
-    if (usable || !consumed) cls.push("Item");
+    cls.push("Crafted");
+    if (usable) cls.push("Item");
   } else if (NON_MATERIAL_TYPES.has(e.type) || e.type === "Plantable") {
     cls.push("Item");
   } else {
@@ -3741,6 +3744,15 @@ for (const e of converted) {
   if (food.length > 0) e.food = food;
   for (const f of food) foodCounts[f] = (foodCounts[f] || 0) + 1;
 
+  // Item Types this item ALSO belongs to. Food = anything edible OR anything
+  // that goes into food (raw meat, Barley, Chicken Egg, Barley Flour) — the
+  // Asksvin Egg, which only hatches, stays out. Plantable = seeds and crops.
+  const also = [];
+  if (e.type !== "Food" && (e.eatable || food.includes("Ingredient"))) also.push("Food");
+  if (e.type !== "Plantable" && e.plantable) also.push("Plantable");
+  if (also.length > 0) e.typeAlso = also;
+  else delete e.typeAlso;
+
   // MegaLoad 1.21 / MegaApp 1.13 read materialClass; keep it to the two
   // material classes so their Raw / Crafted filter stays right.
   const legacy = NON_MATERIAL_TYPES.has(e.type) ? undefined : cls.find((c) => c !== "Item");
@@ -3758,8 +3770,8 @@ const FACETS = [
     id: "itemClass", title: "Class", field: "itemClass",
     values: [
       { value: "Raw", label: "Raw", color: "#a3e635", hint: "Gathered: mined, chopped, dropped, fished, picked or bought" },
-      { value: "Crafted", label: "Crafted", color: "#fbbf24", hint: "Made, then used to make something else" },
-      { value: "Item", label: "Item", color: "#60a5fa", hint: "Finished: gear, pieces, meals, meads (Bread is Crafted and an Item)" },
+      { value: "Crafted", label: "Crafted", color: "#fbbf24", hint: "Made by you, at a station or a factory" },
+      { value: "Item", label: "Item", color: "#60a5fa", hint: "A finished thing you use: gear, pieces, meals, meads (Eyescream is Crafted and an Item)" },
     ],
   },
   {
@@ -3981,8 +3993,9 @@ export interface ValheimItem {
   craftAmount?: number; // How many one craft yields, when more than 1 (arrows 20, Bread Dough 2, meads 6)
   producedBy?: ProducedBy; // Factory conversion for outputs with no Recipe (Copper ← Copper Ore at the Smelter)
   materialClass?: "Raw" | "Crafted"; // Legacy (1.21): Raw / Crafted materials only — see itemClass
-  itemClass?: Array<"Raw" | "Crafted" | "Item">; // Raw = gathered · Crafted = made and used to make something · Item = finished thing (Bread is Crafted + Item)
+  itemClass?: Array<"Raw" | "Crafted" | "Item">; // Raw = gathered · Crafted = made by a player · Item = finished thing you use (Eyescream is Crafted + Item)
   food?: string[];      // Food role: "Ingredient", "Prep", "Eat as-is", "Feast"
+  typeAlso?: string[];  // Item Types it ALSO shows under: raw meat / Barley / berries → "Food", seeds → "Plantable"
   usedFor?: string[];   // What it ends up in, through every intermediate: "Food", "Gear", "Building", "Fishing"...
   tags?: string[];      // Activity tags ("Fishing") that drive meta facets
 }

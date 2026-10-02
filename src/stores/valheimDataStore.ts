@@ -1331,21 +1331,10 @@ export function getFilteredItems(
     items = items.filter((i) => i.weakTo && activeWeakTo.every((d) => i.weakTo!.includes(d)));
   }
   if (activeTypes.length > 0) {
-    // "Plantable" matches both type==="Plantable" (the 17 sapling pieces) AND
-    // any item flagged plantable===true (seeds/crops/mushrooms that keep their
-    // primary Material/Food typing). Without this, Carrot/Onion/etc. wouldn't
-    // surface under the Plantable filter.
-    //
-    // "Food" similarly matches type==="Food" (cooked dishes) AND any item
-    // flagged eatable===true (raw foraged plants/berries/mushrooms typed
-    // Material that can also be eaten directly for a HP/Stam/Eitr buff). So
-    // Mushroom/Blueberries/Honey/etc. surface under BOTH Material and Food.
-    const plantableActive = activeTypes.includes("Plantable");
-    const foodActive = activeTypes.includes("Food");
+    // An item matches its own type or any Item Type it ALSO belongs to
+    // (typeAlso): raw meat / Barley / berries under Food, seeds under Plantable.
     items = items.filter((i) =>
-      activeTypes.includes(i.type)
-      || (plantableActive && i.plantable === true)
-      || (foodActive && i.eatable === true)
+      activeTypes.includes(i.type) || typeAlsoOf(i).some((t) => activeTypes.includes(t))
     );
   }
   if (activeSubcategories.length > 0) {
@@ -1448,6 +1437,18 @@ export function getRelatedItems(item: ValheimItem): ValheimItem[] {
   );
 }
 
+/** Item Types an item ALSO belongs to beyond its own `type`, from the data
+ *  (`typeAlso`, written by convert-dump.cjs): raw meat, Barley and edible
+ *  berries also count as Food; seeds and crops also count as Plantable. Falls
+ *  back to the old eatable / plantable flags for an older dataset. */
+export function typeAlsoOf(i: ValheimItem): string[] {
+  if (i.typeAlso) return i.typeAlso;
+  const also: string[] = [];
+  if (i.eatable === true && i.type !== "Food") also.push("Food");
+  if (i.plantable === true && i.type !== "Plantable") also.push("Plantable");
+  return also;
+}
+
 export function getTypeCounts(
   query: string,
   activeBiomes: string[] = [],
@@ -1457,17 +1458,10 @@ export function getTypeCounts(
   const counts: Record<string, number> = {};
   for (const item of base) {
     counts[item.type] = (counts[item.type] || 0) + 1;
-    // Plantable is a union: type==="Plantable" OR plantable===true. Count items
-    // whose primary type is something else (Material/Food) but have plantable
-    // tagged so the Plantable filter shows the right total.
-    if (item.plantable === true && item.type !== "Plantable") {
-      counts["Plantable"] = (counts["Plantable"] || 0) + 1;
-    }
-    // Food is a union: type==="Food" OR eatable===true. Raw foraged plants
-    // (Mushroom/Blueberries/Honey/etc.) are type=Material but eatable=true,
-    // so the Food filter total includes them.
-    if (item.eatable === true && item.type !== "Food") {
-      counts["Food"] = (counts["Food"] || 0) + 1;
+    // An item also counts under each extra Item Type it belongs to (typeAlso),
+    // so the totals match what the filter shows.
+    for (const t of typeAlsoOf(item)) {
+      if (t !== item.type) counts[t] = (counts[t] || 0) + 1;
     }
   }
   return counts;

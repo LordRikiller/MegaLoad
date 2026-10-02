@@ -115,6 +115,17 @@ fn fetch_dataset(ds: &Dataset) -> FetchResult {
 
     let agent = crate::commands::http::agent();
     let resp = match agent.get(&url).timeout(std::time::Duration::from_secs(10)).call() {
+        // ureq only turns 4xx/5xx into Err — a 304 arrives as Ok with an empty
+        // body. Treating it as fresh data logged "payload not valid JSON: EOF"
+        // on every unchanged poll and reported Failed instead of Unchanged.
+        Ok(r) if r.status() == 304 => {
+            let version = r
+                .header("X-Data-Version")
+                .map(String::from)
+                .unwrap_or_else(|| local.as_ref().map(|m| m.version.clone()).unwrap_or_default());
+            app_log(&format!("{}: 304 (version {})", ds.name, version));
+            return FetchResult::Unchanged { version };
+        }
         Ok(r) => r,
         Err(ureq::Error::Status(304, r)) => {
             // ureq surfaces non-2xx as ureq::Error::Status — handle 304 here as a normal case.

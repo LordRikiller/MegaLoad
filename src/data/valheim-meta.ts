@@ -5,7 +5,7 @@ import type { ValheimMeta } from "./valheimMeta";
 
 export const BUNDLED_VALHEIM_META: ValheimMeta = {
   "schema": 1,
-  "generated": "2026-10-02T11:48:33.305Z",
+  "generated": "2026-10-02T12:02:27.322Z",
   "facets": [
     {
       "id": "itemClass",
@@ -22,13 +22,13 @@ export const BUNDLED_VALHEIM_META: ValheimMeta = {
           "value": "Crafted",
           "label": "Crafted",
           "color": "#fbbf24",
-          "hint": "Made, then used to make something else"
+          "hint": "Made by you, at a station or a factory"
         },
         {
           "value": "Item",
           "label": "Item",
           "color": "#60a5fa",
-          "hint": "Finished: gear, pieces, meals, meads (Bread is Crafted and an Item)"
+          "hint": "A finished thing you use: gear, pieces, meals, meads (Eyescream is Crafted and an Item)"
         }
       ]
     },
