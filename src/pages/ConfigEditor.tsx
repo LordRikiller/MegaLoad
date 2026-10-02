@@ -902,6 +902,59 @@ function SelectControl({
 // Keybind Capture
 // ------------------
 
+/** Unity KeyCode name for a KeyboardEvent.code, "" for a bare modifier, null if unknown. */
+function unityKeyFromCode(code: string): string | null {
+  let m: RegExpMatchArray | null;
+  if ((m = code.match(/^Digit(\d)$/))) return `Alpha${m[1]}`;
+  if ((m = code.match(/^Key([A-Z])$/))) return m[1];
+  if ((m = code.match(/^Numpad(\d)$/))) return `Keypad${m[1]}`;
+  if (/^F\d{1,2}$/.test(code)) return code;
+  const named: Record<string, string> = {
+    Minus: "Minus",
+    Equal: "Equals",
+    BracketLeft: "LeftBracket",
+    BracketRight: "RightBracket",
+    Backslash: "Backslash",
+    Semicolon: "Semicolon",
+    Quote: "Quote",
+    Backquote: "BackQuote",
+    Comma: "Comma",
+    Period: "Period",
+    Slash: "Slash",
+    Space: "Space",
+    Enter: "Return",
+    Escape: "Escape",
+    Tab: "Tab",
+    Backspace: "Backspace",
+    Delete: "Delete",
+    Insert: "Insert",
+    Home: "Home",
+    End: "End",
+    PageUp: "PageUp",
+    PageDown: "PageDown",
+    ArrowUp: "UpArrow",
+    ArrowDown: "DownArrow",
+    ArrowLeft: "LeftArrow",
+    ArrowRight: "RightArrow",
+    CapsLock: "CapsLock",
+    NumpadAdd: "KeypadPlus",
+    NumpadSubtract: "KeypadMinus",
+    NumpadMultiply: "KeypadMultiply",
+    NumpadDivide: "KeypadDivide",
+    NumpadDecimal: "KeypadPeriod",
+    NumpadEnter: "KeypadEnter",
+    ControlLeft: "",
+    ControlRight: "",
+    ShiftLeft: "",
+    ShiftRight: "",
+    AltLeft: "",
+    AltRight: "",
+    MetaLeft: "",
+    MetaRight: "",
+  };
+  return named[code] !== undefined ? named[code] : null;
+}
+
 function KeybindCapture({
   value,
   onChange,
@@ -924,26 +977,31 @@ function KeybindCapture({
       if (e.shiftKey) parts.push("LeftShift");
       if (e.altKey) parts.push("LeftAlt");
 
-      // Map key to Unity KeyCode format
-      const keyMap: Record<string, string> = {
-        " ": "Space",
-        Enter: "Return",
-        Escape: "Escape",
-        Tab: "Tab",
-        Backspace: "Backspace",
-        Delete: "Delete",
-        ArrowUp: "UpArrow",
-        ArrowDown: "DownArrow",
-        ArrowLeft: "LeftArrow",
-        ArrowRight: "RightArrow",
-        Control: "",
-        Shift: "",
-        Alt: "",
-        Meta: "",
-      };
-
-      let key = keyMap[e.key] !== undefined ? keyMap[e.key] : e.key;
-      if (key.length === 1) key = key.toUpperCase();
+      // Map the PHYSICAL key (e.code) to a Unity KeyCode name. e.key is the
+      // character typed, which is wrong for Unity: "1" must be "Alpha1" ("1"
+      // parses as a meaningless key code, "8" as Backspace), "-" is "Minus",
+      // and Shift+1 would come through as "!".
+      let key = unityKeyFromCode(e.code);
+      if (key === null) {
+        const keyMap: Record<string, string> = {
+          " ": "Space",
+          Enter: "Return",
+          Escape: "Escape",
+          Tab: "Tab",
+          Backspace: "Backspace",
+          Delete: "Delete",
+          ArrowUp: "UpArrow",
+          ArrowDown: "DownArrow",
+          ArrowLeft: "LeftArrow",
+          ArrowRight: "RightArrow",
+          Control: "",
+          Shift: "",
+          Alt: "",
+          Meta: "",
+        };
+        key = keyMap[e.key] !== undefined ? keyMap[e.key] : e.key;
+        if (key.length === 1) key = key.toUpperCase();
+      }
 
       if (key) {
         const modifiers = parts.length > 0 ? " + " + parts.join(" + ") : "";
