@@ -1062,3 +1062,131 @@ export const syncPullTheme = () =>
 
 export const syncPushTheme = (blobJson: string) =>
   invoke<void>("sync_push_theme", { blobJson });
+
+// ---------------------------------------------------------------------------
+// World Map — valheim-map.world exports built into atlas packs (map_atlas.rs),
+// synced between machines (map_sync.rs).
+// ---------------------------------------------------------------------------
+
+/** `pack.json` of an installed world. The first eight fields are MegaServer's
+ *  pack schema; the rest are MegaLoad's own bookkeeping. */
+export interface MapPackInfo {
+  schema: number;
+  seed: string;
+  worldVersion: string;
+  world: number;
+  edge: number;
+  locations: number;
+  basemap: string;
+  builtAt: string;
+  id: string;
+  atlasSha: string;
+  basemapSha: string;
+  atlasBytes: number;
+  basemapBytes: number;
+  updatedAt: number;
+  /** "export" | "pack" | "sync" */
+  source: string;
+  tileSide: number;
+}
+
+export interface MapWorlds {
+  worlds: MapPackInfo[];
+  active: string | null;
+}
+
+/** A file offered for import, read without building it. */
+export interface MapSourcePeek {
+  path: string;
+  /** "export" (valheim-map.world All Data) | "pack" (atlas pack zip) */
+  kind: string;
+  seed: string;
+  worldVersion: string;
+  id: string;
+  tileSide: number;
+  resolution: number;
+  bytes: number;
+  modified: number;
+  installed: boolean;
+}
+
+export interface MapImportProgress {
+  stage: string;
+  detail: string;
+  fraction: number;
+}
+
+/** Column-oriented location data. Parallel arrays rather than an array of
+ *  objects: about a third of the size and no per-row parsing. */
+export interface AtlasData {
+  seed: string;
+  version: string;
+  world: number;
+  edge: number;
+  prefabs: string[];
+  biomes: string[];
+  kinds: string[];
+  details: string[];
+  rooms: string[];
+  ids: number[];
+  p: number[];
+  x: number[];
+  y: number[];
+  z: number[];
+  b: number[];
+  h: number[];
+  f: number[];
+  s: number[];
+  cOff: number[];
+  cKind: number[];
+  cDetail: number[];
+  cCount: number[];
+  rOff: number[];
+  rRoom: number[];
+  rCount: number[];
+  /** Distinct chest drop tables (optional in older packs). */
+  loot?: LootTable[];
+  /** Parallel to cKind: the loot table a Container row rolls, or -1. */
+  cLoot?: number[];
+  items?: string[];
+  itemNames?: string[];
+}
+
+/** One Container's m_defaultItems, as DropTable.GetDropListItems rolls it. */
+export interface LootTable {
+  n: [number, number];
+  c: number;
+  o: 0 | 1;
+  /** [item index, stack min, stack max, weight] */
+  d: [number, number, number, number][];
+}
+
+export interface SeedMarks {
+  traders: number[];
+  updatedAt: number;
+}
+
+export interface MapSyncReport {
+  skipped: string | null;
+  pushed: string[];
+  pulled: string[];
+  removed: string[];
+  marksChanged: boolean;
+}
+
+export const mapListWorlds = () => invoke<MapWorlds>("map_list_worlds");
+export const mapSetActive = (id: string) => invoke<void>("map_set_active", { id });
+export const mapAtlasPayload = (id: string) => invoke<string>("map_atlas_payload", { id });
+export const mapBasemap = (id: string) => invoke<ArrayBuffer>("map_basemap", { id });
+export const mapPeekSource = (path: string) => invoke<MapSourcePeek>("map_peek_source", { path });
+export const mapFindDownloads = () => invoke<MapSourcePeek[]>("map_find_downloads");
+export const mapImport = (path: string) => invoke<MapPackInfo>("map_import", { path });
+export const mapDeleteWorld = (id: string) => invoke<void>("map_delete_world", { id });
+export const mapExportPack = (id: string, dest: string) =>
+  invoke<void>("map_export_pack", { id, dest });
+export const mapMarks = () => invoke<Record<string, SeedMarks>>("map_marks");
+export const mapSetTraderMarks = (seed: string, ids: number[]) =>
+  invoke<Record<string, SeedMarks>>("map_set_trader_marks", { seed, ids });
+export const mapOpenGenerator = () => invoke<void>("map_open_generator");
+export const mapOpenFolder = () => invoke<void>("map_open_folder");
+export const mapSync = () => invoke<MapSyncReport>("map_sync");

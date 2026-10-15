@@ -10,6 +10,8 @@ use commands::identity::*;
 use commands::import::*;
 use commands::launcher::*;
 use commands::logs::*;
+use commands::map_atlas::*;
+use commands::map_sync::*;
 use commands::mods::*;
 use commands::player_data::*;
 use commands::player_data::PlayerDataWatcherState;
@@ -32,7 +34,20 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .setup(|_app| {
+        .setup(|app| {
+            // Open at 1440 x 1000 so the wider pages (World Map, Valheim Data)
+            // have room, but never larger than the monitor's work area — the
+            // config size alone would overflow a 1366 x 768 laptop.
+            if let Some(win) = tauri::Manager::get_webview_window(app, "main") {
+                if let Ok(Some(mon)) = win.current_monitor() {
+                    let scale = mon.scale_factor();
+                    let area = mon.work_area().size.to_logical::<f64>(scale);
+                    let w = 1440f64.min(area.width * 0.94).max(900.0);
+                    let h = 1000f64.min(area.height * 0.94).max(780.0);
+                    let _ = win.set_size(tauri::LogicalSize::new(w, h));
+                    let _ = win.center();
+                }
+            }
             // Register this install's HMAC secret with MegaWorker on launch.
             // Idempotent — re-registers existing user_id with possibly new secret.
             // Spawned off the main thread so a slow/down Worker doesn't block UI.
@@ -220,6 +235,21 @@ pub fn run() {
             read_cached_valheim_data,
             fetch_valheim_meta,
             read_cached_valheim_meta,
+            // World Map (valheim-map.world exports → atlas packs, synced)
+            map_list_worlds,
+            map_set_active,
+            map_atlas_payload,
+            map_basemap,
+            map_peek_source,
+            map_find_downloads,
+            map_import,
+            map_delete_world,
+            map_export_pack,
+            map_marks,
+            map_set_trader_marks,
+            map_open_generator,
+            map_open_folder,
+            map_sync,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

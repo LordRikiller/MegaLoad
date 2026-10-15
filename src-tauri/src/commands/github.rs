@@ -19,6 +19,16 @@ use serde::Deserialize;
 
 pub const USER_AGENT: &str = concat!("MegaLoad/", env!("CARGO_PKG_VERSION"));
 
+/// `Response::into_string` refuses anything over 10 MB, and a synced World Map
+/// basemap is ~11 MB once base64'd into a Contents/blob response. Same thing
+/// with a ceiling sized for that.
+fn read_body(resp: ureq::Response) -> std::io::Result<String> {
+    use std::io::Read;
+    let mut s = String::new();
+    resp.into_reader().take(256 << 20).read_to_string(&mut s)?;
+    Ok(s)
+}
+
 #[derive(Deserialize, Debug)]
 struct GitHubContent {
     sha: String,
@@ -44,8 +54,7 @@ fn github_get_blob_base64(sha: &str) -> Result<String, String> {
         .call()
         .map_err(|e| format!("Worker blob GET failed for {}: {}", sha, e))?;
 
-    let body = resp
-        .into_string()
+    let body = read_body(resp)
         .map_err(|e| format!("Read error: {}", e))?;
     let blob: GitHubBlob = serde_json::from_str(&body)
         .map_err(|e| format!("Parse error for blob {}: {}", sha, e))?;
@@ -68,8 +77,7 @@ pub fn github_get_file(path: &str) -> Result<(String, String), String> {
         .call()
         .map_err(|e| format!("Worker GET failed for {}: {}", path, e))?;
 
-    let body = resp
-        .into_string()
+    let body = read_body(resp)
         .map_err(|e| format!("Read error: {}", e))?;
     let gc: GitHubContent =
         serde_json::from_str(&body).map_err(|e| format!("Parse error for {}: {}", path, e))?;
@@ -257,8 +265,7 @@ pub fn github_put_file(
     }
 
     let resp = signed_put(path, &body.to_string())?;
-    let resp_body = resp
-        .into_string()
+    let resp_body = read_body(resp)
         .map_err(|e| format!("Read error: {}", e))?;
     let parsed: serde_json::Value =
         serde_json::from_str(&resp_body).map_err(|e| format!("Parse error: {}", e))?;
@@ -312,8 +319,7 @@ pub fn github_list_dir(path: &str) -> Result<Vec<(String, String)>, String> {
         .call()
         .map_err(|e| format!("Worker GET dir failed for {}: {}", path, e))?;
 
-    let body = resp
-        .into_string()
+    let body = read_body(resp)
         .map_err(|e| format!("Read error: {}", e))?;
     let items: Vec<serde_json::Value> = serde_json::from_str(&body)
         .map_err(|e| format!("Parse error for dir {}: {}", path, e))?;
@@ -349,8 +355,7 @@ pub fn github_get_raw_base64(path: &str) -> Result<String, String> {
         .call()
         .map_err(|e| format!("Worker GET failed for {}: {}", path, e))?;
 
-    let body = resp
-        .into_string()
+    let body = read_body(resp)
         .map_err(|e| format!("Read error: {}", e))?;
     let gc: GitHubContent =
         serde_json::from_str(&body).map_err(|e| format!("Parse error for {}: {}", path, e))?;
@@ -372,4 +377,53 @@ pub fn github_get_raw_base64(path: &str) -> Result<String, String> {
     }
 
     Ok(raw)
+}
+
+/// Read a file as raw bytes, `None` when it does not exist. Binary-safe (the
+/// World Map syncs WebP basemaps) and follows the >1 MB blob fallback.
+pub fn github_get_bytes_opt(path: &str) -> Result<Option<(Vec<u8>, String)>, String> {
+    let url = bugs_contents_url(path);
+    let resp = match crate::commands::http::agent()
+        .get(&url)
+        .set("User-Agent", USER_AGENT)
+        .set("Accept", "application/vnd.github+json")
+        .call()
+    {
+        Ok(r) => r,
+        Err(ureq::Error::Status(404, _)) => return Ok(None),
+        Err(e) => return Err(fmt_ureq_err(path, "GET", e)),
+    };
+    let body = read_body(resp)
+        .map_err(|e| format!("Read error: {}", e))?;
+    let gc: GitHubContent =
+        serde_json::from_str(&body).map_err(|e| format!("Parse error for {}: {}", path, e))?;
+    let raw = gc
+        .content
+        .clone()
+        .unwrap_or_default()
+        .replace('\n', "")
+        .replace('\r', "");
+    let is_b64 = gc
+        .encoding
+        .as_deref()
+        .map(|e| e.eq_ignore_ascii_case("base64"))
+        .unwrap_or(false);
+    let raw = if raw.is_empty() || !is_b64 {
+        github_get_blob_base64(&gc.sha)?
+    } else {
+        raw
+    };
+    let bytes = B64
+        .decode(&raw)
+        .map_err(|e| format!("Base64 decode failed: {}", e))?;
+    Ok(Some((bytes, gc.sha)))
+}
+
+/// `github_list_dir`, but an absent directory is an empty listing.
+pub fn github_list_dir_opt(path: &str) -> Result<Vec<(String, String)>, String> {
+    match github_list_dir(path) {
+        Ok(v) => Ok(v),
+        Err(e) if e.contains("404") => Ok(Vec::new()),
+        Err(e) => Err(e),
+    }
 }

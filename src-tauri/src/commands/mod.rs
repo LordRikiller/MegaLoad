@@ -9,6 +9,8 @@ pub mod identity;
 pub mod import;
 pub mod launcher;
 pub mod logs;
+pub mod map_atlas;
+pub mod map_sync;
 pub mod mods;
 pub mod player_data;
 pub mod prefab_names;

@@ -1,6 +1,6 @@
 [package]
 name = "megaload"
-version = "1.25.0"
+version = "1.27.0"
 description = "MegaLoad - Valheim Mod Manager"
 authors = ["Rik"]
 edition = "2021"
@@ -33,3 +33,6 @@ hmac = "0.12"
 sha2 = "0.10"
 hex = "0.4"
 rand = "0.8"
+rayon = "1"
+flate2 = "1"
+webp = { version = "0.3", default-features = false }

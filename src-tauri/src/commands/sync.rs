@@ -39,7 +39,7 @@ fn get_sync_settings_path() -> PathBuf {
     megaload_data_dir().join(SYNC_SETTINGS_FILE)
 }
 
-fn load_sync_settings() -> SyncSettings {
+pub(crate) fn load_sync_settings() -> SyncSettings {
     let path = get_sync_settings_path();
     if path.exists() {
         if let Ok(data) = fs::read_to_string(&path) {

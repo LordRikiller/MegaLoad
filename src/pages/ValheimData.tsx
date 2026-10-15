@@ -1887,6 +1887,10 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
     pushSelection({ item: null, station, factory: null, vendor: null });
   };
 
+  // When this item IS a crafting station's build piece, list its upgrade pieces.
+  const ownStation = Object.keys(STATION_ICONS).find((s) => STATION_ICONS[s] === item.id);
+  const stationUpgrades = ownStation ? getStationUpgrades(ownStation) : [];
+
   // Filter out "Set" and "Max Quality" from the stat grid — shown elsewhere
   const displayStats = item.stats.filter((s) => s.label !== "Set" && s.label !== "Max Quality");
 
@@ -2936,6 +2940,118 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                     ))}
                   </div>
                 </div>
+              );
+            })()}
+
+            {/* Station Upgrades — only on a crafting station's own build piece */}
+            {stationUpgrades.length > 0 && (() => {
+              const totals = new Map<string, { id: string; name: string; amount: number }>();
+              for (const ing of [...item.recipe, ...stationUpgrades.flatMap((u) => u.recipe)]) {
+                const prev = totals.get(ing.id);
+                totals.set(ing.id, { id: ing.id, name: ing.name, amount: (prev?.amount || 0) + ing.amount });
+              }
+              const entries = [...totals.values()];
+              return (
+                <>
+                  <div className="glass rounded-xl p-5 border border-zinc-800/50">
+                    <h2 className="text-sm font-semibold text-zinc-200 mb-3">
+                      Station Upgrades
+                      <span className="text-[10px] text-zinc-500 font-normal ml-2">Lv 1 → {stationUpgrades.length + 1}</span>
+                    </h2>
+                    <div className="space-y-3">
+                      {stationUpgrades.map((up, i) => (
+                        <div key={up.id}>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleNavigate(up.id)}
+                            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavigate(up.id)}
+                            className="flex items-center gap-2 mb-1.5 rounded hover:bg-zinc-800/50 transition-colors cursor-pointer group"
+                          >
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-bold border border-amber-500/20 shrink-0">
+                              Lv {i + 2}
+                            </span>
+                            <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                              <ItemIcon id={up.id} type={up.type} size={20} />
+                            </div>
+                            <span className="text-xs font-semibold text-brand-400 hover:underline flex-1">{up.name}</span>
+                            <CopyButton
+                              item={up}
+                              size={11}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                              title={`Copy "${up.name}"`}
+                            />
+                          </div>
+                          <div className="space-y-0.5 pl-3 border-l-2 border-zinc-800">
+                            {up.recipe.map((r) => (
+                              <div
+                                key={r.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => handleNavigate(r.id)}
+                                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavigate(r.id)}
+                                className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-zinc-800/50 transition-colors text-left cursor-pointer group"
+                              >
+                                <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                                  <ItemIcon id={r.id} size={20} />
+                                </div>
+                                <span className="text-[11px] text-brand-400 hover:underline flex-1">{r.name}</span>
+                                <CopyTextButton
+                                  text={r.name}
+                                  size={11}
+                                  title={`Copy "${r.name}"`}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                />
+                                {knownPrefabs.size > 0 && (
+                                  knownPrefabs.has(r.id)
+                                    ? <Eye className="w-3 h-3 text-brand-400 shrink-0" />
+                                    : <EyeOff className="w-3 h-3 text-zinc-600 shrink-0" />
+                                )}
+                                <span className="text-[11px] text-zinc-500 font-mono">x{r.amount}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="glass rounded-xl p-5 border border-zinc-800/50">
+                    <h2 className="text-sm font-semibold text-zinc-200 mb-3">
+                      Total Costs
+                      <span className="text-[10px] text-zinc-500 font-normal ml-2">station + all upgrades</span>
+                    </h2>
+                    <div className="space-y-1">
+                      {entries.map((mat) => (
+                        <div
+                          key={mat.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleNavigate(mat.id)}
+                          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavigate(mat.id)}
+                          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-left cursor-pointer group"
+                        >
+                          <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                            <ItemIcon id={mat.id} size={24} />
+                          </div>
+                          <span className="text-xs text-brand-400 hover:underline flex-1">{mat.name}</span>
+                          <CopyTextButton
+                            text={mat.name}
+                            size={12}
+                            title={`Copy "${mat.name}"`}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          />
+                          {knownPrefabs.size > 0 && (
+                            knownPrefabs.has(mat.id)
+                              ? <Eye className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                              : <EyeOff className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+                          )}
+                          <span className="text-xs text-zinc-400 font-mono">x{mat.amount}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
               );
             })()}
 

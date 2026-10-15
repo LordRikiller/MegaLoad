@@ -10,6 +10,7 @@ import { useAutoSync } from "../../hooks/useAutoSync";
 import { useAutoPlayerSync } from "../../hooks/useAutoPlayerSync";
 import { useMegaListStore } from "../../stores/megaListStore";
 import { useThemeStore } from "../../stores/themeStore";
+import { useMapSyncStore } from "../../stores/mapSyncStore";
 import { ThemeBackground } from "../ThemeBackground";
 
 export function AppShell() {
@@ -23,6 +24,10 @@ export function AppShell() {
     useMegaListStore.getState().init();
     // Adopt a cloud theme if theme sync is enabled (no-op otherwise).
     useThemeStore.getState().pullThemeFromCloud();
+    // World Map worlds and trader marks from other PCs. Delayed so the profile
+    // sync gets the network first; a no-op when Cloud Sync is off.
+    const t = window.setTimeout(() => void useMapSyncStore.getState().run(), 20_000);
+    return () => window.clearTimeout(t);
   }, []);
 
   return (

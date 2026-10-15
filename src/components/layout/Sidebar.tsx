@@ -25,6 +25,7 @@ import {
   Shield,
   ListChecks,
   PawPrint,
+  Map as MapIcon,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useProfileStore } from "../../stores/profileStore";
@@ -52,6 +53,7 @@ const navItems = [
   { to: "/config", icon: Settings2, label: "Config Editor" },
   { to: "/trainer", icon: Gamepad2, label: "Trainer" },
   { to: "/valheim-data", icon: Database, label: "Valheim Data" },
+  { to: "/map", icon: MapIcon, label: "World Map" },
   { to: "/pets", icon: PawPrint, label: "Pet Calculator" },
   { to: "/megalist", icon: ListChecks, label: "MegaList" },
   { to: "/player-data", icon: UserCircle, label: "Player Data" },
