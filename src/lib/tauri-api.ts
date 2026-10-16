@@ -1190,3 +1190,39 @@ export const mapSetTraderMarks = (seed: string, ids: number[]) =>
 export const mapOpenGenerator = () => invoke<void>("map_open_generator");
 export const mapOpenFolder = () => invoke<void>("map_open_folder");
 export const mapSync = () => invoke<MapSyncReport>("map_sync");
+
+/** A world save on this PC (Steam Cloud or worlds_local), read from its meta. */
+export interface WorldSave {
+  path: string;
+  name: string;
+  seed: string;
+  uid: string;
+  /** "cloud" | "local" | "folder" */
+  location: string;
+  backup: boolean;
+  saveNumber: number;
+  /** Unix secs the current save was written. */
+  savedAt: number;
+}
+
+export interface SaveChest {
+  prefab: string;
+  /** x, y, z — y is height. */
+  pos: [number, number, number];
+  /** Player id for a built container, 0 for a world one. */
+  creator: number;
+  creatorName: string;
+  /** [item prefab, stack, quality] */
+  items: [string, number, number][];
+}
+
+export interface SaveScan {
+  world: WorldSave;
+  chests: SaveChest[];
+  skippedChunks: number;
+  emptyContainers: number;
+}
+
+export const mapListWorldSaves = () => invoke<WorldSave[]>("map_list_world_saves");
+export const mapDescribeWorldSave = (path: string) => invoke<WorldSave>("map_describe_world_save", { path });
+export const mapScanWorldSave = (path: string) => invoke<SaveScan>("map_scan_world_save", { path });

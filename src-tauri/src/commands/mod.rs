@@ -23,3 +23,4 @@ pub mod trainer;
 pub mod updater;
 pub mod valheim_data;
 pub mod worker_auth;
+pub mod world_saves;

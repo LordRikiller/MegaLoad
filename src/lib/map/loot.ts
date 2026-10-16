@@ -117,3 +117,109 @@ export function fmtOdds(p: number) {
   if (p < 0.01) return "<1%";
   return Math.round(p * 100) + "%";
 }
+
+// --- what is in the containers of a world save ----------------------------------
+
+import itemNames from "./itemNames.json";
+import type { SaveChest, SaveScan } from "../tauri-api";
+
+/** Every item in the game, id -> English name. The atlas only names items its
+ *  loot tables mention; a player's chest can hold anything. */
+const ITEM_NAMES: Record<string, string> = itemNames;
+
+export function itemName(id: string, A?: AtlasData): string {
+  if (ITEM_NAMES[id]) return ITEM_NAMES[id];
+  const i = A?.items?.indexOf(id) ?? -1;
+  return (i >= 0 && A?.itemNames?.[i]) || id;
+}
+
+const ALL_ITEM_TEXT = Object.entries(ITEM_NAMES).map(([id, name]) => [id, `${id} ${name}`.toLowerCase()] as const);
+
+/** Item ids the WHOLE query names (every term in one item's id + name). */
+export function queryItemIds(query: string, A: AtlasData): Set<string> {
+  const out = new Set<string>();
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return out;
+  const hit = (t: string) => terms.every((q) => t.includes(q));
+  for (const [id, t] of ALL_ITEM_TEXT) if (hit(t)) out.add(id);
+  (A.items ?? []).forEach((id, i) => {
+    if (!out.has(id) && hit(`${id} ${A.itemNames?.[i] ?? ""}`.toLowerCase())) out.add(id);
+  });
+  return out;
+}
+
+/** How far from a location's centre a container still counts as in it. Dungeon
+ *  rooms sprawl (and their interiors sit ~5000 m up at the same x, z), so they
+ *  get more room than a ruin. */
+const NEAR_DUNGEON = 100;
+const NEAR_OTHER = 40;
+
+export interface SaveIndex {
+  /** Per chest: the atlas location it belongs to, or -1 for open ground. */
+  near: Int32Array;
+  /** Atlas location -> chest indexes in it. */
+  byLoc: globalThis.Map<number, number[]>;
+}
+
+export function buildSaveIndex(scan: SaveScan, A: AtlasData): SaveIndex {
+  const CELL = 200;
+  const key = (x: number, z: number) => `${Math.floor(x / CELL)},${Math.floor(z / CELL)}`;
+  const grid = new globalThis.Map<string, number[]>();
+  for (let i = 0; i < A.p.length; i++) {
+    const k = key(A.x[i], A.z[i]);
+    const b = grid.get(k);
+    if (b) b.push(i);
+    else grid.set(k, [i]);
+  }
+  const near = new Int32Array(scan.chests.length).fill(-1);
+  const byLoc = new globalThis.Map<number, number[]>();
+  scan.chests.forEach((c, ci) => {
+    const [x, , z] = c.pos;
+    const cx = Math.floor(x / CELL);
+    const cz = Math.floor(z / CELL);
+    let best = -1;
+    let bestD = Infinity;
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dz = -1; dz <= 1; dz++) {
+        for (const i of grid.get(`${cx + dx},${cz + dz}`) ?? []) {
+          const d = Math.hypot(A.x[i] - x, A.z[i] - z);
+          const reach = A.rOff[i + 1] > A.rOff[i] ? NEAR_DUNGEON : NEAR_OTHER;
+          if (d <= reach && d < bestD) {
+            bestD = d;
+            best = i;
+          }
+        }
+      }
+    near[ci] = best;
+    if (best >= 0) {
+      const list = byLoc.get(best);
+      if (list) list.push(ci);
+      else byLoc.set(best, [ci]);
+    }
+  });
+  return { near, byLoc };
+}
+
+const CONTAINER_LABEL: Record<string, string> = {
+  piece_chest_wood: "Wood chest",
+  piece_chest: "Reinforced chest",
+  piece_chest_private: "Personal chest",
+  piece_chest_blackmetal: "Black metal chest",
+  piece_chest_barrel: "Barrel",
+  piece_chest_treasure: "Treasure chest",
+  Cart: "Cart",
+  Karve: "Karve",
+  Raft: "Raft",
+  VikingShip: "Longship",
+  VikingShip_Ashlands: "Drakkar",
+  Trailership: "Trailership",
+  piece_incinerator: "Obliterator",
+};
+
+/** What a container is, in words: built ones by kind and who built them. */
+export function chestLabel(c: SaveChest): string {
+  if (c.prefab === "Player_tombstone") return c.creatorName ? `Tombstone (${c.creatorName})` : "Tombstone";
+  const kind = CONTAINER_LABEL[c.prefab];
+  if (c.creator) return `${kind ?? "Container"} · built by ${c.creatorName || "a player"}`;
+  return kind ?? "World chest";
+}

@@ -11,12 +11,14 @@ import {
   ExternalLink,
   FileArchive,
   FolderOpen,
+  HardDrive,
   List,
   Loader2,
   Map as MapIcon,
   Maximize2,
   Minus,
   MoreHorizontal,
+  Package,
   PackageOpen,
   Plus,
   RefreshCw,
@@ -29,15 +31,32 @@ import {
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import * as api from "../lib/tauri-api";
-import type { AtlasData, MapImportProgress, MapPackInfo, MapSourcePeek } from "../lib/tauri-api";
+import type {
+  AtlasData,
+  MapImportProgress,
+  MapPackInfo,
+  MapSourcePeek,
+  SaveChest,
+  SaveScan,
+  WorldSave,
+} from "../lib/tauri-api";
 import { useToastStore } from "../stores/toastStore";
 import { useMapSyncStore } from "../stores/mapSyncStore";
 import { cn } from "../lib/utils";
 import { debugLog } from "../lib/debug";
 import { GROUPS, displayName } from "../lib/map/valheimNames";
 import type { FilterNode } from "../lib/map/valheimNames";
-import { buildLootIndex, fmtOdds, itemLabel, lootOdds } from "../lib/map/loot";
-import type { LootIndex } from "../lib/map/loot";
+import {
+  buildLootIndex,
+  buildSaveIndex,
+  chestLabel,
+  fmtOdds,
+  itemLabel,
+  itemName,
+  lootOdds,
+  queryItemIds,
+} from "../lib/map/loot";
+import type { LootIndex, SaveIndex } from "../lib/map/loot";
 
 // ---------------------------------------------------------------------------
 // Categories, biomes, flags
@@ -174,14 +193,42 @@ function toast(type: "info" | "success" | "warning", title: string, message?: st
 }
 
 const SECTIONS_KEY = "megaload_map_sections";
-function readSections(): { filters: boolean; results: boolean } {
+type Sections = { filters: boolean; chests: boolean; results: boolean };
+function readSections(): Sections {
+  const out: Sections = { filters: true, chests: true, results: true };
   try {
     const v = JSON.parse(localStorage.getItem(SECTIONS_KEY) || "null");
-    if (v && typeof v.filters === "boolean" && typeof v.results === "boolean") return v;
+    for (const k of Object.keys(out) as (keyof Sections)[]) if (typeof v?.[k] === "boolean") out[k] = v[k];
   } catch {
-    /* default below */
+    /* defaults */
   }
-  return { filters: true, results: true };
+  return out;
+}
+
+/** Remembered per viewer: which save goes with which map, and hand-picked folders. */
+function lsGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function lsSet(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    /* per-viewer nicety only */
+  }
+}
+const EXTRA_SAVES_KEY = "megaload_map_extra_saves";
+function readExtraSaves(): string[] {
+  try {
+    const v = JSON.parse(lsGet(EXTRA_SAVES_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
 interface Loaded {
@@ -829,6 +876,112 @@ function Atlas({ loaded }: { loaded: Loaded }) {
   const syncRevision = useMapSyncStore((s) => s.revision);
   const runSync = useMapSyncStore((s) => s.run);
 
+  // ── The player's own world save: what its containers hold right now ──
+  // The map knows what a chest CAN roll; the save knows what is in it. Saves
+  // are matched to this map by seed, so any world on this PC made from the
+  // same seed (cloud, local, or a folder picked by hand) can be read.
+  const saveKey = `megaload_map_save:${loaded.info.id}`;
+  const [saves, setSaves] = useState<WorldSave[] | null>(null);
+  const [savePath, setSavePath] = useState<string | null>(() => lsGet(saveKey));
+  const [scan, setScan] = useState<SaveScan | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [focusChest, setFocusChest] = useState<number | null>(null);
+
+  const listSaves = useCallback(async () => {
+    const found = await api.mapListWorldSaves().catch(() => [] as WorldSave[]);
+    const picked = await Promise.all(
+      readExtraSaves()
+        .filter((p) => !found.some((f) => f.path === p))
+        .map((p) => api.mapDescribeWorldSave(p).catch(() => null)),
+    );
+    const all = [...found, ...picked.filter((x): x is WorldSave => !!x)];
+    setSaves(all);
+    return all;
+  }, []);
+
+  const matchingSaves = useMemo(() => (saves ?? []).filter((w) => w.seed === seed), [saves, seed]);
+
+  // Keep the chosen save valid: the remembered one while it still exists, else
+  // the most recently played live world on this seed.
+  useEffect(() => {
+    if (saves === null) return;
+    if (savePath && matchingSaves.some((w) => w.path === savePath)) return;
+    const pick = matchingSaves.find((w) => !w.backup) ?? matchingSaves[0] ?? null;
+    setSavePath(pick?.path ?? null);
+  }, [saves, matchingSaves, savePath]);
+
+  useEffect(() => {
+    void listSaves();
+  }, [listSaves]);
+
+  const runScan = useCallback(async (path: string | null, quiet = false) => {
+    if (!quiet) setFocusChest(null);
+    setScanError(null);
+    if (!path) {
+      setScan(null);
+      return;
+    }
+    setScanning(true);
+    try {
+      setScan(await api.mapScanWorldSave(path));
+    } catch (e) {
+      setScan(null);
+      setScanError(String(e));
+    } finally {
+      setScanning(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (saves === null) return; // wait until the remembered path is validated
+    lsSet(saveKey, savePath);
+    void runScan(savePath);
+  }, [savePath, saveKey, runScan, saves === null]);
+
+  /** Re-read from disk: the save number moves on every Valheim save. */
+  const rescan = useCallback(async () => {
+    await listSaves();
+    await runScan(savePath);
+  }, [listSaves, runScan, savePath]);
+
+  // Coming back from the game is the moment a fresher save exists. The scan is
+  // cached per save number, so an unchanged save costs nothing.
+  useEffect(() => {
+    const onFocus = () => {
+      if (savePath) void runScan(savePath, true);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [savePath, runScan]);
+
+  const browseSave = useCallback(async () => {
+    const picked = await open({ directory: true, multiple: false });
+    if (typeof picked !== "string") return;
+    try {
+      const w = await api.mapDescribeWorldSave(picked);
+      if (w.seed !== seed) {
+        toast("warning", `${w.name} is a different seed`, `It was made from seed "${w.seed}"; this map is "${seed}".`);
+        return;
+      }
+      const extra = readExtraSaves();
+      if (!extra.includes(w.path)) lsSet(EXTRA_SAVES_KEY, JSON.stringify([...extra, w.path]));
+      await listSaves();
+      setSavePath(w.path);
+    } catch (e) {
+      toast("warning", "That folder can't be read", String(e));
+    }
+  }, [seed, listSaves]);
+
+  const pickLocation = useCallback((i: number | null) => {
+    setFocusChest(null);
+    setSelected(i);
+  }, []);
+  const pickChest = useCallback((ci: number | null) => {
+    setSelected(null);
+    setFocusChest(ci);
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem(SECTIONS_KEY, JSON.stringify(sections));
@@ -1021,6 +1174,22 @@ function Atlas({ loaded }: { loaded: Loaded }) {
     setGroupSel(new Set());
   };
 
+  /** Every item in the game the query names: a player chest can hold
+   *  anything, not just what loot tables mention. */
+  const hitIds = useMemo(() => queryItemIds(query, A), [query, A]);
+  const saveIx = useMemo<SaveIndex | null>(() => (scan ? buildSaveIndex(scan, A) : null), [scan, A]);
+  /** Containers in the save holding a queried item, nearest spawn first. */
+  const confirmed = useMemo(() => {
+    if (!scan || !hitIds.size) return [] as number[];
+    const out: number[] = [];
+    scan.chests.forEach((c, ci) => {
+      if (c.items.some((it) => hitIds.has(it[0]))) out.push(ci);
+    });
+    const d = (ci: number) => Math.hypot(scan.chests[ci].pos[0], scan.chests[ci].pos[2]);
+    return out.sort((a, b) => d(a) - d(b));
+  }, [scan, hitIds]);
+  const currentSave = matchingSaves.find((w) => w.path === savePath) ?? null;
+
   return (
     <div className="flex-1 min-h-0 grid gap-4 grid-cols-[minmax(300px,340px)_1fr] xl:grid-cols-[380px_1fr] 2xl:grid-cols-[420px_1fr]">
       {/* ── Rail ── */}
@@ -1045,6 +1214,19 @@ function Atlas({ loaded }: { loaded: Loaded }) {
             </button>
           )}
         </div>
+
+        <SaveBar
+          seed={seed}
+          saves={matchingSaves}
+          listed={saves !== null}
+          current={currentSave}
+          scan={scan}
+          scanning={scanning}
+          error={scanError}
+          onPick={setSavePath}
+          onRescan={() => void rescan()}
+          onBrowse={() => void browseSave()}
+        />
 
         <Section
           icon={SlidersHorizontal}
@@ -1092,6 +1274,28 @@ function Atlas({ loaded }: { loaded: Loaded }) {
           </div>
         </Section>
 
+        {hitIds.size > 0 && scan && (
+          <Section
+            icon={Package}
+            title={`In ${scan.world.name}`}
+            badge={confirmed.length}
+            hint="as of the last save"
+            open={sections.chests}
+            onToggle={() => setSections((s) => ({ ...s, chests: !s.chests }))}
+            grow={0.8}
+          >
+            <SaveChestList
+              data={A}
+              scan={scan}
+              saveIx={saveIx}
+              confirmed={confirmed}
+              hitIds={hitIds}
+              focus={focusChest}
+              onPick={pickChest}
+            />
+          </Section>
+        )}
+
         <Section
           icon={List}
           title="Results"
@@ -1101,7 +1305,7 @@ function Atlas({ loaded }: { loaded: Loaded }) {
           onToggle={() => setSections((s) => ({ ...s, results: !s.results }))}
           grow={1.35}
         >
-          <ResultList data={A} matches={matches} itemHits={itemHits} selected={selected} onPick={setSelected} />
+          <ResultList data={A} matches={matches} itemHits={itemHits} selected={selected} onPick={pickLocation} />
         </Section>
       </div>
 
@@ -1117,8 +1321,25 @@ function Atlas({ loaded }: { loaded: Loaded }) {
           icons={icons}
           showPins={filtering}
           selected={selected}
-          onPick={setSelected}
+          onPick={pickLocation}
+          chests={scan?.chests ?? null}
+          chestPins={confirmed}
+          focusChest={focusChest}
+          onPickChest={pickChest}
         />
+        {focusChest !== null && scan && (
+          <div className="absolute top-3 right-3 z-20 w-[23rem] max-w-[calc(100%-4.5rem)] max-h-[calc(100%-1.5rem)] flex flex-col">
+            <ChestDetail
+              data={A}
+              scan={scan}
+              ci={focusChest}
+              near={saveIx?.near[focusChest] ?? -1}
+              hitIds={hitIds}
+              onClose={() => setFocusChest(null)}
+              onPickLocation={pickLocation}
+            />
+          </div>
+        )}
         {selected !== null && (
           <div className="absolute top-3 right-3 z-20 w-[23rem] max-w-[calc(100%-4.5rem)] max-h-[calc(100%-1.5rem)] flex flex-col">
             <Detail
@@ -1126,6 +1347,10 @@ function Atlas({ loaded }: { loaded: Loaded }) {
               lootIx={lootIx}
               itemHits={itemHits}
               i={selected}
+              scan={scan}
+              hereNow={saveIx?.byLoc.get(selected) ?? []}
+              hitIds={hitIds}
+              onPickChest={pickChest}
               onClose={() => setSelected(null)}
               trader={
                 flags[selected] & F_MERCHANT
@@ -1449,6 +1674,10 @@ function Detail({
   lootIx,
   itemHits,
   i,
+  scan,
+  hereNow,
+  hitIds,
+  onPickChest,
   onClose,
   trader,
 }: {
@@ -1456,6 +1685,10 @@ function Detail({
   lootIx: LootIndex;
   itemHits: Set<number>;
   i: number;
+  scan: SaveScan | null;
+  hereNow: number[];
+  hitIds: Set<string>;
+  onPickChest: (ci: number) => void;
   onClose: () => void;
   trader?: { found: boolean; onToggle: () => void };
 }) {
@@ -1587,6 +1820,40 @@ function Detail({
           </div>
         )}
 
+        {scan && hereNow.length > 0 && (
+          <div>
+            <DetailHead>
+              In the containers here now ({hereNow.length})
+            </DetailHead>
+            <ul className="rounded-lg border border-brand-500/30 divide-y divide-zinc-800/70 overflow-hidden">
+              {hereNow.map((ci) => {
+                const c = scan.chests[ci];
+                const hit = c.items.filter((it) => hitIds.has(it[0]));
+                const shown = (hit.length ? hit : c.items).slice(0, 3);
+                return (
+                  <li key={ci}>
+                    <button
+                      type="button"
+                      onClick={() => onPickChest(ci)}
+                      className={cn(
+                        "w-full text-left px-2.5 py-1.5 text-xs hover:bg-zinc-900",
+                        hit.length > 0 && "bg-brand-500/15",
+                      )}
+                    >
+                      <span className="block text-zinc-300">{chestLabel(c)}</span>
+                      <span className="block truncate text-zinc-500">
+                        {shown.map((it) => `${itemName(it[0], A)} ×${it[1]}`).join(", ")}
+                        {c.items.length > shown.length ? ` +${c.items.length - shown.length}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-1 text-[11px] text-zinc-600">From {scan.world.name}, as of its last save.</p>
+          </div>
+        )}
+
         {chests.map((ch) => (
           <ChestLoot key={ch.table} data={A} chest={ch} itemHits={itemHits} />
         ))}
@@ -1657,6 +1924,359 @@ function ChestLoot({
 }
 
 // ---------------------------------------------------------------------------
+// The player's world save — which one, and what its containers hold
+// ---------------------------------------------------------------------------
+
+function fmtAgo(secs: number) {
+  if (!secs) return "";
+  const d = Date.now() / 1000 - secs;
+  if (d < 90) return "just now";
+  if (d < 3600) return `${Math.round(d / 60)} min ago`;
+  if (d < 86400) return `${Math.round(d / 3600)} h ago`;
+  return fmtWhen(secs);
+}
+
+function SaveBar({
+  seed,
+  saves,
+  listed,
+  current,
+  scan,
+  scanning,
+  error,
+  onPick,
+  onRescan,
+  onBrowse,
+}: {
+  seed: string;
+  saves: WorldSave[];
+  listed: boolean;
+  current: WorldSave | null;
+  scan: SaveScan | null;
+  scanning: boolean;
+  error: string | null;
+  onPick: (path: string | null) => void;
+  onRescan: () => void;
+  onBrowse: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", close);
+    return () => window.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const where = (w: WorldSave) =>
+    w.location === "cloud" ? "Steam Cloud" : w.location === "local" ? "Local save" : "Picked folder";
+
+  let status: React.ReactNode;
+  if (!listed) status = "Looking for your worlds…";
+  else if (!current)
+    status = saves.length ? "Not reading a save" : <>No world on this PC uses seed <span className="font-mono text-zinc-300">{seed}</span></>;
+  else if (error) status = <span className="text-red-300">Could not read it: {error}</span>;
+  else if (scanning && !scan) status = "Reading the save…";
+  else if (scan)
+    status = (
+      <>
+        {scan.chests.length.toLocaleString()} containers with items · saved {fmtAgo(current.savedAt)}
+        {scan.skippedChunks > 0 && <span className="text-amber-300"> · {scan.skippedChunks} zones unreadable</span>}
+      </>
+    );
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <div className="flex items-center gap-2.5 rounded-xl border border-zinc-800 bg-zinc-950/95 shadow-lg pl-3 pr-1.5 py-1.5">
+        <HardDrive className={cn("w-4 h-4 shrink-0", current ? "text-brand-400" : "text-zinc-600")} />
+        <button type="button" onClick={() => setOpen(!open)} className="flex-1 min-w-0 text-left group">
+          <span className="flex items-center gap-1.5 text-sm text-zinc-100">
+            <span className="truncate">{current ? current.name : "Your world save"}</span>
+            {current?.backup && <span className="text-[10px] uppercase tracking-wider text-amber-300/90">backup</span>}
+            <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 text-zinc-500 group-hover:text-zinc-300 transition-transform", open && "rotate-180")} />
+          </span>
+          <span className="block truncate text-[11px] text-zinc-500">{status}</span>
+        </button>
+        {current && (
+          <button
+            type="button"
+            onClick={onRescan}
+            disabled={scanning}
+            title="Read the save again"
+            aria-label="Read the save again"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-brand-300 hover:bg-zinc-900 disabled:opacity-50"
+          >
+            {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-2 z-40 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden">
+          <div className="px-3.5 py-2 border-b border-zinc-800 bg-zinc-900/80 text-[11px] uppercase tracking-wider text-zinc-500">
+            Worlds on this PC made from {seed}
+          </div>
+          {saves.length === 0 ? (
+            <p className="px-3.5 py-3 text-xs text-zinc-500">
+              None found in Steam Cloud or worlds_local. Play the world once in Valheim 1.0, or pick its folder.
+            </p>
+          ) : (
+            <ul className="max-h-72 overflow-y-auto divide-y divide-zinc-800/70">
+              {saves.map((w) => (
+                <li key={w.path}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onPick(w.path);
+                      setOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3.5 py-2 text-left hover:bg-zinc-900"
+                  >
+                    <span className="w-4 shrink-0">
+                      {current?.path === w.path && <Check className="w-4 h-4 text-brand-400" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm text-zinc-100 truncate">
+                        {w.name}
+                        {w.backup && <span className="ml-1.5 text-[10px] uppercase tracking-wider text-amber-300/90">backup</span>}
+                      </span>
+                      <span className="block text-[11px] text-zinc-500 truncate">
+                        {where(w)} · saved {fmtWhen(w.savedAt)}
+                        {w.backup ? ` · ${w.path.split(/[\\/]/).pop()}` : ""}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex border-t border-zinc-800">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onBrowse();
+              }}
+              className="flex-1 flex items-center gap-2 px-3.5 py-2.5 text-sm text-brand-300 hover:bg-zinc-900"
+            >
+              <FolderOpen className="w-4 h-4" /> Choose a world folder…
+            </button>
+            {current && (
+              <button
+                type="button"
+                onClick={() => {
+                  onPick(null);
+                  setOpen(false);
+                }}
+                className="px-3.5 py-2.5 text-sm text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border-l border-zinc-800"
+              >
+                Don't read a save
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Containers in the save that hold a searched item. Certain, unlike the
+ *  odds — but only as of the last time Valheim saved the world. */
+function SaveChestList({
+  data: A,
+  scan,
+  saveIx,
+  confirmed,
+  hitIds,
+  focus,
+  onPick,
+}: {
+  data: AtlasData;
+  scan: SaveScan;
+  saveIx: SaveIndex | null;
+  confirmed: number[];
+  hitIds: Set<string>;
+  focus: number | null;
+  onPick: (ci: number) => void;
+}) {
+  const [cap, setCap] = useState(40);
+  useEffect(() => setCap(40), [confirmed]);
+
+  if (!confirmed.length) {
+    return (
+      <div className="h-full grid place-items-center p-5 text-center">
+        <p className="text-sm text-zinc-500">
+          No container in {scan.world.name} holds that right now.
+          <span className="block text-[11px] text-zinc-600 mt-1">
+            World chests only fill when their area first loads — the Results odds cover the rest.
+          </span>
+        </p>
+      </div>
+    );
+  }
+  return (
+    <>
+      <ul className="divide-y divide-zinc-800/60">
+        {confirmed.slice(0, cap).map((ci) => {
+          const c = scan.chests[ci];
+          const hit = c.items.filter((it) => hitIds.has(it[0]));
+          const loc = saveIx?.near[ci] ?? -1;
+          return (
+            <li key={ci}>
+              <button
+                type="button"
+                onClick={() => onPick(ci)}
+                aria-selected={focus === ci}
+                className={cn(
+                  "w-full text-left pl-2 pr-3.5 py-2 flex items-center gap-2.5 transition-colors border-l-2",
+                  focus === ci ? "bg-brand-500/15 border-brand-400" : "border-transparent hover:bg-zinc-900",
+                )}
+              >
+                <span className="grid place-items-center w-5 h-5 shrink-0">
+                  <span className="w-2.5 h-2.5 rotate-45 bg-brand-400 ring-1 ring-black/60" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-zinc-100">
+                    {hit.map((it) => `${itemName(it[0], A)} ×${it[1]}`).join(", ")}
+                  </span>
+                  <span className="block truncate text-[11px] text-zinc-500">
+                    {chestLabel(c)} · {loc >= 0 ? displayName(A.prefabs[A.p[loc]]) : "open ground"}
+                  </span>
+                </span>
+                <span className="font-mono text-[11px] text-zinc-400 tabular-nums">
+                  {fmtDist(Math.hypot(c.pos[0], c.pos[2]))}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {cap < confirmed.length && (
+        <button
+          type="button"
+          onClick={() => setCap(cap + 100)}
+          className="w-full py-2.5 text-xs text-zinc-400 hover:text-brand-300 border-t border-zinc-800"
+        >
+          Show more ({(confirmed.length - cap).toLocaleString()} left)
+        </button>
+      )}
+    </>
+  );
+}
+
+function ChestDetail({
+  data: A,
+  scan,
+  ci,
+  near,
+  hitIds,
+  onClose,
+  onPickLocation,
+}: {
+  data: AtlasData;
+  scan: SaveScan;
+  ci: number;
+  near: number;
+  hitIds: Set<string>;
+  onClose: () => void;
+  onPickLocation: (i: number) => void;
+}) {
+  const c = scan.chests[ci];
+  const rows = [...c.items].sort((a, b) => Number(hitIds.has(b[0])) - Number(hitIds.has(a[0])) || b[1] - a[1]);
+  const copyGoto = () => {
+    const text = `goto ${Math.round(c.pos[0])} ${Math.round(c.pos[2])}`;
+    navigator.clipboard.writeText(text).then(
+      () => useToastStore.getState().addToast({ type: "success", title: "Copied", message: text, duration: 2000 }),
+      (e) => toast("warning", "Could not copy", String(e)),
+    );
+  };
+  return (
+    <section className="min-h-0 flex flex-col rounded-xl border border-brand-500/40 bg-zinc-950/95 shadow-2xl overflow-hidden">
+      <div className="shrink-0 flex items-start gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
+        <span className="grid place-items-center w-8 h-8 shrink-0 mt-0.5">
+          <span className="w-4 h-4 rotate-45 bg-brand-400 ring-2 ring-black/60" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-400">In {scan.world.name}</p>
+          <h3 className="text-base font-semibold text-zinc-100 leading-snug">{chestLabel(c)}</h3>
+          <p className="font-mono text-[11px] text-zinc-500 break-all">{c.prefab}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close details"
+          className="p-1 rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-4">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+          <DT>Position</DT>
+          <dd className="font-mono text-zinc-200 tabular-nums">
+            {c.pos[0].toFixed(1)}, {c.pos[1].toFixed(1)}, {c.pos[2].toFixed(1)}
+          </dd>
+          <DT>Where</DT>
+          <dd className="text-zinc-200">
+            {near >= 0 ? (
+              <button
+                type="button"
+                onClick={() => onPickLocation(near)}
+                className="text-left underline decoration-zinc-600 hover:decoration-brand-400"
+              >
+                {displayName(A.prefabs[A.p[near]])}
+              </button>
+            ) : (
+              "Open ground"
+            )}
+          </dd>
+          <DT>Spawn</DT>
+          <dd className="font-mono text-zinc-200 tabular-nums">{fmtDist(Math.hypot(c.pos[0], c.pos[2]))} away</dd>
+        </dl>
+
+        <button
+          type="button"
+          onClick={copyGoto}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-zinc-950 hover:bg-brand-400 transition-colors"
+        >
+          <Copy className="w-4 h-4" /> Copy goto command
+        </button>
+
+        <div>
+          <DetailHead>Contents ({c.items.length})</DetailHead>
+          <div className="rounded-lg border border-zinc-800 overflow-hidden">
+            <table className="w-full text-xs">
+              <tbody className="divide-y divide-zinc-800/70">
+                {rows.map(([id, stack, quality], n) => {
+                  const name = itemName(id, A);
+                  return (
+                    <tr key={`${id}:${quality}:${n}`} className={hitIds.has(id) ? "bg-brand-500/15" : undefined}>
+                      <td className="px-2 py-1">
+                        <span className="block text-zinc-200">
+                          {name}
+                          {quality > 1 && <span className="ml-1.5 text-brand-400">★{quality}</span>}
+                        </span>
+                        {name !== id && <span className="block font-mono text-[10px] text-zinc-500">{id}</span>}
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono text-zinc-300 tabular-nums w-14">×{stack}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-1 text-[11px] text-zinc-600">
+            As of {scan.world.name}'s last save. Anything moved since won't show until Valheim saves again.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // The map canvas. Pan, zoom and picking are imperative on refs — running
 // 12,000 pins through React state every frame would be pointless work.
 // ---------------------------------------------------------------------------
@@ -1672,6 +2292,10 @@ function MapCanvas({
   showPins,
   selected,
   onPick,
+  chests,
+  chestPins,
+  focusChest,
+  onPickChest,
 }: {
   data: AtlasData;
   edge: number;
@@ -1683,6 +2307,11 @@ function MapCanvas({
   showPins: boolean;
   selected: number | null;
   onPick: (i: number) => void;
+  /** The world save's containers, and which of them to draw. */
+  chests: SaveChest[] | null;
+  chestPins: number[];
+  focusChest: number | null;
+  onPickChest: (ci: number) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1692,6 +2321,7 @@ function MapCanvas({
   const size = useRef({ w: 0, h: 0, dpr: 1 });
   const raf = useRef(0);
   const visible = useRef<Set<number>>(new Set());
+  const visibleChests = useRef<Set<number>>(new Set());
   // Once the view has been moved by hand, resizing must not yank it back.
   const userMoved = useRef(false);
   const [ready, setReady] = useState(false);
@@ -1782,6 +2412,43 @@ function MapCanvas({
       for (const i of alwaysShow) place(i);
       if (showPins) for (const i of matches) place(i);
 
+      // Containers in the save holding the searched item: gold diamonds, so
+      // they read as a different kind of answer from the markers under them.
+      const vc = visibleChests.current;
+      vc.clear();
+      const diamond = (ci: number, ring: boolean) => {
+        if (!chests) return;
+        const c = chests[ci];
+        const sx = ((c.pos[0] + HALF) / WORLD) * v.k + v.tx;
+        const sy = ((HALF - c.pos[2]) / WORLD) * v.k + v.ty;
+        if (sx < -glyph || sy < -glyph || sx > w + glyph || sy > h + glyph) return;
+        vc.add(ci);
+        const r = disc * 0.95;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - r);
+        ctx.lineTo(sx + r, sy);
+        ctx.lineTo(sx, sy + r);
+        ctx.lineTo(sx - r, sy);
+        ctx.closePath();
+        ctx.fillStyle = "#E5A548";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(8,12,20,.9)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        if (ring) {
+          ctx.beginPath();
+          ctx.arc(sx, sy, disc + 6, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(8,12,20,.9)";
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          ctx.strokeStyle = "#E5A548";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      };
+      for (const ci of chestPins) if (ci !== focusChest) diamond(ci, false);
+      if (focusChest !== null) diamond(focusChest, true);
+
       if (selected !== null) {
         const sx = ((A.x[selected] + HALF) / WORLD) * v.k + v.tx;
         const sy = ((HALF - A.z[selected]) / WORLD) * v.k + v.ty;
@@ -1801,7 +2468,7 @@ function MapCanvas({
 
       setZoomLabel((v.k / WORLD).toFixed(2) + "×");
     });
-  }, [A, HALF, WORLD, edge, matches, alwaysShow, selected, iconKeys, icons, showPins]);
+  }, [A, HALF, WORLD, edge, matches, alwaysShow, selected, iconKeys, icons, showPins, chests, chestPins, focusChest]);
 
   const fit = useCallback(() => {
     const { w, h } = size.current;
@@ -1878,6 +2545,25 @@ function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
+  useEffect(() => {
+    if (focusChest === null || !chests) return;
+    const c = chests[focusChest];
+    const v = view.current;
+    const { w, h } = size.current;
+    const covered = w > 700 ? 390 : 0;
+    const sx = ((c.pos[0] + HALF) / WORLD) * v.k + v.tx;
+    if (visibleChests.current.has(focusChest) && sx < w - covered) {
+      draw();
+      return;
+    }
+    userMoved.current = true;
+    if (v.k < WORLD && !visibleChests.current.has(focusChest)) v.k = clampK(WORLD);
+    v.tx = (w - covered) / 2 - ((c.pos[0] + HALF) / WORLD) * v.k;
+    v.ty = h / 2 - ((HALF - c.pos[2]) / WORLD) * v.k;
+    draw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusChest]);
+
   const zoomAt = (sx: number, sy: number, factor: number) => {
     userMoved.current = true;
     const v = view.current;
@@ -1951,11 +2637,26 @@ function MapCanvas({
               best = i;
             }
           }
-          if (best >= 0) onPick(best);
+          // Containers sit on top of the location markers, so they win a tie.
+          let bestChest = -1;
+          if (chests) {
+            for (const ci of visibleChests.current) {
+              const c = chests[ci];
+              const px = ((c.pos[0] + HALF) / WORLD) * v.k + v.tx;
+              const py = ((HALF - c.pos[2]) / WORLD) * v.k + v.ty;
+              const dd = (px - sx) * (px - sx) + (py - sy) * (py - sy);
+              if (dd <= bestD) {
+                bestD = dd;
+                bestChest = ci;
+              }
+            }
+          }
+          if (bestChest >= 0) onPickChest(bestChest);
+          else if (best >= 0) onPick(best);
         }}
       />
 
-      {ready && !showPins && selected === null && (
+      {ready && !showPins && selected === null && focusChest === null && (
         <div className="pointer-events-none absolute inset-x-0 bottom-12 flex justify-center px-3">
           <p className="rounded-lg border border-zinc-700/80 bg-zinc-950/90 px-3.5 py-2 text-xs text-zinc-300 shadow-lg">
             Showing the starting stone. Tick a place, a biome, or search to fill the map.

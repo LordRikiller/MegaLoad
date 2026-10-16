@@ -12,6 +12,7 @@ use commands::launcher::*;
 use commands::logs::*;
 use commands::map_atlas::*;
 use commands::map_sync::*;
+use commands::world_saves::*;
 use commands::mods::*;
 use commands::player_data::*;
 use commands::player_data::PlayerDataWatcherState;
@@ -250,6 +251,9 @@ pub fn run() {
             map_open_generator,
             map_open_folder,
             map_sync,
+            map_list_world_saves,
+            map_describe_world_save,
+            map_scan_world_save,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

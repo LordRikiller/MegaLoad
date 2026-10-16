@@ -329,7 +329,7 @@ pub struct KnownText {
 
 /// Valheim's `StringExtensionMethods.GetStableHashCode` — the hash an item's
 /// prefab name is stored under from inventory format 108 onwards.
-fn stable_hash_code(s: &str) -> i32 {
+pub(crate) fn stable_hash_code(s: &str) -> i32 {
     let chars: Vec<char> = s.chars().collect();
     let mut hash1: i32 = 5381;
     let mut hash2: i32 = 5381;
@@ -346,7 +346,7 @@ fn stable_hash_code(s: &str) -> i32 {
 }
 
 /// Reverse map built once from the generated prefab name table.
-fn prefab_name_for_hash(hash: i32) -> Option<&'static str> {
+pub(crate) fn prefab_name_for_hash(hash: i32) -> Option<&'static str> {
     use std::collections::HashMap;
     use std::sync::OnceLock;
     static MAP: OnceLock<HashMap<i32, &'static str>> = OnceLock::new();
