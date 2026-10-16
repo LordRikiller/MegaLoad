@@ -1,11 +1,11 @@
 {
-  "version": "1.25.0",
-  "notes": "Config editor: key bindings now save correctly.\n\nCapturing a key used to save the character you typed rather than the key's real name, so a number key was saved as \"1\" instead of \"Alpha1\" and the game couldn't read it (\"8\" even came out as Backspace, and Shift+1 as \"!\"). It now saves the physical key with the name Valheim expects: number row, letters, keypad, F-keys and punctuation.\n\nMiniQoL 2.7.3 also repairs any bindings that were saved the old way.",
-  "pub_date": "2026-10-02T20:56:19.000Z",
+  "version": "1.27.0",
+  "notes": "New: World Map.\n\nDownload your seed's \"All Data\" zip from valheim-map.world and MegaLoad turns it into a searchable map: every boss altar, dungeon, trader, vegvisir, runestone and chest, with the odds of what each chest can roll. Search for an item (e.g. \"Battle Idol\") to see every chest that can hold it, nearest spawn first.\n\nKeep as many worlds as you like and switch between them. With Cloud Sync on, finished maps and the trader sites you mark follow you to your other PCs.\n\nAlso: Valheim Data shows the upgrade pieces for each crafting station, and MegaLoad opens a little larger.",
+  "pub_date": "2026-10-16T00:58:28.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOU0xVkFHSHorcTRzcjFLUTRVaFJaUkpiRjA5L1NiaTA4VFR6VjdVbFpkamoxUWVVRWhTOVFHY2h6U25aU1RESUZLY0NJUzFLNG8zNWhyV1cyT0VFaWc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwOTc0NTYzCWZpbGU6TWVnYUxvYWRfMS4yNS4wX3g2NC1zZXR1cC5uc2lzLnppcApKV3VWMW1naGZDeThCRjQwZFBPeGRHMG5BaTh1cTl2R0ZMRTdzVFQ4dGpwWUpVNFlhOEpldnk4OXZsaFpDazdZeFlSM2o0MjBOckszblhxa3RrU2VBZz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.25.0/MegaLoad_1.25.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUYzbUxyNURhTnNpRHNZenRnMGZVaEZRK29Ja3J6eU80VHY1cHpXNXJXWXdOMVNxY1NsTVh1cnRpWlB0aXZFTW5RV2NqR291Vi9jbGpxYjdndG9pNGdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTAzOTgwCWZpbGU6TWVnYUxvYWRfMS4yNy4wX3g2NC1zZXR1cC5uc2lzLnppcAowRWROdDFNT0Z4L09pbGlIU1JJNkIrNlZNUE40RUhLNVp0cnZxVHczVU0wR0tZcTRQUmJiZHpURFRkUWFTRFpqT3pOa3U3bUlMSVY5YnMvekV2ZW9EQT09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.27.0/MegaLoad_1.27.0_x64-setup.nsis.zip"
     }
   }
 }
