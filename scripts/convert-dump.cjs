@@ -111,9 +111,24 @@ const FORAGED_AS_MATERIAL = new Set([
   "MushroomBzerker", // Toadstool — Bog Witch vendor, ingredient for Berserkir mead
   // Farming — crops + raw produce that double as recipe ingredients
   "Honey", "Carrot", "Onion", "Vineberry",
+  // Valheim 1.0 — Lingonberries (Deep North Fulings), the three new crops and
+  // the Luminous Larva (Hooded Lantern fuel). Typed Consumable like the rest.
+  "Lingonberry", "Kale", "Poteitr", "Oat", "GlowWorm",
   // Note: Dandelion, Thistle, Turnip, Flax, Barley already type=Material in
   // upstream dumps; included here is unnecessary but no harm.
 ]);
+
+// Gathered things the game types Misc or as a weapon that recipes consume, so
+// they belong on the Material filter: boss drops (Hard Antler, Majestic
+// Carapace, Kindled Ribs are already Material), Kall's summoner, Hildir's
+// vendor parts, and the Snowball (Ice → Snowball → Snow Lantern).
+const MISC_AS_MATERIAL = new Set([
+  "DragonTear", "YagluthDrop", "HatefulBlood",
+  "ScytheHandle", "BarrelRings", "BarberKit",
+  "Snowball",
+]);
+// Re-typed throwables still show under Weapon as well (typeAlso).
+const THROWABLE_MATERIALS = new Set(["Snowball"]);
 
 // ── Localization resolver ──
 function loc(token) {
@@ -320,6 +335,8 @@ for (const [finalId, baseRecipe] of Object.entries(MEAD_BASE_MAP)) {
 }
 // ── Build creature drop lookup: item prefab -> [{creature, chance, min, max}] ──
 const dropLookup = {};  // item prefab -> [{creaturePrefab, creature, chance, min, max, biome?}]
+// creature prefab -> game faction (e.g. "DeepNorth"), read by guessCreatureBiome.
+const CREATURE_FACTION = Object.fromEntries(creatureDrops.filter(cd => cd.faction).map(cd => [cd.creature, cd.faction]));
 for (const cd of creatureDrops) {
   const creatureName = loc(findCreatureName(cd.creature));
   for (const d of cd.drops) {
@@ -466,6 +483,7 @@ function mapItemType(gameType, prefab, shared) {
   // direct-eat as a bonus survival option. Surface them as Material so the
   // Material biome filter rolls them up alongside Wood/Stone/Ore/etc.
   if (FORAGED_AS_MATERIAL.has(prefab)) return "Material";
+  if (MISC_AS_MATERIAL.has(prefab)) return "Material";
 
   // Drinking items — not weapons, decorative/celebratory
   if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin" || prefab === "Tankard_dvergr") return "Misc";
@@ -518,6 +536,8 @@ const SUBCATEGORY_OVERRIDE = {
   DvergrKeyFragment:   "Boss Caller",
   Bell:                "Boss Caller",
   BellFragment:        "Boss Caller",
+  HatefulBlood:        "Boss Caller",   // Malicious Blood — summons Kall
+  LeatherScraps:       "Hide",          // not Ore, despite the "Scrap" in the prefab
   ChickenEgg:          "Egg",
   VoltureEgg:          "Egg",
   AsksvinEgg:          "Egg",
@@ -555,9 +575,10 @@ function mapSubcategory(gameType, prefab, shared) {
   // for a cleaner grouping; berries get "Berry"; rest fall back to Material.
   if (FORAGED_AS_MATERIAL.has(prefab)) {
     if (prefab.startsWith("Mushroom")) return "Mushroom";
-    if (["Blueberries","Raspberry","Cloudberry","Vineberry"].includes(prefab)) return "Berry";
+    if (["Blueberries","Raspberry","Cloudberry","Vineberry","Lingonberry"].includes(prefab)) return "Berry";
     return "Material";
   }
+  if (MISC_AS_MATERIAL.has(prefab)) return "Material";
 
   // Drinking items — decorative
   if (prefab === "Tankard" || prefab === "TankardAnniversary" || prefab === "TankardOdin" || prefab === "Tankard_dvergr") return "Misc";
@@ -813,9 +834,19 @@ const RAW_MATERIAL_BIOME = {
   // ─── Deep North (tier 9, Valheim 1.0) ───
   // Only materials with real evidence: frost-named 1.0 additions, Frigid Kiln /
   // Frost Foundry products, and anything explicitly named DeepNorth. Ambiguous new
-  // items (Kale, Oat, Poteitr, Glowworm, Hook) are deliberately left unassigned
-  // rather than guessed at — a wrong biome is worse than a blank one.
+  // items (Hook) are deliberately left unassigned rather than guessed at — a wrong
+  // biome is worse than a blank one.
   "FaderEmber": "Ashlands",           // Fader is the Ashlands final boss
+  // 1.0 crops + forage (Milord-confirmed 2026-10-30). The dump has no world source
+  // for them; seeds carry the biome on to their saplings.
+  "Kale": "Deep North",
+  "Poteitr": "Deep North",
+  "Oat": "Deep North",
+  "GlowWorm": "Deep North",             // Luminous Larva
+  "KaleSeeds": "Deep North",
+  "OatSeeds": "Deep North",
+  "PoteitrSeeds": "Deep North",
+  "OatFlour": "Deep North",             // Windmill product, no recipe to recurse through
   "CookedMooseMeat": "Deep North",
   "CookedSealBlubber": "Deep North",
   "MooseMeat": "Deep North",
@@ -2667,8 +2698,15 @@ function findItemName(prefab) {
 function guessCreatureBiome(prefab) {
   // Check BIOME_OVERRIDE first (authoritative for edge cases)
   if (BIOME_OVERRIDE[prefab]) return BIOME_OVERRIDE[prefab][0];
-  
+  // The game's own faction beats any name pattern: Greydwarf_Frozen, GoblinDeepNorth,
+  // TrollFrost (Gammeltroll), Skeleton_DeepNorth and the Mórkhalla Pulps are all
+  // DeepNorth-faction, but "greydwarf"/"goblin"/"troll"/"blob" filed them lower down.
+  if (CREATURE_FACTION[prefab] === "DeepNorth") return "Deep North";
+
   const p = prefab.toLowerCase();
+  // Biome-suffixed variants (Skeleton_Meadows, Skeleton_Swamps_noarcher, Bat_Swamp).
+  const suffix = p.match(/_(meadows|swamps?|mountains?)(_noarcher)?$/);
+  if (suffix) return { meadows: "Meadows", swamp: "Swamp", swamps: "Swamp", mountain: "Mountain", mountains: "Mountain" }[suffix[1]];
   // ── Deep North (Valheim 1.0). MUST come before the generic patterns: "trollsnow"
   //    contains "troll" and would otherwise be filed under Black Forest. ──
   if (p.includes("trollsnow")) return "Deep North";   // Snow Troll, not a BF troll
@@ -2680,7 +2718,7 @@ function guessCreatureBiome(prefab) {
 
   // ── Specific overrides BEFORE generic patterns (order matters!) ──
   if (p.includes("unbjorn")) return "Plains";        // Vile — Plains, not Ashlands
-  if (p === "bjorn") return "Black Forest";            // Bear — Black Forest, not Ashlands
+  if (p === "bjorn" || p === "bjorn_sleeping") return "Black Forest"; // Bear — Black Forest, not Ashlands
   if (p === "blobfrost") return "Mountain";            // Frost Blob — Mountain, not Swamp
   if (p === "bloblava") return "Ashlands";             // Lava Blob — Ashlands, not Swamp
   if (p === "blobtar") return "Plains";                // Growth — Plains, not Swamp
@@ -3202,11 +3240,14 @@ for (const e of converted) {
   }
 }
 
-// Add missing items
+// Add missing items. An addition also beats a build piece holding its id: 1.0
+// ships a Feast-table piece with prefab RottenMeat, and the piece loop claimed
+// the id after ITEM_REMOVE dropped the dump's item — Rotten Meat vanished from
+// Materials and showed up as a Feast build piece instead.
 for (const add of ITEM_ADDITIONS) {
-  if (!converted.some(e => e.id === add.id)) {
-    converted.push(add);
-  }
+  const at = converted.findIndex(e => e.id === add.id);
+  if (at < 0) converted.push(add);
+  else if (converted[at].type === "BuildPiece") converted[at] = add;
 }
 
 // Fix recipe references that use raw tokens instead of display names
@@ -3762,6 +3803,7 @@ for (const e of converted) {
   const also = [];
   if (e.type !== "Food" && (e.eatable || food.includes("Ingredient"))) also.push("Food");
   if (e.type !== "Plantable" && e.plantable) also.push("Plantable");
+  if (THROWABLE_MATERIALS.has(e.id)) also.push("Weapon");
   if (also.length > 0) e.typeAlso = also;
   else delete e.typeAlso;
 
