@@ -17,10 +17,16 @@ interface Props {
    * (`itemIds`) and the aggregated craft Materials (`materialIds`).
    */
   materialIds?: string[];
+  /** Replaces the "N items from the current filter" line (e.g. a single item page). */
+  summary?: string;
+  /** How the added items are tagged. Bulk exports default to "export". */
+  source?: "export" | "manual";
+  /** Open the list after adding. Off for the item page so the user stays put. */
+  navigateAfter?: boolean;
 }
 
 /** Modal for "Export to list" — choose new/existing list, add filtered items. */
-export function ExportToListModal({ open, onClose, itemIds, filterSnapshot, materialIds }: Props) {
+export function ExportToListModal({ open, onClose, itemIds, filterSnapshot, materialIds, summary, source = "export", navigateAfter = true }: Props) {
   const navigate = useNavigate();
   // Subscribe to the raw lists array; filtering inline in the selector returns
   // a fresh reference every snapshot, which trips React 18's getSnapshot
@@ -61,15 +67,15 @@ export function ExportToListModal({ open, onClose, itemIds, filterSnapshot, mate
         itemId: id,
         checked: false,
         addedAt: snapshot.exportedAt,
-        source: "export" as const,
+        source,
       }));
       const id = createList(finalName, items, snapshot);
-      addToast({ type: "success", title: "List created", message: `"${finalName}" — ${items.length} items`, duration: 2500 });
+      addToast({ type: "success", title: "List created", message: `"${finalName}" — ${items.length} item${items.length === 1 ? "" : "s"}`, duration: 2500 });
       close();
-      navigate(`/megalist/${id}`);
+      if (navigateAfter) navigate(`/megalist/${id}`);
     } else {
       if (!selectedListId) return;
-      const added = addItems(selectedListId, effectiveIds, "export");
+      const added = addItems(selectedListId, effectiveIds, source);
       const target = lists.find((l) => l.id === selectedListId);
       addToast({
         type: "success",
@@ -78,7 +84,7 @@ export function ExportToListModal({ open, onClose, itemIds, filterSnapshot, mate
         duration: 2500,
       });
       close();
-      navigate(`/megalist/${selectedListId}`);
+      if (navigateAfter) navigate(`/megalist/${selectedListId}`);
     }
   };
 
@@ -124,6 +130,8 @@ export function ExportToListModal({ open, onClose, itemIds, filterSnapshot, mate
                 Materials ({materialIds?.length ?? 0})
               </button>
             </div>
+          ) : summary ? (
+            <p className="text-xs text-zinc-500">{summary}</p>
           ) : (
             <p className="text-xs text-zinc-500">
               {effectiveIds.length} item{effectiveIds.length === 1 ? "" : "s"} from the current filter

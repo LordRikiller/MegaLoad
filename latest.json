@@ -1,11 +1,11 @@
 {
-  "version": "1.28.0",
-  "notes": "World Map now reads your own world save.\n\nPick the world you play (MegaLoad finds every world on this PC made from the map's seed, in Steam Cloud or local saves, or you can choose a folder) and search for an item: the map shows every chest, cart, ship and tombstone that actually holds it, as gold diamonds, along with what else is inside and who built it.\n\nIt reads the world as of Valheim's last save, so anything moved since shows up after the next autosave or when you quit to the menu. Nothing in the save is ever changed.",
-  "pub_date": "2026-10-16T02:06:03.000Z",
+  "version": "1.28.1",
+  "notes": "Add a single item to a MegaList straight from its Valheim Data page: hit the new List button beside the level picker and pick a new or existing list. You stay on the item page afterwards.\n\nAlso ships MegaPortals 1.1.1: renaming a Home Portal hub now sticks on a server without MegaPortals.",
+  "pub_date": "2026-11-01T01:51:49.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUFXb1NOQzBqa0RqcndIa0NtSzZ3REw5ZThZVEl6V3B2VDROeFJubmhFaS9KTEo2aGsrNFg3M2kzMU5UWUtmZ0xIUXl3UnIvZUNoVG56a2xKY3BzUlFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTE0NjY0CWZpbGU6TWVnYUxvYWRfMS4yOC4wX3g2NC1zZXR1cC5uc2lzLnppcApGTU9mMTBzTmFyOXpQNzlwOE9xN1k0d2l2MG9CVGNBak8yZDN3b1UrYzFqWm56eUY3WVBPazk1N21uUVlEazhNcHpSWElnbUgzSXVQaFNYTDFFMDhCZz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.28.0/MegaLoad_1.28.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUxzSVoreVhFbWlIckJ1QzhZSVoxdk50WjNQZlRZdmxxaHJNOW1PWHFZQ3crM0dzS1NtQ21zTnhMajczcGh1QXh0eVpWQ09RdGRHRWU0aG1mbDdUOWdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNDk3ODc2CWZpbGU6TWVnYUxvYWRfMS4yOC4xX3g2NC1zZXR1cC5uc2lzLnppcApTbFFPZUV2R2RZTWgzMThOZnBpbTJzQmdJTkhTZWUzamQ5RGJVOHRJVmRYWUFoaEVZVExzb3J5bmxKVUd5NnFTejZrNEZ4K3VkY2VGUVpSS1YvOUNBZz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.28.1/MegaLoad_1.28.1_x64-setup.nsis.zip"
     }
   }
 }

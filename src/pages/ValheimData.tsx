@@ -46,6 +46,7 @@ import {
   Copy,
   Sprout,
   Fish,
+  ListChecks,
 } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { saveTextFile } from "../lib/tauri-api";
@@ -1828,6 +1829,7 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
   // What's in the level box while the user is typing; null = mirror statsLevel.
   const [levelDraft, setLevelDraft] = useState<string | null>(null);
   const [cartLevel, setCartLevel] = useState(item.maxQuality || 1);
+  const [listModalOpen, setListModalOpen] = useState(false);
   const usedIn = getUsedIn(item.id);
   const droppedBy = getDroppedBy(item.id);
   const armorSet = getArmorSet(item);
@@ -2028,9 +2030,26 @@ function DetailView({ item, onBack }: { item: ValheimItem; onBack: () => void })
                 );
               })()}
             </div>
+            <button
+              onClick={() => setListModalOpen(true)}
+              title="Add to a MegaList"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg glass border border-zinc-800 text-[11px] font-medium text-zinc-400 hover:text-brand-400 hover:border-brand-500/30 transition-colors"
+            >
+              <ListChecks className="w-3 h-3" />
+              List
+            </button>
           </div>
         </div>
       </div>
+      <ExportToListModal
+        open={listModalOpen}
+        onClose={() => setListModalOpen(false)}
+        itemIds={[item.id]}
+        filterSnapshot={{}}
+        summary={`Add ${item.name} to a list`}
+        source="manual"
+        navigateAfter={false}
+      />
 
       {/* ── Scrollable Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
