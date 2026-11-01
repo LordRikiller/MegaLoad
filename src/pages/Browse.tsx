@@ -28,10 +28,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   Crown,
+  ChevronDown,
 } from "lucide-react";
 import { cn, formatModName } from "../lib/utils";
 import { iconForModName } from "../lib/modIcons";
 import { StandaloneConfirm, standaloneConflicts } from "../components/StandaloneConfirm";
+import { ModReadme } from "../components/ModReadme";
 
 export function Browse() {
   const { activeProfile } = useProfileStore();
@@ -70,6 +72,8 @@ export function Browse() {
   const [ourMods, setOurMods] = useState<StarterMod[]>([]);
   const [installingOurMod, setInstallingOurMod] = useState<string | null>(null);
   const [pendingStandalone, setPendingStandalone] = useState<{ mod: StarterMod; removing: string[] } | null>(null);
+  // full_name of the result whose description accordion is open (one at a time).
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -458,16 +462,20 @@ export function Browse() {
               const isInstalling = installing.has(item.full_name);
               const hasUpdate =
                 installed && installedVer && installedVer !== item.version;
+              const isExpanded = expanded === item.full_name;
 
               return (
                 <div
                   key={item.full_name}
                   className={cn(
-                    "glass rounded-xl p-4 flex items-center gap-4 group transition-all duration-200 cursor-pointer",
+                    "glass rounded-xl group transition-all duration-200",
                     installed
                       ? "border-emerald-500/20 hover:border-emerald-500/40"
                       : "border-zinc-800/50 hover:border-zinc-700/50"
                   )}
+                >
+                <div
+                  className="p-4 flex items-center gap-4 cursor-pointer"
                   onClick={() => handleViewDetail(item)}
                 >
                   {/* Icon */}
@@ -539,6 +547,23 @@ export function Browse() {
                     )}
                   </div>
 
+                  {/* Description accordion toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpanded(isExpanded ? null : item.full_name);
+                    }}
+                    className={cn(
+                      "shrink-0 p-2 rounded-lg transition-colors",
+                      isExpanded
+                        ? "text-brand-400 bg-brand-500/10"
+                        : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50"
+                    )}
+                    title={isExpanded ? "Hide description" : "Show full description"}
+                  >
+                    <ChevronDown className={cn("w-4.5 h-4.5 transition-transform", isExpanded && "rotate-180")} />
+                  </button>
+
                   {/* Install/Uninstall Button */}
                   <div
                     className="shrink-0"
@@ -566,6 +591,12 @@ export function Browse() {
                       </button>
                     )}
                   </div>
+                </div>
+                {isExpanded && (
+                  <div className="mx-4 mb-4 pt-3 border-t border-zinc-800/60 max-h-[28rem] overflow-y-auto animate-in fade-in duration-200">
+                    <ModReadme owner={item.owner} name={item.name} version={item.version} />
+                  </div>
+                )}
                 </div>
               );
             })}
@@ -622,6 +653,7 @@ function ModDetailView({
   onUninstall: () => void;
 }) {
   const latest = detail.versions[0];
+  const [descOpen, setDescOpen] = useState(true);
   const hasUpdate =
     isInstalled &&
     installedVersion &&
@@ -753,8 +785,29 @@ function ModDetailView({
         </div>
       </div>
 
-      {/* Version History */}
       <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Full description (README) */}
+        {latest && (
+          <div className="glass rounded-xl border border-zinc-800/50 mb-4">
+            <button
+              onClick={() => setDescOpen(!descOpen)}
+              className="w-full flex items-center justify-between px-5 py-3 text-left"
+            >
+              <h2 className="text-lg font-semibold text-zinc-200">Description</h2>
+              <ChevronDown className={cn("w-4 h-4 text-zinc-500 transition-transform", descOpen && "rotate-180")} />
+            </button>
+            {descOpen && (
+              <ModReadme
+                owner={detail.owner}
+                name={detail.name}
+                version={latest.version_number}
+                className="px-5 pb-5"
+              />
+            )}
+          </div>
+        )}
+
+        {/* Version History */}
         <h2 className="text-lg font-semibold text-zinc-200 mb-3">
           Version History
         </h2>

@@ -1,11 +1,11 @@
 {
-  "version": "1.28.1",
-  "notes": "Add a single item to a MegaList straight from its Valheim Data page: hit the new List button beside the level picker and pick a new or existing list. You stay on the item page afterwards.\n\nAlso ships MegaPortals 1.1.1: renaming a Home Portal hub now sticks on a server without MegaPortals.",
-  "pub_date": "2026-11-01T01:51:49.000Z",
+  "version": "1.28.2",
+  "notes": "Browse finds what you search for: mods whose name matches now come before mods that only mention the word in their blurb, and popularity counts every version's downloads, not just the newest. Spaces are ignored on names, so \"enhanced edition\" finds ValheimEnhancedEdition.\n\nRead a mod's full description: click the arrow on any result to open its README right in the list, or open the mod for a Description section above the version history.",
+  "pub_date": "2026-11-01T19:52:59.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUxzSVoreVhFbWlIckJ1QzhZSVoxdk50WjNQZlRZdmxxaHJNOW1PWHFZQ3crM0dzS1NtQ21zTnhMajczcGh1QXh0eVpWQ09RdGRHRWU0aG1mbDdUOWdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNDk3ODc2CWZpbGU6TWVnYUxvYWRfMS4yOC4xX3g2NC1zZXR1cC5uc2lzLnppcApTbFFPZUV2R2RZTWgzMThOZnBpbTJzQmdJTkhTZWUzamQ5RGJVOHRJVmRYWUFoaEVZVExzb3J5bmxKVUd5NnFTejZrNEZ4K3VkY2VGUVpSS1YvOUNBZz09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.28.1/MegaLoad_1.28.1_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBoTHFjc0p5RzljOWlEL3BaMFRadDI5SlFqQW1EWG9QZnlzbUlUR2Q0a2pQcGFmU1pEMHN6aXlEZDZXMCthTGJhV0lRZiswbVVoNnljdlB4ckhPNWdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNTYyNzY2CWZpbGU6TWVnYUxvYWRfMS4yOC4yX3g2NC1zZXR1cC5uc2lzLnppcApDMmVLb2tZZDBySk11c0p5QlpNSmRZaW4xcm9zejFDUUZEMEkzUkZqWXVmVndOeHdhS3dTRmpmS280ZUd1UVpUVU9teHlWcTlpMXMwRVRLcVlGZFpCUT09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.28.2/MegaLoad_1.28.2_x64-setup.nsis.zip"
     }
   }
 }

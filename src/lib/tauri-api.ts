@@ -384,6 +384,10 @@ export const searchThunderstore = (
 export const getThunderstoreDetail = (fullName: string) =>
   invoke<ThunderstoreModDetail>("get_thunderstore_detail", { fullName });
 
+/** A package version's README markdown (the full description). */
+export const getThunderstoreReadme = (owner: string, name: string, version: string) =>
+  invoke<string>("get_thunderstore_readme", { owner, name, version });
+
 export const getThunderstoreCategories = () =>
   invoke<string[]>("get_thunderstore_categories");
 

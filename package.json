@@ -1,7 +1,7 @@
 {
   "name": "megaload",
   "private": true,
-  "version": "1.28.1",
+  "version": "1.28.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,7 +20,9 @@
     "lucide-react": "^0.460.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "9.1.0",
     "react-router-dom": "^7.0.0",
+    "remark-gfm": "4.0.1",
     "tailwind-merge": "^2.6.0",
     "zustand": "^5.0.11"
   },

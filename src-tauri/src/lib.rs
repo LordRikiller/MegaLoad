@@ -124,6 +124,7 @@ pub fn run() {
             // Thunderstore
             search_thunderstore,
             get_thunderstore_detail,
+            get_thunderstore_readme,
             get_thunderstore_categories,
             install_thunderstore_mod,
             update_thunderstore_mod,

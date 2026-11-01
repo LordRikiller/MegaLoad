@@ -191,13 +191,14 @@ pub fn search_thunderstore(
         .unwrap_or("")
         .to_lowercase();
 
-    // Filter
-    let filtered: Vec<&ThunderstorePackage> = packages
+    // Filter, keeping each hit's match tier so name hits rank above
+    // description-only hits ("enhanced" matches 60+ blurbs).
+    let mut sorted: Vec<(u8, u64, &ThunderstorePackage)> = packages
         .iter()
-        .filter(|p| {
+        .filter_map(|p| {
             // Skip deprecated unless explicitly searching
             if p.is_deprecated && query_lower.is_empty() {
-                return false;
+                return None;
             }
             // Category filter
             if !cat_lower.is_empty()
@@ -206,35 +207,22 @@ pub fn search_thunderstore(
                     .iter()
                     .any(|c| c.to_lowercase().contains(&cat_lower))
             {
-                return false;
+                return None;
             }
-            // Text search
-            if !query_lower.is_empty() {
-                let latest = p.versions.first();
-                let desc = latest
-                    .map(|v| v.description.to_lowercase())
-                    .unwrap_or_default();
-                let matches = p.name.to_lowercase().contains(&query_lower)
-                    || p.owner.to_lowercase().contains(&query_lower)
-                    || p.full_name.to_lowercase().contains(&query_lower)
-                    || desc.contains(&query_lower);
-                if !matches {
-                    return false;
-                }
-            }
-            true
+            let tier = if query_lower.is_empty() {
+                0
+            } else {
+                match_tier(p, &query_lower)?
+            };
+            Some((tier, total_downloads(p), p))
         })
         .collect();
 
-    let total = filtered.len();
+    let total = sorted.len();
 
-    // Sort by downloads (most popular first)
-    let mut sorted = filtered;
-    sorted.sort_by(|a, b| {
-        let a_dl = a.versions.first().map(|v| v.downloads).unwrap_or(0);
-        let b_dl = b.versions.first().map(|v| v.downloads).unwrap_or(0);
-        b_dl.cmp(&a_dl)
-    });
+    // Best match tier first, then most popular. Popularity is the sum over
+    // every version — the latest version alone resets to ~0 on each release.
+    sorted.sort_by(|a, b| a.0.cmp(&b.0).then(b.1.cmp(&a.1)));
 
     // Paginate
     let start = page * per_page;
@@ -242,7 +230,7 @@ pub fn search_thunderstore(
         .into_iter()
         .skip(start)
         .take(per_page)
-        .filter_map(|p| {
+        .filter_map(|(_, downloads, p)| {
             let latest = p.versions.first()?;
             Some(ThunderstoreListItem {
                 full_name: p.full_name.clone(),
@@ -250,7 +238,7 @@ pub fn search_thunderstore(
                 owner: p.owner.clone(),
                 version: latest.version_number.clone(),
                 description: latest.description.clone(),
-                downloads: latest.downloads,
+                downloads,
                 rating: p.rating_score,
                 icon: latest.icon.clone(),
                 categories: p.categories.clone(),
@@ -267,6 +255,73 @@ pub fn search_thunderstore(
         page,
         per_page,
     })
+}
+
+/// How well a package matches a (lowercased) query, lower is better:
+/// 0 = the name is the query, 1 = name/owner/full_name contains it,
+/// 2 = only the latest description does. None = no match.
+/// Spaces are ignored on the name side so "enhanced edition" finds
+/// ValheimEnhancedEdition (Thunderstore names use underscores, not spaces).
+fn match_tier(p: &ThunderstorePackage, query: &str) -> Option<u8> {
+    let squash = |s: &str| s.to_lowercase().replace(['_', ' ', '-'], "");
+    let q = squash(query);
+    let name = squash(&p.name);
+    if !q.is_empty() && name == q {
+        return Some(0);
+    }
+    if (!q.is_empty() && (name.contains(&q) || squash(&p.owner).contains(&q)))
+        || p.full_name.to_lowercase().contains(query)
+    {
+        return Some(1);
+    }
+    let desc_hit = p
+        .versions
+        .first()
+        .map_or(false, |v| v.description.to_lowercase().contains(query));
+    desc_hit.then_some(2)
+}
+
+fn total_downloads(p: &ThunderstorePackage) -> u64 {
+    p.versions.iter().map(|v| v.downloads).sum()
+}
+
+/// Thunderstore owner/package names are `[A-Za-z0-9_]`; versions are dotted digits.
+fn is_ts_ident(s: &str, extra: char) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == extra)
+}
+
+#[derive(Deserialize)]
+struct ReadmeResponse {
+    markdown: String,
+}
+
+/// Fetch a package version's README (markdown) for the Browse description panel.
+/// The cached package list only carries the 250-char summary.
+#[command(async)]
+pub fn get_thunderstore_readme(owner: String, name: String, version: String) -> Result<String, String> {
+    if !is_ts_ident(&owner, '-') || !is_ts_ident(&name, '-') || !is_ts_ident(&version, '.') {
+        return Err("Invalid package identifier".into());
+    }
+    let url = format!(
+        "https://thunderstore.io/api/experimental/package/{}/{}/{}/readme/",
+        owner, name, version
+    );
+    validate_download_url(&url)?;
+    let resp = crate::commands::http::agent()
+        .get(&url)
+        .set("User-Agent", concat!("MegaLoad/", env!("CARGO_PKG_VERSION")))
+        .set("Accept", "application/json")
+        .call()
+        .map_err(|e| format!("Thunderstore readme error: {}", e))?;
+    // READMEs are a few KB; cap at 2 MB so a bad response can't balloon.
+    let mut buf = Vec::new();
+    resp.into_reader()
+        .take(2 * 1024 * 1024)
+        .read_to_end(&mut buf)
+        .map_err(|e| format!("Read error: {}", e))?;
+    let body: ReadmeResponse =
+        serde_json::from_slice(&buf).map_err(|e| format!("Readme parse error: {}", e))?;
+    Ok(body.markdown)
 }
 
 #[derive(Serialize, Clone, Debug)]
