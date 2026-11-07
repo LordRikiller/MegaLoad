@@ -150,26 +150,21 @@ fn scan_mods_dir(dir: &Path, enabled: bool, mods: &mut Vec<ModInfo>) -> Result<(
             let ts_manifest = read_thunderstore_manifest(&path);
 
             // Mod in its own folder — look for DLLs inside
-            if let Ok(sub_entries) = fs::read_dir(&path) {
-                for sub_entry in sub_entries.flatten() {
-                    let sub_path = sub_entry.path();
-                    if sub_path.extension().and_then(|e| e.to_str()) == Some("dll") {
-                        let dll_name = sub_path
-                            .file_stem()
-                            .unwrap_or_default()
-                            .to_string_lossy()
-                            .to_string();
-                        mods.push(ModInfo {
-                            name: dll_name.clone(),
-                            file_name: sub_entry.file_name().to_string_lossy().to_string(),
-                            folder: file_name.clone(),
-                            enabled,
-                            version: ts_manifest.as_ref().map(|m| m.0.clone()),
-                            guid: None,
-                            description: ts_manifest.as_ref().and_then(|m| m.1.clone()),
-                        });
-                    }
-                }
+            for sub_path in find_mod_dlls(&path) {
+                let dll_name = sub_path
+                    .file_stem()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string();
+                mods.push(ModInfo {
+                    name: dll_name.clone(),
+                    file_name: sub_path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+                    folder: file_name.clone(),
+                    enabled,
+                    version: ts_manifest.as_ref().map(|m| m.0.clone()),
+                    guid: None,
+                    description: ts_manifest.as_ref().and_then(|m| m.1.clone()),
+                });
             }
         } else if path.extension().and_then(|e| e.to_str()) == Some("dll") {
             // Loose DLL directly in plugins folder
@@ -191,6 +186,41 @@ fn scan_mods_dir(dir: &Path, enabled: bool, mods: &mut Vec<ModInfo>) -> Result<(
     }
 
     Ok(())
+}
+
+/// DLLs belonging to a folder-style mod: the shallowest level of the folder that
+/// holds any. Most mods keep their DLLs at the top, but some Thunderstore zips ship
+/// their own `BepInEx/plugins/<Mod>/` tree, which BepInEx still loads (it searches
+/// recursively) — reading only the top level hid those from MegaLoad entirely.
+/// Stopping at the first level with DLLs keeps library subfolders out of the list.
+pub(crate) fn find_mod_dlls(dir: &Path) -> Vec<std::path::PathBuf> {
+    let mut level = vec![dir.to_path_buf()];
+    // Deep enough for Author-Mod/BepInEx/plugins/Mod/x.dll with room to spare.
+    for _ in 0..6 {
+        let mut dlls = Vec::new();
+        let mut next = Vec::new();
+        for d in &level {
+            let Ok(entries) = fs::read_dir(d) else { continue };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    next.push(path);
+                } else if path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .map_or(false, |e| e.eq_ignore_ascii_case("dll"))
+                {
+                    dlls.push(path);
+                }
+            }
+        }
+        if !dlls.is_empty() || next.is_empty() {
+            dlls.sort();
+            return dlls;
+        }
+        level = next;
+    }
+    Vec::new()
 }
 
 /// Read a Thunderstore manifest.json from a mod folder to get version and description.
@@ -336,4 +366,41 @@ pub fn validate_bepinex(bepinex_path: String) -> Result<serde_json::Value, Strin
         "plugin_count": plugin_count,
         "path_exists": base.exists(),
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn touch(p: &Path) {
+        fs::create_dir_all(p.parent().unwrap()).unwrap();
+        fs::write(p, b"").unwrap();
+    }
+
+    #[test]
+    fn find_mod_dlls_top_level_and_nested() {
+        let root = std::env::temp_dir().join(format!("megaload-find-dlls-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+
+        // Normal mod: DLL at the top, a library subfolder below stays out.
+        let flat = root.join("Flat");
+        touch(&flat.join("Flat.dll"));
+        touch(&flat.join("lib").join("Helper.dll"));
+        let found = find_mod_dlls(&flat);
+        assert_eq!(found, vec![flat.join("Flat.dll")]);
+
+        // Thunderstore zip that ships its own BepInEx/plugins tree.
+        let nested = root.join("Author-Nested");
+        touch(&nested.join("manifest.json"));
+        let dll = nested.join("BepInEx").join("plugins").join("Nested").join("Nested.DLL");
+        touch(&dll);
+        assert_eq!(find_mod_dlls(&nested), vec![dll]);
+
+        // No DLL anywhere.
+        let empty = root.join("Empty");
+        touch(&empty.join("README.md"));
+        assert!(find_mod_dlls(&empty).is_empty());
+
+        let _ = fs::remove_dir_all(&root);
+    }
 }

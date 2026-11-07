@@ -555,6 +555,9 @@ fn download_ts_file(url: &str) -> Result<Vec<u8>, String> {
 /// - DLLs at root level
 /// - DLLs inside plugins/ subfolder
 /// - Nested Author-ModName/plugins/ structure
+///
+/// The zip is extracted verbatim, so nested layouts stay nested on disk;
+/// `mods::find_mod_dlls` is what finds the DLLs inside them.
 fn extract_thunderstore_zip(bytes: &[u8], mod_dir: &Path) -> Result<(), String> {
     let reader = Cursor::new(bytes);
     let mut archive =

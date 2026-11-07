@@ -879,15 +879,10 @@ fn scan_mods_for_sync(dir: &Path, enabled: bool, mods: &mut Vec<SyncModEntry>) -
 }
 
 fn find_dll_in_folder(dir: &Path) -> Option<String> {
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().to_string();
-            if name.to_lowercase().ends_with(".dll") {
-                return Some(name);
-            }
-        }
-    }
-    None
+    crate::commands::mods::find_mod_dlls(dir)
+        .first()
+        .and_then(|p| p.file_name())
+        .map(|n| n.to_string_lossy().to_string())
 }
 
 fn read_thunderstore_tracking(bepinex_path: &str) -> Vec<SyncThunderstoreMod> {

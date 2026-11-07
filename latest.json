@@ -1,11 +1,11 @@
 {
-  "version": "1.28.2",
-  "notes": "Browse finds what you search for: mods whose name matches now come before mods that only mention the word in their blurb, and popularity counts every version's downloads, not just the newest. Spaces are ignored on names, so \"enhanced edition\" finds ValheimEnhancedEdition.\n\nRead a mod's full description: click the arrow on any result to open its README right in the list, or open the mod for a Description section above the version history.",
-  "pub_date": "2026-11-01T19:52:59.000Z",
+  "version": "1.28.3",
+  "notes": "The Mods page now shows every installed mod. Some Thunderstore mods pack their DLL a few folders deep (their own BepInEx/plugins inside the mod folder). The game still loaded them, but MegaLoad never listed them, so you couldn't see, disable or delete them. Sync and MegaBugs reports now see them too.",
+  "pub_date": "2026-11-07T21:52:11.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOVBoTHFjc0p5RzljOWlEL3BaMFRadDI5SlFqQW1EWG9QZnlzbUlUR2Q0a2pQcGFmU1pEMHN6aXlEZDZXMCthTGJhV0lRZiswbVVoNnljdlB4ckhPNWdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNTYyNzY2CWZpbGU6TWVnYUxvYWRfMS4yOC4yX3g2NC1zZXR1cC5uc2lzLnppcApDMmVLb2tZZDBySk11c0p5QlpNSmRZaW4xcm9zejFDUUZEMEkzUkZqWXVmVndOeHdhS3dTRmpmS280ZUd1UVpUVU9teHlWcTlpMXMwRVRLcVlGZFpCUT09Cg==",
-      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.28.2/MegaLoad_1.28.2_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTZGtBN0hkQ3RKOUZhSCtxaUd6Q2M3SnFqSWRYeDJ3bDY0WWxMZml6TmhTZEdTNnFKYVBzMDdIa01UNG9pR0U2aWk3eWFIYUtVOGw4VjcwWjdHTkxOZktock4xazl6a2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MDg4MzEwCWZpbGU6TWVnYUxvYWRfMS4yOC4zX3g2NC1zZXR1cC5uc2lzLnppcApFWHkxVjVMMkp2d28xeVgrUkdKSU1IQ2NLQTlad0FhYVVrd2ZnTUoyb1Ayc3NNYkZLRC9lK0YxQnA3V0Q2Q2pqRjFZMHhTZldiaEcrZlNzMTUzR0JEZz09Cg==",
+      "url": "https://github.com/LordRikiller/MegaLoad/releases/download/v1.28.3/MegaLoad_1.28.3_x64-setup.nsis.zip"
     }
   }
 }

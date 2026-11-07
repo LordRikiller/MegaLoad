@@ -1116,18 +1116,13 @@ fn get_installed_mod_list(bepinex_path: &str) -> Vec<String> {
             let path = entry.path();
             if path.is_dir() {
                 // Folder-style mod
-                if let Ok(files) = fs::read_dir(&path) {
-                    for f in files.flatten() {
-                        if f.path().extension().and_then(|e| e.to_str()) == Some("dll") {
-                            let dll_name = f
-                                .path()
-                                .file_stem()
-                                .unwrap_or_default()
-                                .to_string_lossy()
-                                .to_string();
-                            mods.push(dll_name);
-                        }
-                    }
+                for f in crate::commands::mods::find_mod_dlls(&path) {
+                    let dll_name = f
+                        .file_stem()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .to_string();
+                    mods.push(dll_name);
                 }
             } else if path.extension().and_then(|e| e.to_str()) == Some("dll") {
                 let dll_name = path
