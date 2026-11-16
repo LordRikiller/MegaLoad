@@ -131,8 +131,9 @@
       "download_url": "https://github.com/LordRikiller/MegaDebug/releases/download/v0.3.0/MegaDebug.dll",
       "dll_name": "MegaDebug.dll",
       "plugin_folder": "MegaDebug",
-      "description": "Floating diagnostic mod — on-demand probes (managed-heap/ZDO/object counters, ZDO census, and an F8 Perf Probe that shows where the frame time goes) for debugging game issues. Install to diagnose, remove when done. All output gated by [99. Debug] DebugMode.",
-      "hidden": false
+      "description": "Floating diagnostic mod — on-demand probes (managed-heap/ZDO/object counters, ZDO census, and an F8 Perf Probe that shows where the frame time goes) for debugging game issues. Install to diagnose, remove when done. All output gated by [99. Debug] DebugMode. Safe beside MiniQoL and the Mega series.",
+      "hidden": false,
+      "standalone_compatible": true
     },
     {
       "name": "MiniQoL",
