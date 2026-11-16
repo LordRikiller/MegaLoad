@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-16T07:25:23Z",
+  "updated_at": "2026-11-16T11:41:33Z",
   "mods": [
     {
       "name": "MegaHoe",
@@ -52,11 +52,11 @@
     },
     {
       "name": "MegaFarming",
-      "version": "1.7.0",
-      "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.7.0/MegaFarming.dll",
+      "version": "1.8.0",
+      "download_url": "https://github.com/LordRikiller/MegaFarming/releases/download/v1.8.0/MegaFarming.dll",
       "dll_name": "MegaFarming.dll",
       "plugin_folder": "MegaFarming",
-      "description": "Mass farming — hold-key mass harvest pickables/beehives, grid plant any cultivator plant (plants need just one build-grid cell of room to grow - 0.25m for crops, 0.5m for trees, straight off MegaBuilder's 0.25/0.5/1/2/4m ladder - so anything you plant on the grid actually grows instead of sitting on 'lacking space', per-cell cultivated-ground check), plant anywhere (any biome), plus custom plantables (bushes, mushrooms, thistle, fiddleheads, royal jelly) added to the Cultivator. Middle-click a crop while holding the Cultivator to remove it, growth + respawn timer hover (saplings AND picked berry bushes / mushrooms etc.), stump markers on picked renewables."
+      "description": "Mass farming — hold-key mass harvest pickables/beehives, grid plant any cultivator plant (plants need just one build-grid cell of room to grow - 0.25m for crops, 0.5m for trees, straight off MegaBuilder's 0.25/0.5/1/2/4m ladder - so anything you plant on the grid actually grows instead of sitting on 'lacking space', per-cell cultivated-ground check), plant anywhere (any biome), plus custom plantables (raspberry, blueberry, cloudberry and lingonberry bushes, mushrooms, thistle, fiddleheads, royal jelly) added to the Cultivator. Middle-click a crop while holding the Cultivator to remove it, growth + respawn timer hover (saplings AND picked berry bushes / mushrooms etc.), stump markers on picked renewables."
     },
     {
       "name": "MegaFishing",
@@ -127,11 +127,11 @@
     },
     {
       "name": "MegaDebug",
-      "version": "0.2.0",
-      "download_url": "https://github.com/LordRikiller/MegaDebug/releases/download/v0.2.0/MegaDebug.dll",
+      "version": "0.3.0",
+      "download_url": "https://github.com/LordRikiller/MegaDebug/releases/download/v0.3.0/MegaDebug.dll",
       "dll_name": "MegaDebug.dll",
       "plugin_folder": "MegaDebug",
-      "description": "Floating diagnostic mod — on-demand probes (managed-heap/ZDO/object counters + ZDO census) for debugging game issues. Install to diagnose, remove when done. All output gated by [99. Debug] DebugMode.",
+      "description": "Floating diagnostic mod — on-demand probes (managed-heap/ZDO/object counters, ZDO census, and an F8 Perf Probe that shows where the frame time goes) for debugging game issues. Install to diagnose, remove when done. All output gated by [99. Debug] DebugMode.",
       "hidden": false
     },
     {
@@ -154,11 +154,11 @@
     },
     {
       "name": "MegaPets",
-      "version": "1.0.0",
-      "download_url": "https://github.com/LordRikiller/MegaPets/releases/download/v1.0.0/MegaPets.dll",
+      "version": "1.1.1",
+      "download_url": "https://github.com/LordRikiller/MegaPets/releases/download/v1.1.1/MegaPets.dll",
       "dll_name": "MegaPets.dll",
       "plugin_folder": "MegaPets",
-      "description": "Every pet feature in one mod, safe beside MiniQoL and the Mega series. NEW Pet Cage: craft one at the Workbench (10 Wood, 4 Leather Scraps, 2 Resin), put it on your hotbar, look at any tamed creature and use it to catch it - Hen, Boar, Wolf, Lox, Asksvin, Moose, anything tamed. Name, stars, health, saddle and breeding state go into the cage, the icon shows who's inside, and a full cage can go through portals (heavy: up to 80 kg for a Lox). Use a full cage to let your pet out in front of you. Pets age and get hungry in the cage as normal. WARNING: removing MegaPets deletes every pet still in a cage - let them out first. Also here, MOVED from other mods with your settings carried over: the Pet Feeder (tames eat from nearby chests and barrels, leave-1 rule, optional passive taming of untamed creatures; was MegaStuff), Tamed Spike Immunity (your own stakes don't skewer your tames; was MegaQoL) and tame performance (idle tame AI rate, Lox/dragon animator culling, garbage-free breeding counts; was MiniQoL/MegaQoL). Every player on a server needs MegaPets for the cage. Never trips a cheat flag.",
+      "description": "Every pet feature in one mod, safe beside MiniQoL and the Mega series. NEW Pet Cage: craft one at the Workbench (10 Wood, 4 Leather Scraps, 2 Resin), put it on your hotbar, look at any tamed creature and use it to catch it - Hen, Boar, Wolf, Lox, Asksvin, Moose, anything tamed. Name, stars, health, saddle and breeding state go into the cage, the icon shows who's inside, and a full cage can go through portals (heavy: up to 80 kg for a Lox). Use a full cage to let your pet out in front of you. Pets age and get hungry in the cage as normal. WARNING: removing MegaPets deletes every pet still in a cage - let them out first. Also here, MOVED from other mods with your settings carried over: the Pet Feeder (tames eat from nearby chests and barrels, leave-1 rule, optional passive taming of untamed creatures; was MegaStuff), Tamed Spike Immunity (your own stakes don't skewer your tames; was MegaQoL) and tame performance (idle tame AI rate, Lox/dragon animator culling, garbage-free breeding counts; was MiniQoL/MegaQoL). Every player on a server needs MegaPets for the cage. 1.1.0: Ctrl+F9 tame performance profiler ([99. Debug]) - captures where the frame goes in a busy base and saves a report to the BepInEx folder. 1.1.1: the cage now catches young tames too (piggies, cubs, calves, chicks, hatchlings) and shows a pet's given name. Never trips a cheat flag.",
       "standalone_compatible": true
     },
     {
